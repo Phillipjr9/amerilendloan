@@ -1,0 +1,1378 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
+import { CheckCircle2, Loader2, Phone, ArrowLeft, Save } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { toast } from "sonner";
+
+const US_STATES = [
+  { code: "AL", name: "Alabama" },
+  { code: "AK", name: "Alaska" },
+  { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" },
+  { code: "CA", name: "California" },
+  { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" },
+  { code: "DE", name: "Delaware" },
+  { code: "FL", name: "Florida" },
+  { code: "GA", name: "Georgia" },
+  { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" },
+  { code: "IL", name: "Illinois" },
+  { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" },
+  { code: "KS", name: "Kansas" },
+  { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" },
+  { code: "ME", name: "Maine" },
+  { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" },
+  { code: "MI", name: "Michigan" },
+  { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" },
+  { code: "MO", name: "Missouri" },
+  { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" },
+  { code: "NV", name: "Nevada" },
+  { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" },
+  { code: "NM", name: "New Mexico" },
+  { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" },
+  { code: "ND", name: "North Dakota" },
+  { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" },
+  { code: "OR", name: "Oregon" },
+  { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" },
+  { code: "SC", name: "South Carolina" },
+  { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" },
+  { code: "TX", name: "Texas" },
+  { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" },
+  { code: "VA", name: "Virginia" },
+  { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" },
+  { code: "WI", name: "Wisconsin" },
+  { code: "WY", name: "Wyoming" }
+];
+
+export default function ApplyLoan() {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [submittedTrackingNumber, setSubmittedTrackingNumber] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // Load saved draft from localStorage on mount
+  const loadSavedDraft = () => {
+    const saved = localStorage.getItem('loanApplicationDraft');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          formData: parsed.formData,
+          step: parsed.step || 1,
+          savedAt: new Date(parsed.savedAt)
+        };
+      } catch (e) {
+        console.error('Failed to parse saved draft:', e);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const savedDraft = loadSavedDraft();
+  
+  const [formData, setFormData] = useState(savedDraft?.formData || {
+    fullName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    ssn: "",
+    driversLicense: "",
+    licenseState: "",
+    citizenshipStatus: "",
+    housingStatus: "",
+    militaryStatus: "",
+    street: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    monthlyRent: "",
+    employmentStatus: "",
+    employer: "",
+    employerPhone: "",
+    jobTitle: "",
+    employmentLength: "",
+    monthlyIncome: "",
+    payFrequency: "",
+    nextPayDate: "",
+    additionalIncome: "",
+    additionalIncomeSource: "",
+    bankName: "",
+    accountType: "",
+    routingNumber: "",
+    accountNumber: "",
+    accountHolderName: "",
+    accountOpenDuration: "",
+    loanType: "",
+    requestedAmount: "",
+    loanPurpose: "",
+    desiredTerm: "",
+    monthlyDebts: "",
+    outstandingLoans: "",
+    creditScore: "",
+    disbursementMethod: "",
+    reference1Name: "",
+    reference1Phone: "",
+    reference1Relationship: "",
+    reference2Name: "",
+    reference2Phone: "",
+    reference2Relationship: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    emergencyContactRelationship: "",
+    termsAccepted: false,
+    privacyAccepted: false,
+    esignAccepted: false,
+  });
+
+  useEffect(() => {
+    if (savedDraft) {
+      setCurrentStep(savedDraft.step);
+      setLastSaved(savedDraft.savedAt);
+      toast.success(`Draft loaded from ${savedDraft.savedAt.toLocaleString()}`);
+    }
+  }, []);
+
+  const submitMutation = trpc.loans.submit.useMutation({
+    onSuccess: (data) => {
+      setSubmittedTrackingNumber(data.trackingNumber);
+      // Clear saved draft on successful submission
+      localStorage.removeItem('loanApplicationDraft');
+      toast.success("Application submitted successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to submit application");
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate terms and conditions acceptance
+    if (!formData.termsAccepted) {
+      toast.error("Please accept the Terms of Service and Loan Agreement");
+      return;
+    }
+
+    if (!formData.privacyAccepted) {
+      toast.error("Please acknowledge the Privacy Policy");
+      return;
+    }
+
+    if (!formData.esignAccepted) {
+      toast.error("Please consent to E-Sign Agreement");
+      return;
+    }
+
+    // Validate SSN format
+    if (!/^\d{3}-\d{2}-\d{4}$/.test(formData.ssn)) {
+      toast.error("SSN must be in format XXX-XX-XXXX");
+      return;
+    }
+
+    // Validate date of birth format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.dateOfBirth)) {
+      toast.error("Date of birth must be in format YYYY-MM-DD");
+      return;
+    }
+
+    // Convert amounts to cents
+    const monthlyIncome = Math.round(parseFloat(formData.monthlyIncome) * 100);
+    const requestedAmount = Math.round(parseFloat(formData.requestedAmount) * 100);
+
+    if (isNaN(monthlyIncome) || monthlyIncome <= 0) {
+      toast.error("Please enter a valid monthly income");
+      return;
+    }
+
+    if (isNaN(requestedAmount) || requestedAmount <= 0) {
+      toast.error("Please enter a valid loan amount");
+      return;
+    }
+
+    submitMutation.mutate({
+      ...formData,
+      employmentStatus: formData.employmentStatus as "employed" | "self_employed" | "unemployed" | "retired",
+      loanType: formData.loanType as "installment" | "short_term",
+      monthlyIncome,
+      requestedAmount,
+    });
+  };
+
+  const updateFormData = (field: string, value: string | boolean) => {
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
+  };
+
+  const saveForLater = () => {
+    const draft = {
+      formData,
+      step: currentStep,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem('loanApplicationDraft', JSON.stringify(draft));
+    setLastSaved(new Date());
+    toast.success('Application saved! You can continue later.');
+  };
+
+  const clearDraft = () => {
+    if (confirm('Are you sure you want to clear your saved application?')) {
+      localStorage.removeItem('loanApplicationDraft');
+      setLastSaved(null);
+      toast.success('Draft cleared');
+    }
+  };
+
+  // Address autocomplete with debouncing
+  const searchAddress = async (query: string) => {
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+        `q=${encodeURIComponent(query)}&` +
+        `format=json&` +
+        `addressdetails=1&` +
+        `countrycodes=us&` +
+        `limit=5`,
+        {
+          headers: {
+            'User-Agent': 'AmeriLend Loan Application'
+          }
+        }
+      );
+      const data = await response.json();
+      setAddressSuggestions(data);
+      setShowSuggestions(data.length > 0);
+    } catch (error) {
+      console.error('Address search error:', error);
+    }
+  };
+
+  const handleAddressChange = (value: string) => {
+    updateFormData("street", value);
+    
+    // Clear previous timer
+    if (searchTimer) {
+      clearTimeout(searchTimer);
+    }
+    
+    // Set new timer for debounced search
+    const timer = setTimeout(() => {
+      searchAddress(value);
+    }, 500);
+    
+    setSearchTimer(timer);
+  };
+
+  const selectAddress = (suggestion: any) => {
+    const address = suggestion.address;
+    
+    // Build street address from components
+    const streetParts = [
+      address.house_number,
+      address.road || address.street
+    ].filter(Boolean);
+    
+    updateFormData("street", streetParts.join(' '));
+    updateFormData("city", address.city || address.town || address.village || '');
+    
+    // Find matching state code
+    const stateName = address.state || '';
+    const matchingState = US_STATES.find(
+      s => s.name.toLowerCase() === stateName.toLowerCase()
+    );
+    if (matchingState) {
+      updateFormData("state", matchingState.code);
+    }
+    
+    updateFormData("zipCode", address.postcode || '');
+    
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+  };
+
+  const nextStep = () => {
+    if (currentStep < 4) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-[#0033A0]" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <Link href="/">
+                <a className="text-2xl font-bold">
+                  <span className="text-[#0033A0]">Ameri</span>
+                  <span className="text-[#D4AF37]">Lend</span>
+                </a>
+              </Link>
+              <div className="flex items-center gap-3">
+                                <a
+                  href="tel:+19452121609"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-primary transition-colors"
+                >
+                  <Phone className="w-4 h-4" />
+                  +1 945 212-1609
+                </a>
+                <Button
+                  variant="outline"
+                  className="border-[#0033A0] text-[#0033A0]"
+                  asChild
+                >
+                  <a href={getLoginUrl()}>Log In</a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="flex-1 flex items-center justify-center py-12">
+          <Card className="max-w-md w-full mx-4">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#0033A0]/10 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-[#0033A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-[#0033A0] mb-2">Sign In Required</h2>
+              <p className="text-gray-600 mb-6">
+                Please sign in to your account to apply for a loan. This helps us keep your information secure and allows you to track your application.
+              </p>
+              <Button
+                className="w-full bg-[#FFA500] hover:bg-[#FF8C00] text-white"
+                asChild
+              >
+                <a href={getLoginUrl()}>Sign In to Continue</a>
+              </Button>
+              <p className="text-sm text-gray-500 mt-4">
+                Don't have an account? Signing in will create one automatically.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show success screen if application was submitted
+  if (submittedTrackingNumber) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <Link href="/">
+                <a className="text-2xl font-bold">
+                  <span className="text-[#0033A0]">Ameri</span>
+                  <span className="text-[#D4AF37]">Lend</span>
+                </a>
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <div className="flex-1 flex items-center justify-center py-12">
+          <Card className="max-w-2xl w-full mx-4">
+            <CardContent className="p-8 text-center">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-12 h-12 text-green-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-[#0033A0] mb-4">Application Submitted Successfully!</h2>
+              <p className="text-gray-600 mb-6">
+                Thank you for submitting your loan application. We're reviewing your information and will get back to you shortly.
+              </p>
+              
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
+                <p className="text-sm text-gray-600 mb-2">Your Tracking Number:</p>
+                <p className="text-3xl font-bold text-[#0033A0] font-mono tracking-wider">
+                  {submittedTrackingNumber}
+                </p>
+                <p className="text-sm text-gray-500 mt-3">
+                  Please save this number for your records. You can use it to track your application status.
+                </p>
+              </div>
+
+              <div className="space-y-3 text-left mb-6">
+                <h3 className="font-semibold text-[#0033A0] text-lg">What happens next?</h3>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Our team will review your application within 24-48 hours</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>You'll receive an email notification with the decision</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>If approved, pay the 3.5% processing fee via credit/debit card or crypto</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Funds will be disbursed to your account within 24 hours after payment confirmation</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  className="flex-1 bg-[#0033A0] hover:bg-[#002080] text-white"
+                  asChild
+                >
+                  <Link href="/dashboard">View Dashboard</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-[#0033A0] text-[#0033A0]"
+                  asChild
+                >
+                  <Link href="/">Back to Home</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/">
+              <a className="text-2xl font-bold">
+                <span className="text-[#0033A0]">Ameri</span>
+                <span className="text-[#D4AF37]">Lend</span>
+              </a>
+            </Link>
+            <div className="flex items-center gap-3">
+                            <a
+                href="tel:+19452121609"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-primary transition-colors"
+              >
+                <Phone className="w-4 h-4" />
+                +1 945 212-1609
+              </a>
+              <Link href="/dashboard">
+                <Button variant="outline" className="border-[#0033A0] text-[#0033A0]">
+                  Dashboard
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Progress Bar */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between max-w-3xl mx-auto mb-4">
+            {[1, 2, 3, 4, 5, 6].map((step) => (
+              <div key={step} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                      currentStep >= step
+                        ? "bg-[#0033A0] text-white"
+                        : "bg-gray-200 text-gray-500"
+                    }`}
+                  >
+                    {currentStep > step ? (
+                      <CheckCircle2 className="w-6 h-6" />
+                    ) : (
+                      step
+                    )}
+                  </div>
+                  <span className="text-xs mt-2 text-gray-600 hidden sm:block">
+                    {step === 1 && "Personal"}
+                    {step === 2 && "Address"}
+                    {step === 3 && "Employment"}
+                    {step === 4 && "Banking"}
+                    {step === 5 && "Loan Details"}
+                    {step === 6 && "References"}
+                  </span>
+                </div>
+                {step < 6 && (
+                  <div
+                    className={`h-1 flex-1 mx-2 ${
+                      currentStep > step ? "bg-[#0033A0]" : "bg-gray-200"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          {lastSaved && (
+            <div className="flex items-center justify-between max-w-3xl mx-auto">
+              <p className="text-sm text-gray-500">
+                Last saved: {lastSaved.toLocaleString()}
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearDraft}
+                className="text-xs text-red-600 hover:text-red-700"
+              >
+                Clear Draft
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Form Content */}
+      <div className="flex-1 py-12">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <Card>
+            <CardContent className="p-8">
+              <form onSubmit={handleSubmit}>
+                {/* Step 1: Personal Information */}
+                {currentStep === 1 && (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-[#0033A0] mb-2">
+                        Personal Information
+                      </h2>
+                      <p className="text-gray-600">
+                        Let's start with some basic information about you.
+                      </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
+                        <Input
+                          id="fullName"
+                          value={formData.fullName}
+                          onChange={(e) => updateFormData("fullName", e.target.value)}
+                          placeholder="John Doe"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => updateFormData("email", e.target.value)}
+                          placeholder="john@example.com"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number *</Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => updateFormData("phone", e.target.value)}
+                          placeholder="(555) 123-4567"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                        <Input
+                          id="dateOfBirth"
+                          type="date"
+                          value={formData.dateOfBirth}
+                          onChange={(e) => updateFormData("dateOfBirth", e.target.value)}
+                          required
+                        />
+                        <p className="text-xs text-gray-500">Format: YYYY-MM-DD</p>
+                      </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="ssn">Social Security Number *</Label>
+                        <Input
+                          id="ssn"
+                          value={formData.ssn}
+                          onChange={(e) => updateFormData("ssn", e.target.value)}
+                          placeholder="XXX-XX-XXXX"
+                          required
+                        />
+                        <p className="text-xs text-gray-500">
+                          Your SSN is encrypted and secure. Format: XXX-XX-XXXX
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="driversLicense">Driver's License Number *</Label>
+                        <Input
+                          id="driversLicense"
+                          value={formData.driversLicense}
+                          onChange={(e) => updateFormData("driversLicense", e.target.value)}
+                          placeholder="License Number"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="licenseState">License State *</Label>
+                        <Select
+                          value={formData.licenseState}
+                          onValueChange={(value) => updateFormData("licenseState", value)}
+                          required
+                        >
+                          <SelectTrigger id="licenseState">
+                            <SelectValue placeholder="Select state" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {US_STATES.map((state) => (
+                              <SelectItem key={state.code} value={state.code}>
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="citizenshipStatus">Citizenship Status *</Label>
+                        <Select
+                          value={formData.citizenshipStatus}
+                          onValueChange={(value) => updateFormData("citizenshipStatus", value)}
+                          required
+                        >
+                          <SelectTrigger id="citizenshipStatus">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="us_citizen">U.S. Citizen</SelectItem>
+                            <SelectItem value="permanent_resident">Permanent Resident</SelectItem>
+                            <SelectItem value="work_visa">Work Visa Holder</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="housingStatus">Housing Status *</Label>
+                        <Select
+                          value={formData.housingStatus}
+                          onValueChange={(value) => updateFormData("housingStatus", value)}
+                          required
+                        >
+                          <SelectTrigger id="housingStatus">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="own">Own</SelectItem>
+                            <SelectItem value="rent">Rent</SelectItem>
+                            <SelectItem value="live_with_family">Live with Family</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="militaryStatus">Military Status</Label>
+                        <Select
+                          value={formData.militaryStatus}
+                          onValueChange={(value) => updateFormData("militaryStatus", value)}
+                        >
+                          <SelectTrigger id="militaryStatus">
+                            <SelectValue placeholder="Select if applicable" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Not Applicable</SelectItem>
+                            <SelectItem value="active">Active Duty</SelectItem>
+                            <SelectItem value="reserve">Reserve/National Guard</SelectItem>
+                            <SelectItem value="veteran">Veteran</SelectItem>
+                            <SelectItem value="spouse">Military Spouse</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={saveForLater}
+                        className="border-gray-300 text-gray-700"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Save for Later
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={nextStep}
+                        className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8"
+                      >
+                        Continue
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: Address Information */}
+                {currentStep === 2 && (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-[#0033A0] mb-2">
+                        Address Information
+                      </h2>
+                      <p className="text-gray-600">
+                        Where do you currently reside?
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2 relative">
+                        <Label htmlFor="street">Street Address *</Label>
+                        <Input
+                          id="street"
+                          value={formData.street}
+                          onChange={(e) => handleAddressChange(e.target.value)}
+                          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                          onFocus={() => formData.street.length >= 3 && addressSuggestions.length > 0 && setShowSuggestions(true)}
+                          placeholder="Start typing your address..."
+                          autoComplete="off"
+                          required
+                        />
+                        {showSuggestions && addressSuggestions.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                            {addressSuggestions.map((suggestion, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => selectAddress(suggestion)}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b last:border-b-0"
+                              >
+                                <div className="font-medium text-sm">
+                                  {suggestion.display_name}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="city">City *</Label>
+                          <Input
+                            id="city"
+                            value={formData.city}
+                            onChange={(e) => updateFormData("city", e.target.value)}
+                            placeholder="New York"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="state">State *</Label>
+                          <Select
+                            value={formData.state}
+                            onValueChange={(value) => updateFormData("state", value)}
+                            required
+                          >
+                            <SelectTrigger id="state">
+                              <SelectValue placeholder="Select state" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {US_STATES.map((state) => (
+                                <SelectItem key={state.code} value={state.code}>
+                                  {state.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="zipCode">ZIP Code *</Label>
+                          <Input
+                            id="zipCode"
+                            value={formData.zipCode}
+                            onChange={(e) => updateFormData("zipCode", e.target.value)}
+                            placeholder="10001"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="monthlyRent">Monthly Housing Payment *</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            $
+                          </span>
+                          <Input
+                            id="monthlyRent"
+                            type="number"
+                            step="0.01"
+                            value={formData.monthlyRent}
+                            onChange={(e) => updateFormData("monthlyRent", e.target.value)}
+                            placeholder="1200.00"
+                            className="pl-7"
+                            required
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Monthly rent or mortgage payment
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        type="button"
+                        onClick={prevStep}
+                        variant="outline"
+                        className="border-[#0033A0] text-[#0033A0]"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back
+                      </Button>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={saveForLater}
+                          className="border-gray-300 text-gray-700"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Save for Later
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={nextStep}
+                          className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8"
+                        >
+                          Continue
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Employment Information */}
+                {currentStep === 3 && (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-[#0033A0] mb-2">
+                        Employment Information
+                      </h2>
+                      <p className="text-gray-600">
+                        Tell us about your employment and income.
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="employmentStatus">Employment Status *</Label>
+                        <Select
+                          value={formData.employmentStatus}
+                          onValueChange={(value) => updateFormData("employmentStatus", value)}
+                          required
+                        >
+                          <SelectTrigger id="employmentStatus">
+                            <SelectValue placeholder="Select employment status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="employed">Employed</SelectItem>
+                            <SelectItem value="self_employed">Self-Employed</SelectItem>
+                            <SelectItem value="unemployed">Unemployed</SelectItem>
+                            <SelectItem value="retired">Retired</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {(formData.employmentStatus === "employed" ||
+                        formData.employmentStatus === "self_employed") && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="employer">Employer Name *</Label>
+                            <Input
+                              id="employer"
+                              value={formData.employer}
+                              onChange={(e) => updateFormData("employer", e.target.value)}
+                              placeholder="Company Name"
+                              required
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="employerPhone">Employer Phone *</Label>
+                              <Input
+                                id="employerPhone"
+                                type="tel"
+                                value={formData.employerPhone}
+                                onChange={(e) => updateFormData("employerPhone", e.target.value)}
+                                placeholder="(555) 123-4567"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="jobTitle">Job Title *</Label>
+                              <Input
+                                id="jobTitle"
+                                value={formData.jobTitle}
+                                onChange={(e) => updateFormData("jobTitle", e.target.value)}
+                                placeholder="Your Position"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="employmentLength">Length of Employment *</Label>
+                            <Select
+                              value={formData.employmentLength}
+                              onValueChange={(value) => updateFormData("employmentLength", value)}
+                              required
+                            >
+                              <SelectTrigger id="employmentLength">
+                                <SelectValue placeholder="How long at current employer?" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="less_than_6_months">Less than 6 months</SelectItem>
+                                <SelectItem value="6_to_12_months">6 to 12 months</SelectItem>
+                                <SelectItem value="1_to_2_years">1 to 2 years</SelectItem>
+                                <SelectItem value="2_to_5_years">2 to 5 years</SelectItem>
+                                <SelectItem value="5_plus_years">5+ years</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="monthlyIncome">Monthly Income *</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            $
+                          </span>
+                          <Input
+                            id="monthlyIncome"
+                            type="number"
+                            step="0.01"
+                            value={formData.monthlyIncome}
+                            onChange={(e) => updateFormData("monthlyIncome", e.target.value)}
+                            placeholder="3000.00"
+                            className="pl-7"
+                            required
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Enter your gross monthly income before taxes
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="payFrequency">Pay Frequency *</Label>
+                          <Select
+                            value={formData.payFrequency}
+                            onValueChange={(value) => updateFormData("payFrequency", value)}
+                            required
+                          >
+                            <SelectTrigger id="payFrequency">
+                              <SelectValue placeholder="How often are you paid?" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="bi_weekly">Bi-Weekly (Every 2 weeks)</SelectItem>
+                              <SelectItem value="semi_monthly">Semi-Monthly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="nextPayDate">Next Pay Date *</Label>
+                          <Input
+                            id="nextPayDate"
+                            type="date"
+                            value={formData.nextPayDate}
+                            onChange={(e) => updateFormData("nextPayDate", e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="additionalIncome">Additional Monthly Income</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              $
+                            </span>
+                            <Input
+                              id="additionalIncome"
+                              type="number"
+                              step="0.01"
+                              value={formData.additionalIncome}
+                              onChange={(e) => updateFormData("additionalIncome", e.target.value)}
+                              placeholder="0.00"
+                              className="pl-7"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="additionalIncomeSource">Source of Additional Income</Label>
+                          <Input
+                            id="additionalIncomeSource"
+                            value={formData.additionalIncomeSource}
+                            onChange={(e) => updateFormData("additionalIncomeSource", e.target.value)}
+                            placeholder="e.g., Freelance, Investments, Pension"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        type="button"
+                        onClick={prevStep}
+                        variant="outline"
+                        className="border-[#0033A0] text-[#0033A0]"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back
+                      </Button>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={saveForLater}
+                          className="border-gray-300 text-gray-700"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Save for Later
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={nextStep}
+                          className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8"
+                        >
+                          Continue
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Loan Details */}
+                {currentStep === 4 && (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-[#0033A0] mb-2">
+                        Loan Details
+                      </h2>
+                      <p className="text-gray-600">
+                        Finally, tell us about the loan you're requesting.
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="loanType">Loan Type *</Label>
+                        <Select
+                          value={formData.loanType}
+                          onValueChange={(value) => updateFormData("loanType", value)}
+                          required
+                        >
+                          <SelectTrigger id="loanType">
+                            <SelectValue placeholder="Select loan type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="installment">Installment Loan</SelectItem>
+                            <SelectItem value="short_term">Short-Term Loan</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="requestedAmount">Requested Amount *</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            $
+                          </span>
+                          <Input
+                            id="requestedAmount"
+                            type="number"
+                            step="0.01"
+                            value={formData.requestedAmount}
+                            onChange={(e) => updateFormData("requestedAmount", e.target.value)}
+                            placeholder="5000.00"
+                            className="pl-7"
+                            required
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Typical range: $500 - $10,000
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="loanPurpose">Loan Purpose *</Label>
+                        <Textarea
+                          id="loanPurpose"
+                          value={formData.loanPurpose}
+                          onChange={(e) => updateFormData("loanPurpose", e.target.value)}
+                          placeholder="Describe how you plan to use the loan funds..."
+                          rows={4}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="disbursementMethod">Disbursement Method *</Label>
+                        <Select
+                          value={formData.disbursementMethod}
+                          onValueChange={(value) => updateFormData("disbursementMethod", value)}
+                          required
+                        >
+                          <SelectTrigger id="disbursementMethod">
+                            <SelectValue placeholder="How would you like to receive funds?" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bank_transfer">Bank Transfer (ACH)</SelectItem>
+                            <SelectItem value="check">Physical Check</SelectItem>
+                            <SelectItem value="debit_card">Debit Card</SelectItem>
+                            <SelectItem value="paypal">PayPal</SelectItem>
+                            <SelectItem value="crypto">Cryptocurrency</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500">
+                          Bank transfers are typically the fastest (1-2 business days)
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-[#0033A0] mb-2">Before You Submit</h4>
+                      <ul className="space-y-1 text-sm text-gray-700">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span>Review all information for accuracy</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span>You'll receive a decision within 24 hours</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span>3.5% processing fee applies upon approval (paid via card or crypto before disbursement)</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Terms and Conditions */}
+                    <div className="space-y-4 border-t pt-4">
+                      <h4 className="font-semibold text-[#0033A0]">Required Agreements</h4>
+                      
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="termsAccepted"
+                          checked={formData.termsAccepted}
+                          onCheckedChange={(checked) => updateFormData("termsAccepted", checked as boolean)}
+                          required
+                        />
+                        <label
+                          htmlFor="termsAccepted"
+                          className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+                        >
+                          I have read and agree to the{" "}
+                          <a
+                            href="/legal/terms-of-service.md"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#0033A0] underline hover:text-[#FF8C00]"
+                          >
+                            Terms of Service
+                          </a>{" "}
+                          and{" "}
+                          <a
+                            href="/legal/loan-agreement.md"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#0033A0] underline hover:text-[#FF8C00]"
+                          >
+                            Loan Agreement
+                          </a>
+                          . *
+                        </label>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="privacyAccepted"
+                          checked={formData.privacyAccepted}
+                          onCheckedChange={(checked) => updateFormData("privacyAccepted", checked as boolean)}
+                          required
+                        />
+                        <label
+                          htmlFor="privacyAccepted"
+                          className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+                        >
+                          I acknowledge that I have read and understand the{" "}
+                          <a
+                            href="/legal/privacy-policy.md"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#0033A0] underline hover:text-[#FF8C00]"
+                          >
+                            Privacy Policy
+                          </a>
+                          , including how my personal information will be collected, used, and shared. *
+                        </label>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="esignAccepted"
+                          checked={formData.esignAccepted}
+                          onCheckedChange={(checked) => updateFormData("esignAccepted", checked as boolean)}
+                          required
+                        />
+                        <label
+                          htmlFor="esignAccepted"
+                          className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+                        >
+                          I consent to receive and sign documents electronically as described in the{" "}
+                          <a
+                            href="/legal/esign-consent.md"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#0033A0] underline hover:text-[#FF8C00]"
+                          >
+                            E-Sign Consent Agreement
+                          </a>
+                          . *
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        type="button"
+                        onClick={prevStep}
+                        variant="outline"
+                        className="border-[#0033A0] text-[#0033A0]"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back
+                      </Button>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={saveForLater}
+                          className="border-gray-300 text-gray-700"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Save for Later
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={submitMutation.isPending}
+                          className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8"
+                        >
+                          {submitMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            "Submit Application"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Help Section */}
+          <div className="mt-8 text-center">
+            <p className="text-gray-600 mb-2">Need help with your application?</p>
+            <div className="flex items-center justify-center gap-4">
+              <a
+                href="tel:+19452121609"
+                className="flex items-center gap-2 text-[#0033A0] hover:underline"
+              >
+                <Phone className="w-4 h-4" />
+                +1 945 212-1609
+              </a>
+              <span className="text-gray-400">|</span>
+              <a href="#faq" className="text-[#0033A0] hover:underline">
+                View FAQs
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-8">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-sm text-gray-400">
+            © 2025 AmeriLend - U.S. Consumer Loan Platform. All rights reserved.
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Loans subject to approval. 3.5% processing fee paid via credit/debit card or cryptocurrency before disbursement.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
