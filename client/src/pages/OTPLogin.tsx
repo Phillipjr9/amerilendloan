@@ -371,13 +371,6 @@ export default function OTPLogin() {
                     </div>
                   </div>
 
-                  <a
-                    href={getLoginUrl()}
-                    className="block w-full bg-white border-2 border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white py-3 rounded-lg font-semibold text-center transition-all"
-                  >
-                    Login with Manus OAuth
-                  </a>
-
                   <div className="mt-6 space-y-3">
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                       <p className="text-xs text-green-900 text-center">
@@ -510,13 +503,6 @@ export default function OTPLogin() {
                       <span className="px-4 bg-white text-gray-500">Or continue with</span>
                     </div>
                   </div>
-
-                  <a
-                    href={getLoginUrl()}
-                    className="block w-full bg-white border-2 border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white py-3 rounded-lg font-semibold text-center transition-all"
-                  >
-                    Sign Up with Manus OAuth
-                  </a>
 
                   <div className="mt-6 space-y-3">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
