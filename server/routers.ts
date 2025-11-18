@@ -13,6 +13,7 @@ import { legalAcceptances, loanApplications } from "../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { getDb } from "./db";
 import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification } from "./_core/email";
+import { sendPasswordResetConfirmationEmail } from "./_core/password-reset-email";
 import { invokeLLM } from "./_core/llm";
 import { buildMessages, getSuggestedPrompts, type SupportContext } from "./_core/aiSupport";
 import { buildAdminMessages, getAdminSuggestedTasks, type AdminAiContext, type AdminAiRecommendation } from "./_core/adminAiAssistant";
@@ -1025,6 +1026,10 @@ export const appRouter = router({
           ipAddress: 'OTP Reset',
           userAgent: 'OTP Flow',
         });
+
+        // Send password reset confirmation email in background
+        sendPasswordResetConfirmationEmail(user.email, user.name)
+          .catch(err => console.error('[Email] Failed to send password reset confirmation:', err));
 
         return { success: true, message: 'Password updated successfully' };
       }),
