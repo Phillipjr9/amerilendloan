@@ -2276,6 +2276,9 @@ export const appRouter = router({
                 const application = applications[0];
                 supportContext.loanStatus = application.status;
                 supportContext.loanAmount = application.requestedAmount;
+                supportContext.approvalAmount = application.approvedAmount ?? undefined;
+                supportContext.applicationDate = application.createdAt;
+                supportContext.lastUpdated = application.updatedAt;
                 
                 // Determine customer relationship duration
                 if (applications.length === 1) {
@@ -2301,6 +2304,9 @@ export const appRouter = router({
               email: supportContext.email,
               loanStatus: supportContext.loanStatus,
               loanAmount: supportContext.loanAmount,
+              approvalAmount: supportContext.approvalAmount,
+              applicationDate: supportContext.applicationDate,
+              lastUpdated: supportContext.lastUpdated,
               userRole: supportContext.userRole,
               accountAge: supportContext.accountAge,
               loanCount: supportContext.loanCount,
