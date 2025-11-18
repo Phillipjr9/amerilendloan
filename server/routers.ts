@@ -984,6 +984,51 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Reset password after OTP verification (public - no auth required)
+    resetPasswordWithOTP: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        code: z.string().length(6),
+        newPassword: z.string().min(8),
+      }))
+      .mutation(async ({ input }) => {
+        // First verify the OTP code
+        const result = await verifyOTP(input.email, input.code, "reset");
+        if (!result.valid) {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: result.error || "Invalid or expired code" 
+          });
+        }
+
+        // Get user by email
+        const user = await db.getUserByEmail(input.email);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found"
+          });
+        }
+
+        // Hash the new password
+        const bcrypt = await import('bcryptjs');
+        const newPasswordHash = await bcrypt.hash(input.newPassword, 10);
+        
+        // Update password in database
+        await db.updateUserPassword(user.id, newPasswordHash);
+        
+        // Log the activity
+        await db.logAccountActivity({
+          userId: user.id,
+          activityType: 'password_reset',
+          description: 'User reset password via OTP',
+          ipAddress: 'OTP Reset',
+          userAgent: 'OTP Flow',
+        });
+
+        return { success: true, message: 'Password updated successfully' };
+      }),
+
     // Record login attempt and check rate limiting
     recordAttempt: publicProcedure
       .input(z.object({

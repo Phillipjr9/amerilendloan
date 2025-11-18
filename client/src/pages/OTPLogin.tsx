@@ -74,8 +74,8 @@ export default function OTPLogin() {
     },
   });
 
-  // Password update mutation for password reset
-  const updatePasswordMutation = trpc.auth.supabaseUpdateProfile.useMutation({
+  // Password update mutation for password reset (uses OTP verification)
+  const updatePasswordMutation = trpc.otp.resetPasswordWithOTP.useMutation({
     onSuccess: () => {
       toast.success("Password updated successfully! You can now log in.");
       setIsResetMode(false);
@@ -228,9 +228,11 @@ export default function OTPLogin() {
       return;
     }
 
-    // Call the password update mutation
+    // Call the password update mutation with email, code, and new password
     updatePasswordMutation.mutate({
-      password: newPassword,
+      email: loginIdentifier,
+      code: code,
+      newPassword: newPassword,
     });
   };
 
