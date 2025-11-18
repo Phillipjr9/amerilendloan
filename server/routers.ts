@@ -1808,137 +1808,6 @@ export const appRouter = router({
         const status = await getNetworkStatus(input.currency);
         return status;
       }),
-
-    // Retry a failed payment (with rate limiting)
-    retryPayment: protectedProcedure
-      .input(z.object({
-        paymentId: z.number(),
-        opaqueData: z.object({
-          dataDescriptor: z.string(),
-          dataValue: z.string(),
-        }).optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const payment = await db.getPaymentById(input.paymentId);
-        
-        if (!payment) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Payment not found" });
-        }
-        
-        if (payment.userId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN" });
-        }
-
-        // Only allow retry for failed or expired payments
-        if (payment.status !== "failed" && payment.status !== "expired") {
-          throw new TRPCError({ 
-            code: "BAD_REQUEST", 
-            message: `Cannot retry payment with status: ${payment.status}` 
-          });
-        }
-
-        // Rate limiting: only one retry attempt per 30 seconds
-        const lastUpdated = payment.updatedAt ? new Date(payment.updatedAt).getTime() : 0;
-        const timeSinceUpdate = Date.now() - lastUpdated;
-        if (timeSinceUpdate < 30000) {
-          throw new TRPCError({ 
-            code: "TOO_MANY_REQUESTS",
-            message: `Please wait ${Math.ceil((30000 - timeSinceUpdate) / 1000)} seconds before retrying`
-          });
-        }
-
-        // Get application to verify it's still in correct state
-        const application = await db.getLoanApplicationById(payment.loanApplicationId);
-        if (!application) {
-          throw new TRPCError({ code: "NOT_FOUND" });
-        }
-
-        // If card payment, retry with new tokenized card data
-        if (payment.paymentMethod === "card" && input.opaqueData) {
-          const result = await createAuthorizeNetTransaction(
-            payment.amount,
-            input.opaqueData,
-            `Processing fee for loan #${application.trackingNumber} (Retry)`
-          );
-
-          if (!result.success) {
-            await db.updatePaymentStatus(payment.id, "failed", {
-              failureReason: result.error || "Card payment failed on retry",
-            });
-            
-            throw new TRPCError({ 
-              code: "BAD_REQUEST", 
-              message: result.error || "Card payment failed - please retry with another card"
-            });
-          }
-
-          // Update payment to succeeded
-          await db.updatePaymentStatus(payment.id, "succeeded", {
-            paymentIntentId: result.transactionId,
-            cardLast4: result.cardLast4,
-            cardBrand: result.cardBrand,
-            completedAt: new Date(),
-          }, {
-            action: "payment_retry_succeeded"
-          });
-
-          // Update loan status to fee_paid
-          await db.updateLoanApplicationStatus(payment.loanApplicationId, "fee_paid");
-
-          return {
-            success: true,
-            message: "Payment retry succeeded",
-            transactionId: result.transactionId
-          };
-        }
-
-        // For crypto payments, generate new payment address
-        if (payment.paymentMethod === "crypto" && payment.cryptoCurrency) {
-          const charge = await createCryptoCharge(
-            payment.amount,
-            payment.cryptoCurrency as any,
-            `Processing fee for loan #${application.trackingNumber} (Retry)`,
-            { loanApplicationId: payment.loanApplicationId, userId: ctx.user.id }
-          );
-
-          if (!charge.success) {
-            throw new TRPCError({ 
-              code: "INTERNAL_SERVER_ERROR", 
-              message: charge.error || "Failed to create crypto payment on retry"
-            });
-          }
-
-          // Update payment with new crypto address
-          await db.updatePaymentStatus(payment.id, "pending", {
-            cryptoAddress: charge.paymentAddress,
-            cryptoAmount: charge.cryptoAmount,
-            paymentIntentId: charge.chargeId,
-          }, {
-            action: "crypto_payment_retry"
-          });
-
-          return {
-            success: true,
-            message: "New crypto payment address generated",
-            cryptoAddress: charge.paymentAddress,
-            cryptoAmount: charge.cryptoAmount,
-          };
-        }
-
-        throw new TRPCError({ 
-          code: "BAD_REQUEST", 
-          message: "Invalid payment method for retry"
-        });
-      }),
-
-    // Get payment audit trail (admin only)
-    getAuditLog: adminProcedure
-      .input(z.object({
-        paymentId: z.number(),
-      }))
-      .query(async ({ input }) => {
-        return db.getPaymentAuditLog(input.paymentId);
-      }),
   }),
 
   // Disbursement router (admin only)
@@ -2658,16 +2527,15 @@ export const appRouter = router({
           // Create analysis message
           const analysisPrompt = `Analyze this loan application and provide a recommendation:
 
-APPLICANT: ${user?.fullName || "Unknown"}
-LOAN AMOUNT: $${application.loanAmount}
+APPLICANT: ${application.fullName || "Unknown"}
+LOAN AMOUNT: $${application.requestedAmount}
 PURPOSE: ${application.loanPurpose || "Not specified"}
 STATUS: ${application.status}
 
 APPLICANT INFO:
-- Age: ${new Date().getFullYear() - new Date(user?.dateOfBirth || "").getFullYear()} years old
-- Employment: ${user?.employmentStatus || "Unknown"}
-- Monthly Income: $${user?.monthlyIncome || "Not provided"}
-- Credit Score: ${user?.creditScore || "Not provided"}
+- Age: ${new Date().getFullYear() - new Date(application.dateOfBirth || "").getFullYear()} years old
+- Employment: ${application.employmentStatus || "Unknown"}
+- Monthly Income: $${application.monthlyIncome || "Not provided"}
 
 DOCUMENTS:
 - Submitted at: ${application.documentSubmittedAt ? new Date(application.documentSubmittedAt).toLocaleDateString() : "Not submitted"}
@@ -2736,7 +2604,7 @@ Be concise and data-driven.`;
 
           // Build analysis for all pending apps
           const applicationSummary = pendingApplications
-            .map(app => `- ${app.id}: $${app.loanAmount} (${app.status})`)
+            .map(app => `- ${app.id}: $${app.requestedAmount} (${app.status})`)
             .join("\n");
 
           const analysisPrompt = `You are reviewing ${pendingApplications.length} pending loan applications.
@@ -2786,7 +2654,7 @@ Provide:
             count: pendingApplications.length,
             applications: pendingApplications.map(app => ({
               id: app.id,
-              amount: app.loanAmount,
+              amount: app.requestedAmount,
               status: app.status,
             })),
           };
