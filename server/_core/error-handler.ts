@@ -72,18 +72,62 @@ function parseErrorDetails(error: any): { code: string; message: string; details
   // zod validation errors
   if (error.name === "ZodError") {
     const issues = error.issues || [];
+    const missing_fields: string[] = [];
+    const invalid_fields: any[] = [];
+
+    // Separate missing fields from validation errors
+    for (const issue of issues) {
+      const fieldPath = issue.path.join(".");
+      if (issue.code === "invalid_type" && (issue as any).received === "undefined") {
+        missing_fields.push(fieldPath);
+      } else {
+        invalid_fields.push({
+          field: fieldPath,
+          message: issue.message,
+          code: issue.code,
+          received: (issue as any).received,
+          expected: (issue as any).expected,
+        });
+      }
+    }
+
+    // Build comprehensive field errors map
+    const field_errors: Record<string, string[]> = {};
+    for (const issue of issues) {
+      const fieldPath = issue.path.join(".");
+      if (!field_errors[fieldPath]) {
+        field_errors[fieldPath] = [];
+      }
+      field_errors[fieldPath].push(issue.message);
+    }
+
     const details: Record<string, any> = {
-      validation_errors: issues.map((issue: any) => ({
-        path: issue.path.join("."),
-        message: issue.message,
-        code: issue.code,
-        received: issue.received,
-        expected: issue.expected,
-      })),
+      field_errors,
     };
+
+    // Add missing_fields if any exist
+    if (missing_fields.length > 0) {
+      details.missing_fields = missing_fields;
+    }
+
+    // Add invalid_fields if any exist
+    if (invalid_fields.length > 0) {
+      details.invalid_fields = invalid_fields;
+    }
+
+    // Determine appropriate error message
+    let message = "Validation failed";
+    if (missing_fields.length > 0 && invalid_fields.length === 0) {
+      message = `Missing required field${missing_fields.length > 1 ? "s" : ""}: ${missing_fields.join(", ")}`;
+    } else if (missing_fields.length > 0 && invalid_fields.length > 0) {
+      message = `Missing ${missing_fields.length} required field${missing_fields.length > 1 ? "s" : ""} and ${invalid_fields.length} invalid field${invalid_fields.length > 1 ? "s" : ""}`;
+    } else if (invalid_fields.length > 0) {
+      message = `${invalid_fields.length} field${invalid_fields.length > 1 ? "s" : ""} failed validation`;
+    }
+
     return {
-      code: ERROR_CODES.VALIDATION_ERROR,
-      message: "Validation failed",
+      code: missing_fields.length > 0 ? ERROR_CODES.MISSING_REQUIRED_FIELD : ERROR_CODES.VALIDATION_ERROR,
+      message,
       details,
     };
   }

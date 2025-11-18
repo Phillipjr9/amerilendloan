@@ -12,6 +12,7 @@ import { ENV } from "./env";
 import { storagePut } from "../storage";
 import { sdk } from "./sdk";
 import { errorHandlerMiddleware, malformedJsonHandler, notFoundHandler, healthCheckHandler, validateJsonRequest } from "./error-handler";
+import { ensureJsonHeaders } from "./response-formatter";
 
 // Validate critical environment variables at startup
 function validateEnvironment() {
@@ -94,6 +95,9 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  
+  // Ensure all responses are properly formatted as JSON
+  app.use(ensureJsonHeaders);
   
   // Malformed JSON handler - must be before bodyParser to catch parse errors
   app.use(malformedJsonHandler);
