@@ -37,6 +37,10 @@ export default function OTPLogin() {
   const [code, setCode] = useState("");
   const [pendingIdentifier, setPendingIdentifier] = useState("");
   const [isResetMode, setIsResetMode] = useState(false);
+  const [resetStep, setResetStep] = useState<"code" | "newPassword">("code");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const requestEmailCodeMutation = trpc.otp.requestCode.useMutation({
     onSuccess: () => {
@@ -51,11 +55,9 @@ export default function OTPLogin() {
   const verifyCodeMutation = trpc.otp.verifyCode.useMutation({
     onSuccess: () => {
       if (isResetMode) {
-        toast.success("Account access restored! You can now log in.");
-        setIsResetMode(false);
-        setStep("form");
-        setCode("");
-        setLoginIdentifier("");
+        // For password reset, move to password entry step instead of directly logging in
+        setResetStep("newPassword");
+        toast.success("Code verified! Now enter your new password.");
       } else if (isLogin) {
         toast.success("Login successful!");
         setTimeout(() => setLocation("/dashboard"), 300);
@@ -69,6 +71,23 @@ export default function OTPLogin() {
     },
     onError: (error) => {
       toast.error(error.message || "Invalid code");
+    },
+  });
+
+  // Password update mutation for password reset
+  const updatePasswordMutation = trpc.auth.supabaseUpdateProfile.useMutation({
+    onSuccess: () => {
+      toast.success("Password updated successfully! You can now log in.");
+      setIsResetMode(false);
+      setResetStep("code");
+      setStep("form");
+      setCode("");
+      setLoginIdentifier("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update password");
     },
   });
 
@@ -188,6 +207,30 @@ export default function OTPLogin() {
     requestEmailCodeMutation.mutate({
       email: loginIdentifier,
       purpose: "reset",
+    });
+  };
+
+  const handleUpdatePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPassword || !confirmNewPassword) {
+      toast.error("Please enter and confirm your new password");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
+
+    // Call the password update mutation
+    updatePasswordMutation.mutate({
+      password: newPassword,
     });
   };
 
@@ -490,6 +533,95 @@ export default function OTPLogin() {
                 </form>
               )}
             </div>
+          </div>
+        ) : isResetMode && resetStep === "newPassword" ? (
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden p-8">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-[#0033A0] mb-2">Create New Password</h2>
+              <p className="text-gray-600">
+                Enter a new secure password for your account
+              </p>
+            </div>
+
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                  minLength={8}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-3 text-gray-500 hover:text-[#0033A0]"
+                >
+                  {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Confirm new password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                  minLength={8}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-3 text-gray-500 hover:text-[#0033A0]"
+                >
+                  {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-900">
+                  <strong>Password Requirements:</strong>
+                  <ul className="mt-2 list-disc list-inside space-y-1">
+                    <li>At least 8 characters long</li>
+                    <li>Mix of uppercase and lowercase letters</li>
+                  </ul>
+                </p>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={updatePasswordMutation.isPending}
+                className="w-full bg-[#0033A0] hover:bg-[#002080] text-white py-3 rounded-lg font-semibold text-lg transition-all"
+              >
+                {updatePasswordMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Updating Password...
+                  </>
+                ) : (
+                  "Update Password"
+                )}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsResetMode(false);
+                  setResetStep("code");
+                  setStep("form");
+                  setCode("");
+                  setLoginIdentifier("");
+                }}
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </form>
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden p-8">
