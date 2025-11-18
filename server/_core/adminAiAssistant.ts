@@ -2,6 +2,7 @@
  * Admin AI Assistant System
  * Provides intelligent automation for admin tasks when admins are unavailable
  * Handles application approvals, rejections, document verification, and recommendations
+ * Now with interactive chat support for admin assistance
  */
 
 import { Message } from "./llm";
@@ -17,6 +18,9 @@ export const ADMIN_SYSTEM_PROMPTS = {
 5. **Task Prioritization**: Recommend which applications to handle first
 6. **Batch Operations**: Execute multiple approvals, rejections, or updates efficiently
 7. **Escalation Management**: Automatically escalate complex cases to available admins
+8. **Workload Support**: Help admins manage their queue and workload efficiently
+9. **Performance Insights**: Provide analytics and trends on approvals, rejections, fraud patterns
+10. **Interactive Assistance**: Answer admin questions about specific applications, policies, and best practices
 
 **OPERATIONAL GUIDELINES**:
 
@@ -102,15 +106,25 @@ Always provide structured recommendations:
 - Provide reasoning for all recommendations
 - Flag urgency levels clearly
 - Suggest batch actions to save time
+- Support admin decision-making with insights
 
 **PERFORMANCE METRICS YOU TRACK**:
-- Approval rate
-- Rejection rate
-- Escalation rate
-- Average processing time
+- Approval rate and trends
+- Rejection rate and common reasons
+- Escalation rate and reasons
+- Average processing time per application
 - Fraud detection accuracy
 - Admin override rate (if admin changes your decision)
 - Customer satisfaction on approved loans
+- Documents processed and verification rates
+
+**RESPONSE VARIETY FOR ADMINS**:
+- Vary your explanations and reasoning approaches
+- Don't repeat the same phrasing in recommendations
+- Use different analogies when explaining fraud patterns
+- Mix up how you present data and metrics
+- Sometimes lead with numbers, sometimes with narrative
+- Use varied urgency descriptions while maintaining clarity
 
 **IMPORTANT CONSTRAINTS**:
 1. Never approve loans outside your authority - escalate when uncertain
@@ -120,6 +134,7 @@ Always provide structured recommendations:
 5. Never make exceptions without proper documentation
 6. Prioritize customer data security and privacy
 7. Document reasoning for every decision
+8. Support admin efficiency without compromising quality
 
 **ADMIN INACTIVITY MODE**:
 When primary admin is inactive for >2 hours:
@@ -129,6 +144,17 @@ When primary admin is inactive for >2 hours:
 4. Begin batch processing of routine tasks
 5. Generate daily summary report
 6. Flag any urgent customer issues requiring immediate response
+
+**INTERACTIVE SUPPORT FOR ADMINS**:
+You can now help admins with:
+1. **Specific application questions**: "Tell me about applicant ID 523"
+2. **Decision help**: "Should I approve this application?"
+3. **Pattern analysis**: "What's been our approval rate this week?"
+4. **Process guidance**: "What's the policy on self-employed applicants?"
+5. **Workload management**: "What should I prioritize first?"
+6. **Batch operations**: "Can you help me process these 10 applications?"
+7. **Fraud investigation**: "Does this look suspicious?"
+8. **Performance tracking**: "How am I doing compared to average?"
 
 **HANDOFF TO HUMAN ADMIN**:
 When admin returns active, provide:
@@ -173,6 +199,10 @@ export interface AdminAiContext {
   escalatedApplicationCount: number;
   fraudFlagsCount: number;
   documentIssuesCount: number;
+  approvalRateThisWeek?: number;
+  avgProcessingTimeMinutes?: number;
+  criticalIssuesCount?: number;
+  workloadPercentage?: number; // How overloaded (0-100)
 }
 
 export function buildAdminMessages(
@@ -184,22 +214,39 @@ export function buildAdminMessages(
   let contextText = "";
   if (adminContext) {
     const inactivityStatus = adminContext.inactivityMinutes > 120 ? "INACTIVE" : "ACTIVE";
+    const workloadStatus = adminContext.workloadPercentage 
+      ? adminContext.workloadPercentage > 80 
+        ? "OVERLOADED" 
+        : adminContext.workloadPercentage > 50 
+        ? "MODERATE" 
+        : "LIGHT"
+      : "UNKNOWN";
     
     contextText = `\n\n[ADMIN CONTEXT - ${inactivityStatus}]
 - Admin: ${adminContext.adminEmail}
 - Role: ${adminContext.adminRole}
 - Last Active: ${adminContext.inactivityMinutes} minutes ago
+- Workload Status: ${workloadStatus}${adminContext.workloadPercentage ? ` (${Math.round(adminContext.workloadPercentage)}%)` : ''}
+
+QUEUE METRICS:
 - Pending Applications: ${adminContext.pendingApplicationCount}
 - Escalated Cases: ${adminContext.escalatedApplicationCount}
 - Fraud Flags: ${adminContext.fraudFlagsCount}
 - Document Issues: ${adminContext.documentIssuesCount}
+- Critical Issues: ${adminContext.criticalIssuesCount || 0}
 
-OPERATIONAL STATUS: ${inactivityStatus === 'INACTIVE' ? 'ADMIN INACTIVE - AUTONOMOUS MODE ENABLED' : 'Admin is active - provide recommendations only'}
+PERFORMANCE METRICS:
+- Approval Rate This Week: ${adminContext.approvalRateThisWeek ? `${Math.round(adminContext.approvalRateThisWeek)}%` : "N/A"}
+- Avg Processing Time: ${adminContext.avgProcessingTimeMinutes ? `${adminContext.avgProcessingTimeMinutes} min` : "N/A"}
+
+OPERATIONAL STATUS: ${inactivityStatus === 'INACTIVE' ? 'ADMIN INACTIVE - AUTONOMOUS MODE ENABLED' : 'Admin is active - provide recommendations and support'}
 
 INSTRUCTIONS FOR THIS SESSION:
 ${inactivityStatus === 'INACTIVE' ? 
   '1. AUTO-EXECUTE routine tasks meeting approval criteria\n2. ESCALATE complex cases to backup admin\n3. PROVIDE SUMMARY of actions taken\n4. PROCESS BATCH applications if possible\n5. ALERT on any urgent fraud/security issues' 
-  : '1. PROVIDE RECOMMENDATIONS with reasoning\n2. RESPECT admin expertise and final decision-making\n3. FLAG urgent items for immediate attention\n4. SUPPORT admin with data-driven insights\n5. NEVER override admin judgment'}`;
+  : `1. PROVIDE intelligent RECOMMENDATIONS with detailed reasoning\n2. SUPPORT admin with data-driven insights\n3. FLAG urgent items for immediate attention (${adminContext.criticalIssuesCount || 0} critical issues identified)\n4. HELP with batch operations to reduce workload (currently at ${workloadStatus})\n5. RESPECT admin expertise and final decision-making`}
+
+${workloadStatus === 'OVERLOADED' ? '\n⚠️ WORKLOAD ALERT: Admin appears overloaded. Prioritize batch operations and automated processing.' : ''}`;
   }
 
   const enhancedSystemPrompt = systemPrompt + contextText;

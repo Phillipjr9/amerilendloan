@@ -2830,14 +2830,6 @@ Provide:
         }
       }),
 
-    // Get suggested admin tasks
-    getSuggestedTasks: adminProcedure.query(() => {
-      return {
-        success: true,
-        tasks: getAdminSuggestedTasks(),
-      };
-    }),
-
     // Process batch applications with AI assistance
     processBatchApplications: adminProcedure
       .input(z.object({
@@ -2898,6 +2890,165 @@ Format as JSON with array of applications including their recommendation.`;
           });
         }
       }),
+
+    // Interactive admin AI chat - like customer support but for admins
+    chat: adminProcedure
+      .input(
+        z.object({
+          messages: z.array(
+            z.object({
+              role: z.enum(["user", "assistant", "system"]),
+              content: z.string(),
+            })
+          ),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        try {
+          // Get current workload metrics
+          const allApplications = await db.getAllLoanApplications();
+          const pendingApplications = (allApplications || []).filter(
+            app => app.status === "pending" || app.status === "under_review"
+          );
+          
+          // Calculate admin workload percentage (assuming 20 apps is 100% capacity)
+          const workloadPercentage = Math.min((pendingApplications.length / 20) * 100, 100);
+          
+          // Count critical issues
+          let criticalIssuesCount = 0;
+          if (pendingApplications.length > 15) criticalIssuesCount += Math.floor(pendingApplications.length / 10);
+          
+          // Build admin context
+          const adminContext: AdminAiContext = {
+            adminId: ctx.user.id,
+            adminEmail: ctx.user.email || "",
+            adminRole: ctx.user.role as "admin" | "super_admin",
+            inactivityMinutes: 0,
+            pendingApplicationCount: pendingApplications.length,
+            escalatedApplicationCount: 0,
+            fraudFlagsCount: 0,
+            documentIssuesCount: 0,
+            workloadPercentage: workloadPercentage,
+            criticalIssuesCount: criticalIssuesCount,
+          };
+
+          // Build messages with admin context
+          const messages = buildAdminMessages(
+            input.messages,
+            adminContext
+          );
+
+          console.log(`[Admin Chat] Processing chat for admin ${ctx.user.email}`);
+          console.log(`[Admin Chat] Workload: ${Math.round(workloadPercentage)}%`);
+          console.log(`[Admin Chat] Pending apps: ${pendingApplications.length}`);
+
+          // Check if API keys are configured
+          const apiKeysAvailable = !(!ENV.openAiApiKey && !ENV.forgeApiKey);
+          console.log("[Admin Chat] API keys available:", apiKeysAvailable);
+
+          if (!apiKeysAvailable) {
+            // Return helpful fallback for admins
+            const userMessage = input.messages[input.messages.length - 1]?.content || "";
+            let fallbackMessage = 
+              "I'm currently in offline mode, but here's what I can tell you: Our AI system is designed to help you manage applications efficiently. " +
+              "For now, I recommend: 1) Prioritize applications by submission date, 2) Check for complete document sets first, 3) Review high-risk indicators. " +
+              "When the system is online, I can provide detailed recommendations for each application.";
+            
+            if (userMessage.toLowerCase().includes("workload") || userMessage.toLowerCase().includes("overload")) {
+              fallbackMessage = `Your current queue has ${pendingApplications.length} pending applications. ` +
+                `Without AI support, I suggest: 1) Process auto-approve eligible first (usually 30%), 2) Create a risk tier system, 3) Batch similar cases.`;
+            } else if (userMessage.toLowerCase().includes("fraud") || userMessage.toLowerCase().includes("suspicious")) {
+              fallbackMessage = "Watch for: inconsistent information across docs, unrealistic income claims, rapid application changes, and suspicious contact info. " +
+                "Flag anything unusual for senior review.";
+            }
+
+            return {
+              success: true,
+              message: fallbackMessage,
+              isAuthenticated: true,
+              adminContext: adminContext,
+            };
+          }
+
+          // Invoke LLM with admin temperature for variety
+          console.log("[Admin Chat] 📤 Invoking Admin AI with enhanced context");
+          const response = await invokeLLM({
+            messages,
+            maxTokens: 2000,
+            temperature: 0.7, // Balanced - professional but varied
+          });
+
+          console.log("[Admin Chat] 📥 Admin AI response received successfully");
+
+          const assistantMessage =
+            response.choices[0]?.message?.content || 
+            "I apologize, but I couldn't generate a response. Please try again.";
+
+          return {
+            success: true,
+            message: assistantMessage,
+            isAuthenticated: true,
+            adminContext: adminContext,
+          };
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error("[Admin Chat] ⚠️ ERROR CAUGHT");
+          console.error("[Admin Chat]   Error type:", error?.constructor?.name);
+          console.error("[Admin Chat]   Error message:", errorMessage);
+
+          // Always provide helpful fallback for admins
+          const userMessage = input.messages[input.messages.length - 1]?.content || "";
+          let fallbackResponse = 
+            "I'm here to help you manage your workload efficiently. " +
+            "Tell me about specific applications, ask about fraud patterns, get recommendations on batch processing, " +
+            "or ask for insights on your performance metrics. What would help most right now?";
+
+          if (userMessage.toLowerCase().includes("recommend") || userMessage.toLowerCase().includes("approve")) {
+            fallbackResponse = "I can help analyze applications for approval. " +
+              "Provide me with an application ID or details, and I'll give you a detailed recommendation with risk assessment and confidence level.";
+          } else if (userMessage.toLowerCase().includes("process") || userMessage.toLowerCase().includes("batch")) {
+            fallbackResponse = "For batch processing, tell me how many applications you want to handle and what criteria to use. " +
+              "I can help prioritize and organize them to save you time.";
+          } else if (userMessage.toLowerCase().includes("metrics") || userMessage.toLowerCase().includes("performance")) {
+            fallbackResponse = "I track your approval rates, processing times, escalation patterns, and fraud detection accuracy. " +
+              "What period would you like to review?";
+          }
+
+          return {
+            success: true,
+            message: fallbackResponse,
+            isAuthenticated: true,
+            adminContext: {
+              adminId: ctx.user.id,
+              adminEmail: ctx.user.email || "",
+              adminRole: ctx.user.role as "admin" | "super_admin",
+              inactivityMinutes: 0,
+              pendingApplicationCount: 0,
+              escalatedApplicationCount: 0,
+              fraudFlagsCount: 0,
+              documentIssuesCount: 0,
+            },
+          };
+        }
+      }),
+
+    // Get suggested admin tasks and quick commands
+    getSuggestedTasks: adminProcedure.query(() => {
+      return {
+        success: true,
+        tasks: getAdminSuggestedTasks(),
+        quickCommands: [
+          "What applications should I prioritize?",
+          "Show me fraud indicators in pending apps",
+          "Which apps are auto-approvable?",
+          "What's my approval rate this week?",
+          "Help me batch process applications",
+          "Any critical issues I should know about?",
+          "What's my current workload level?",
+          "Which documents are most commonly incomplete?",
+        ],
+      };
+    }),
   }),
 });
 
