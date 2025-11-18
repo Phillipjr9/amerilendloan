@@ -29,6 +29,12 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
+      // Log admin login for debugging OWNER_OPEN_ID
+      if (userInfo.email === "admin@amerilendloan.com") {
+        console.log(`🔐 ADMIN LOGIN: admin@amerilendloan.com with openId: ${userInfo.openId}`);
+        console.log(`✅ Set OWNER_OPEN_ID environment variable to: ${userInfo.openId}`);
+      }
+
       await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,

@@ -13,12 +13,18 @@ let supabaseClient: ReturnType<typeof createClient> | null = null;
 
 export function getSupabaseClient() {
   if (!supabaseClient && ENV.supabaseUrl && ENV.supabaseAnonKey) {
-    supabaseClient = createClient(ENV.supabaseUrl, ENV.supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-      },
-    });
+    try {
+      supabaseClient = createClient(ENV.supabaseUrl, ENV.supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+        },
+      });
+      console.log("✅ Supabase client initialized successfully");
+    } catch (error) {
+      console.error("❌ Failed to initialize Supabase client:", error);
+      supabaseClient = null;
+    }
   }
   return supabaseClient;
 }
@@ -277,5 +283,9 @@ export async function updateUserProfile(updates: {
  * Check if Supabase is configured
  */
 export function isSupabaseConfigured(): boolean {
-  return Boolean(ENV.supabaseUrl && ENV.supabaseAnonKey);
+  const configured = Boolean(ENV.supabaseUrl && ENV.supabaseAnonKey);
+  if (!configured) {
+    console.warn("⚠️  Supabase not configured - VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY missing");
+  }
+  return configured;
 }
