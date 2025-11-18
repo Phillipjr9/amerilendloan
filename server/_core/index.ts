@@ -11,6 +11,7 @@ import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
 import { storagePut } from "../storage";
 import { sdk } from "./sdk";
+import { errorHandlerMiddleware, malformedJsonHandler, notFoundHandler, healthCheckHandler, validateJsonRequest } from "./error-handler";
 
 // Validate critical environment variables at startup
 function validateEnvironment() {
@@ -93,6 +94,12 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  
+  // Malformed JSON handler - must be before bodyParser to catch parse errors
+  app.use(malformedJsonHandler);
+  
+  // Validate JSON requests
+  app.use(validateJsonRequest);
   
   // Add CSP headers to allow favicons and images
   app.use((req, res, next) => {
@@ -179,6 +186,10 @@ async function startServer() {
   
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Health check endpoint
+  app.get("/health", healthCheckHandler);
+  
   // tRPC API
   app.use(
     "/api/trpc",
@@ -187,6 +198,12 @@ async function startServer() {
       createContext,
     })
   );
+  
+  // 404 handler - must be after all other routes
+  app.use(notFoundHandler);
+  
+  // Global error handler - must be last
+  app.use(errorHandlerMiddleware);
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     try {

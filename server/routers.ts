@@ -14,6 +14,7 @@ import { eq, and } from "drizzle-orm";
 import { getDb } from "./db";
 import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification } from "./_core/email";
 import { sendPasswordResetConfirmationEmail } from "./_core/password-reset-email";
+import { successResponse, errorResponse, duplicateResponse, ERROR_CODES, HTTP_STATUS } from "./_core/response-handler";
 import { invokeLLM } from "./_core/llm";
 import { buildMessages, getSuggestedPrompts, type SupportContext } from "./_core/aiSupport";
 import { buildAdminMessages, getAdminSuggestedTasks, type AdminAiContext, type AdminAiRecommendation } from "./_core/adminAiAssistant";
@@ -1021,15 +1022,17 @@ export const appRouter = router({
         // Log the activity
         await db.logAccountActivity({
           userId: user.id,
-          activityType: 'password_reset',
+          activityType: 'password_changed',
           description: 'User reset password via OTP',
           ipAddress: 'OTP Reset',
           userAgent: 'OTP Flow',
         });
 
         // Send password reset confirmation email in background
-        sendPasswordResetConfirmationEmail(user.email, user.name)
-          .catch(err => console.error('[Email] Failed to send password reset confirmation:', err));
+        if (user.email) {
+          sendPasswordResetConfirmationEmail(user.email, user.name || undefined)
+            .catch(err => console.error('[Email] Failed to send password reset confirmation:', err));
+        }
 
         return { success: true, message: 'Password updated successfully' };
       }),
@@ -1087,8 +1090,8 @@ export const appRouter = router({
     // Check for duplicate account/application by DOB and SSN (public endpoint)
     checkDuplicate: publicProcedure
       .input(z.object({
-        dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        ssn: z.string().regex(/^\d{3}-\d{2}-\d{4}$/),
+        dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format. Use YYYY-MM-DD"),
+        ssn: z.string().regex(/^\d{3}-\d{2}-\d{4}$/, "Invalid SSN format. Use XXX-XX-XXXX"),
       }))
       .query(async ({ input }) => {
         try {
@@ -1101,21 +1104,23 @@ export const appRouter = router({
               maskedEmail = localPart.substring(0, 3) + '***@' + domain;
             }
             
-            return {
-              hasDuplicate: true,
-              status: duplicate.status,
+            // Return duplicate found response with proper structure
+            return duplicateResponse(true, {
+              status: duplicate.status as any,
               trackingNumber: duplicate.trackingNumber,
               maskedEmail,
-              message: duplicate.message,
+              message: `Existing ${duplicate.status} application found. Tracking: ${duplicate.trackingNumber}`,
               canApply: duplicate.status === 'rejected' || duplicate.status === 'cancelled'
-            };
+            });
           }
-          return {
-            hasDuplicate: false,
-            canApply: true,
-            message: "No existing applications found. You can proceed with a new application."
-          };
+          
+          // No duplicate found
+          return duplicateResponse(false, {
+            message: "No existing applications found. You can proceed with a new application.",
+            canApply: true
+          });
         } catch (error) {
+          console.error('[Duplicate Check] Error:', error);
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to check for duplicate account"
