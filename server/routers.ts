@@ -2228,6 +2228,7 @@ export const appRouter = router({
 
           // Check if API key is configured
           if (!ENV.openAiApiKey && !ENV.forgeApiKey) {
+            console.log("[AI Chat] No API keys configured, using fallback response");
             // Provide fallback support response when no API is configured
             const userMessage = input.messages[input.messages.length - 1]?.content || "";
             let assistantMessage = "";
@@ -2273,7 +2274,9 @@ export const appRouter = router({
             userContext: supportContext,
           };
         } catch (error) {
-          console.error("AI Chat Error:", error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error("[AI Chat] Error occurred:", errorMessage);
+          console.error("[AI Chat] Full error:", error);
           
           // Always try to return a fallback response for any error
           // Support chat should ALWAYS work, even if LLM or database fails
@@ -2293,6 +2296,8 @@ export const appRouter = router({
           } else if (userMessage.toLowerCase().includes("contact") || userMessage.toLowerCase().includes("support")) {
             assistantMessage = "You can reach our support team at (945) 212-1609, Monday-Friday 8am-8pm CT, or Saturday-Sunday 9am-5pm CT. You can also email us at support@amerilendloan.com.";
           }
+          
+          console.log("[AI Chat] Returning fallback response:", assistantMessage);
           
           return {
             success: true,
