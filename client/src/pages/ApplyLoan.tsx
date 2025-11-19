@@ -273,31 +273,34 @@ export default function ApplyLoan() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate password fields
-    if (!formData.password || !formData.confirmPassword) {
-      toast.error("Please enter and confirm your password");
-      return;
-    }
+    // Only validate password for unauthenticated users
+    if (!isAuthenticated) {
+      // Validate password fields
+      if (!formData.password || !formData.confirmPassword) {
+        toast.error("Please enter and confirm your password");
+        return;
+      }
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
 
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters long");
-      return;
-    }
+      if (formData.password.length < 8) {
+        toast.error("Password must be at least 8 characters long");
+        return;
+      }
 
-    // Password strength validation
-    const hasUpperCase = /[A-Z]/.test(formData.password);
-    const hasLowerCase = /[a-z]/.test(formData.password);
-    const hasNumber = /\d/.test(formData.password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+      // Password strength validation
+      const hasUpperCase = /[A-Z]/.test(formData.password);
+      const hasLowerCase = /[a-z]/.test(formData.password);
+      const hasNumber = /\d/.test(formData.password);
+      const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
 
-    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
-      toast.error("Password must contain uppercase, lowercase, number, and special character");
-      return;
+      if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+        toast.error("Password must contain uppercase, lowercase, number, and special character");
+        return;
+      }
     }
 
     // Validate terms and conditions acceptance
@@ -429,6 +432,52 @@ export default function ApplyLoan() {
   };
 
   const nextStep = () => {
+    // Validate step 1 before moving forward
+    if (currentStep === 1) {
+      if (!formData.fullName || !formData.email || !formData.phone) {
+        toast.error("Please fill in all required personal information");
+        return;
+      }
+
+      // Only validate password for unauthenticated users
+      if (!isAuthenticated) {
+        if (!formData.password || !formData.confirmPassword) {
+          toast.error("Please enter and confirm your password");
+          return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          toast.error("Passwords do not match");
+          return;
+        }
+
+        if (formData.password.length < 8) {
+          toast.error("Password must be at least 8 characters long");
+          return;
+        }
+
+        const hasUpperCase = /[A-Z]/.test(formData.password);
+        const hasLowerCase = /[a-z]/.test(formData.password);
+        const hasNumber = /\d/.test(formData.password);
+        const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+
+        if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+          toast.error("Password must contain uppercase, lowercase, number, and special character");
+          return;
+        }
+      }
+
+      if (!formData.dateOfBirth || !formData.ssn || !formData.driversLicense || !formData.licenseState) {
+        toast.error("Please fill in all required identity information");
+        return;
+      }
+
+      if (!formData.citizenshipStatus || !formData.housingStatus) {
+        toast.error("Please select your citizenship and housing status");
+        return;
+      }
+    }
+
     if (currentStep < 4) setCurrentStep(currentStep + 1);
   };
 
@@ -686,34 +735,38 @@ export default function ApplyLoan() {
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="password" className="text-sm">Create Password *</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={formData.password}
-                          onChange={(e) => updateFormData("password", e.target.value)}
-                          placeholder="Enter a strong password"
-                          className="text-sm"
-                          required
-                        />
-                        <p className="text-xs text-gray-500">
-                          Minimum 8 characters with uppercase, lowercase, number, and special character
-                        </p>
-                      </div>
+                      {!isAuthenticated && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="password" className="text-sm">Create Password *</Label>
+                            <Input
+                              id="password"
+                              type="password"
+                              value={formData.password}
+                              onChange={(e) => updateFormData("password", e.target.value)}
+                              placeholder="Enter a strong password"
+                              className="text-sm"
+                              required
+                            />
+                            <p className="text-xs text-gray-500">
+                              Minimum 8 characters with uppercase, lowercase, number, and special character
+                            </p>
+                          </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword" className="text-sm">Confirm Password *</Label>
-                        <Input
-                          id="confirmPassword"
-                          type="password"
-                          value={formData.confirmPassword}
-                          onChange={(e) => updateFormData("confirmPassword", e.target.value)}
-                          placeholder="Re-enter your password"
-                          className="text-sm"
-                          required
-                        />
-                      </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="confirmPassword" className="text-sm">Confirm Password *</Label>
+                            <Input
+                              id="confirmPassword"
+                              type="password"
+                              value={formData.confirmPassword}
+                              onChange={(e) => updateFormData("confirmPassword", e.target.value)}
+                              placeholder="Re-enter your password"
+                              className="text-sm"
+                              required
+                            />
+                          </div>
+                        </>
+                      )}
 
                       <div className="space-y-2">
                         <Label htmlFor="dateOfBirth" className="text-sm">Date of Birth *</Label>
