@@ -36,8 +36,8 @@ export const fullNameSchema = z
 export const loanAmountSchema = z
   .number()
   .int()
-  .min(1000, "Minimum loan amount is $10.00")
-  .max(500000, "Maximum loan amount is $5,000.00");
+  .min(1000, "Minimum loan amount is $1,000.00")
+  .max(500000, "Maximum loan amount is $500,000.00");
 
 // Phone number validation
 export const phoneSchema = z

@@ -40,6 +40,7 @@ export const COMPANY_INFO = {
     emailIcon: "https://cdn-icons-png.flaticon.com/512/561/561127.png",
     trustpilotLogo: "https://www.amerilendloan.com/images/trustpilot-logo.svg",
     lendingTreeLogo: "https://www.amerilendloan.com/images/lending-tree-logo.svg",
+    bbbLogo: "https://www.amerilendloan.com/images/bbb.png",
   },
 };
 
@@ -92,12 +93,15 @@ export function getEmailFooter(): string {
 
       <div style="margin: 25px 0; padding: 20px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
         <p style="margin: 10px 0 15px 0; font-weight: bold; font-size: 13px; color: #333;">✅ Trusted By Thousands</p>
-        <div style="margin-top: 12px; display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; align-items: center; max-width: 500px; margin-left: auto; margin-right: auto;">
+        <div style="margin-top: 12px; display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; align-items: center; max-width: 600px; margin-left: auto; margin-right: auto;">
           <div style="display: flex; justify-content: center; align-items: center;">
             <img src="${COMPANY_INFO.images.trustpilotLogo}" alt="Trustpilot" style="display: block; height: 50px; max-width: 150px; width: auto; border: 0; object-fit: contain;">
           </div>
           <div style="display: flex; justify-content: center; align-items: center;">
             <img src="${COMPANY_INFO.images.lendingTreeLogo}" alt="LendingTree" style="display: block; height: 50px; max-width: 150px; width: auto; border: 0; object-fit: contain;">
+          </div>
+          <div style="display: flex; justify-content: center; align-items: center;">
+            <img src="${COMPANY_INFO.images.bbbLogo}" alt="Better Business Bureau" style="display: block; height: 50px; max-width: 150px; width: auto; border: 0; object-fit: contain;">
           </div>
         </div>
       </div>

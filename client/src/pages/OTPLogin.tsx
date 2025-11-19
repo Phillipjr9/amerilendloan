@@ -7,6 +7,7 @@ import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 
 export default function OTPLogin() {
   const [, setLocation] = useLocation();
@@ -364,26 +365,12 @@ export default function OTPLogin() {
                     )}
                   </Button>
 
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white text-gray-500">Or continue with</span>
-                    </div>
-                  </div>
+                  <SocialAuthButtons purpose="login" />
 
-                  <div className="mt-6 space-y-3">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-xs text-green-900 text-center">
-                        🔒 <strong>Secure Login:</strong> Your credentials are encrypted with 256-bit SSL encryption. Sessions expire after 24 hours of inactivity.
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <a href="#contact" className="text-xs text-gray-600 hover:text-[#0033A0] underline">
-                        Need help logging in? Contact Support
-                      </a>
-                    </div>
+                  <div className="text-center">
+                    <a href="#contact" className="text-xs text-gray-600 hover:text-[#0033A0] underline">
+                      Need help logging in? Contact Support
+                    </a>
                   </div>
                 </form>
               )}
@@ -497,27 +484,7 @@ export default function OTPLogin() {
                     </a>.
                   </p>
 
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white text-gray-500">Or continue with</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 space-y-3">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs text-blue-900 text-center">
-                        🛡️ <strong>Why it's safe:</strong> We use bank-level encryption, never share your data, and comply with all financial privacy regulations.
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <a href="#contact" className="text-xs text-gray-600 hover:text-[#0033A0] underline">
-                        Questions? Contact our support team
-                      </a>
-                    </div>
-                  </div>
+                  <SocialAuthButtons purpose="signup" className="mt-4" />
                 </form>
               )}
             </div>
@@ -682,6 +649,13 @@ export default function OTPLogin() {
               </a>
             </Link>
           </p>
+        </div>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm font-semibold text-gray-700 mb-3">Trusted by leading lending platforms</p>
+          <div className="flex justify-center">
+            <img src="/ssl-seal.png" alt="SSL Certificate - Secure Connection" className="h-24 w-auto" />
+          </div>
         </div>
 
         <div className="mt-4 space-y-2">

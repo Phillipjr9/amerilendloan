@@ -14,4 +14,21 @@ export const ENV = {
   sendGridApiKey: process.env.SENDGRID_API_KEY ?? "",
   supabaseUrl: process.env.VITE_SUPABASE_URL ?? "",
   supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY ?? "",
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  githubClientId: process.env.GITHUB_CLIENT_ID ?? "",
+  githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+  microsoftClientId: process.env.MICROSOFT_CLIENT_ID ?? "",
+  microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET ?? "",
 };
+
+export function getEnv() {
+  return {
+    GOOGLE_CLIENT_ID: ENV.googleClientId,
+    GOOGLE_CLIENT_SECRET: ENV.googleClientSecret,
+    GITHUB_CLIENT_ID: ENV.githubClientId,
+    GITHUB_CLIENT_SECRET: ENV.githubClientSecret,
+    MICROSOFT_CLIENT_ID: ENV.microsoftClientId,
+    MICROSOFT_CLIENT_SECRET: ENV.microsoftClientSecret,
+  };
+}

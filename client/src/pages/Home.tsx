@@ -21,7 +21,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { AISupport } from "@/components/AISupport";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import { ApplicationTracking } from "@/components/ApplicationTracking";
-import { SecuritySeal, SecurityBadgeFooter, TrustIndicators } from "@/components/SecuritySeal";
+
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -135,10 +135,7 @@ export default function Home() {
               </a>
             </nav>
 
-            {/* Security Seal */}
-            <div className="hidden lg:block">
-              <SecuritySeal />
-            </div>
+
 
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center gap-1.5">
@@ -972,18 +969,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Benefit 4 */}
-            <Card className="bg-white text-gray-800 relative pt-8">
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
-              <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Safe and Secure</h3>
-                <p className="text-gray-600">
-                  We are dedicated to protecting your information and communications with advanced 256 bit encryption technology.
-                </p>
-              </CardContent>
-            </Card>
+
 
             {/* Benefit 5 */}
             <Card className="bg-white text-gray-800 relative pt-8">
@@ -1043,7 +1029,7 @@ export default function Home() {
               {/* BBB Logo */}
               <div className="flex items-center justify-center">
                 <img 
-                  src="/bbb-logo.svg" 
+                  src="/images/bbb.png" 
                   alt="Better Business Bureau" 
                   className="h-12 md:h-14 w-auto"
                 />
@@ -1249,10 +1235,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Trust Indicators Section */}
-          <div className="py-8 mb-8">
-            <TrustIndicators />
-          </div>
 
           {/* Track Application Section */}
           <div className="flex justify-center py-6 mb-6">
