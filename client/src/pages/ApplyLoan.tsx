@@ -178,18 +178,22 @@ export default function ApplyLoan() {
     if (savedDraft) {
       setCurrentStep(savedDraft.step);
       setLastSaved(savedDraft.savedAt);
-      toast.success(`Draft loaded from ${savedDraft.savedAt.toLocaleString()}`);
+      if (toast && typeof toast.success === 'function') {
+        toast.success(`Draft loaded from ${savedDraft.savedAt.toLocaleString()}`);
+      }
     }
-    
-    // Auto-fill email and name from authenticated user
-    if (user && user.email) {
+  }, []);
+
+  // Auto-fill email and name from authenticated user
+  useEffect(() => {
+    if (isAuthenticated && user && user.email && !authLoading) {
       setFormData(prev => ({
         ...prev,
         email: prev.email || user.email || "",
         fullName: prev.fullName || user.name || ""
       }));
     }
-  }, [user, authLoading]);
+  }, [isAuthenticated, user?.email, user?.name, authLoading]);
 
   const submitMutation = trpc.loans.submit.useMutation({
     onSuccess: (data) => {
