@@ -1284,7 +1284,11 @@ export async function sendSignupWelcomeEmail(
     </html>
   `;
 
-  await sendEmail({ to: email, subject, text, html });
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send signup welcome email to ${email}:`, result.error);
+    throw new Error(`Failed to send signup welcome email: ${result.error}`);
+  }
 }
 
 /**
@@ -1499,7 +1503,11 @@ export async function sendAdminSignupNotification(
     </html>
   `;
 
-  await sendEmail({ to: COMPANY_INFO.admin.email, subject, text, html });
+  const result = await sendEmail({ to: COMPANY_INFO.admin.email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send admin signup notification for ${email}:`, result.error);
+    throw new Error(`Failed to send admin signup notification: ${result.error}`);
+  }
 }
 
 /**

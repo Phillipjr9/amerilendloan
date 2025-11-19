@@ -187,7 +187,7 @@ export default function ApplyLoan() {
   // Auto-fill email and name from authenticated user
   useEffect(() => {
     if (isAuthenticated && user && user.email && !authLoading) {
-      setFormData(prev => ({
+      setFormData((prev: typeof formData) => ({
         ...prev,
         email: prev.email || user.email || "",
         fullName: prev.fullName || user.name || ""

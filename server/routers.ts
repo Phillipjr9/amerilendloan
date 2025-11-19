@@ -1024,7 +1024,7 @@ export const appRouter = router({
               
               // Send admin notification for new signup
               try {
-                await sendAdminSignupNotification(user.name || "User", user.email, user.phone || "");
+                await sendAdminSignupNotification(user.name || "User", user.email, "");
                 console.log(`[Email] Admin signup notification sent for ${user.email}`);
               } catch (err) {
                 console.error('[Email] Failed to send admin signup notification:', err);
