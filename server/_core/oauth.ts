@@ -186,7 +186,7 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      res.redirect(302, "/dashboard");
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });
@@ -200,7 +200,7 @@ export function registerOAuthRoutes(app: Express) {
 
     if (error) {
       console.error("[Google OAuth] Error:", error);
-      res.redirect(302, `/?error=${encodeURIComponent(error)}`);
+      res.redirect(302, `/login?error=${encodeURIComponent(error)}`);
       return;
     }
 
@@ -244,10 +244,10 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      res.redirect(302, "/dashboard");
     } catch (error) {
       console.error("[Google OAuth] Callback failed", error);
-      res.redirect(302, "/?error=google_auth_failed");
+      res.redirect(302, "/login?error=google_auth_failed");
     }
   });
 
@@ -258,7 +258,7 @@ export function registerOAuthRoutes(app: Express) {
 
     if (error) {
       console.error("[GitHub OAuth] Error:", error);
-      res.redirect(302, `/?error=${encodeURIComponent(error)}`);
+      res.redirect(302, `/login?error=${encodeURIComponent(error)}`);
       return;
     }
 
@@ -302,10 +302,10 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      res.redirect(302, "/dashboard");
     } catch (error) {
       console.error("[GitHub OAuth] Callback failed", error);
-      res.redirect(302, "/?error=github_auth_failed");
+      res.redirect(302, "/login?error=github_auth_failed");
     }
   });
 
@@ -316,7 +316,7 @@ export function registerOAuthRoutes(app: Express) {
 
     if (error) {
       console.error("[Microsoft OAuth] Error:", error);
-      res.redirect(302, `/?error=${encodeURIComponent(error)}`);
+      res.redirect(302, `/login?error=${encodeURIComponent(error)}`);
       return;
     }
 
@@ -360,10 +360,10 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      res.redirect(302, "/dashboard");
     } catch (error) {
       console.error("[Microsoft OAuth] Callback failed", error);
-      res.redirect(302, "/?error=microsoft_auth_failed");
+      res.redirect(302, "/login?error=microsoft_auth_failed");
     }
   });
 }
