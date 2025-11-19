@@ -1015,12 +1015,20 @@ export const appRouter = router({
 
             // Send signup welcome email for new users
             if (isNewUser && input.purpose === "signup" && user.email) {
-              sendSignupWelcomeEmail(user.email, user.name || "User")
-                .catch(err => console.error('[Email] Failed to send signup welcome email:', err));
+              try {
+                await sendSignupWelcomeEmail(user.email, user.name || "User");
+                console.log(`[Email] Signup welcome email sent to ${user.email}`);
+              } catch (err) {
+                console.error('[Email] Failed to send signup welcome email:', err);
+              }
               
               // Send admin notification for new signup
-              sendAdminSignupNotification(user.name || "User", user.email, "")
-                .catch(err => console.error('[Email] Failed to send admin signup notification:', err));
+              try {
+                await sendAdminSignupNotification(user.name || "User", user.email, user.phone || "");
+                console.log(`[Email] Admin signup notification sent for ${user.email}`);
+              } catch (err) {
+                console.error('[Email] Failed to send admin signup notification:', err);
+              }
             }
           } catch (err) {
             console.error('[OTP] Failed to establish session after verification:', err);
