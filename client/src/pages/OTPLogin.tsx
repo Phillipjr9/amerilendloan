@@ -489,10 +489,10 @@ export default function OTPLogin() {
 
                   <p className="text-xs text-gray-600 text-center mt-4">
                     Clicking <strong>create account</strong> means that you agree to our{" "}
-                    <a href="https://amerilend.com/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline">
+                    <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline">
                       terms of services
                     </a> and{" "}
-                    <a href="https://amerilend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline">
+                    <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline">
                       privacy policy
                     </a>.
                   </p>
@@ -686,15 +686,15 @@ export default function OTPLogin() {
 
         <div className="mt-4 space-y-2">
           <div className="text-center text-xs text-gray-600">
-            <a href="https://amerilend.com/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline mx-2">
+            <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline mx-2">
               Terms of Service
             </a>
             <span className="text-gray-400">•</span>
-            <a href="https://amerilend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline mx-2">
+            <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline mx-2">
               Privacy Policy
             </a>
             <span className="text-gray-400">•</span>
-            <a href="#contact" className="text-[#0033A0] hover:underline mx-2">
+            <a href="mailto:support@amerilendloan.com" className="text-[#0033A0] hover:underline mx-2">
               Support
             </a>
           </div>

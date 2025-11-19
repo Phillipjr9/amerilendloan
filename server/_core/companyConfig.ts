@@ -68,27 +68,36 @@ export function getEmailFooter(): string {
       
       <div style="margin: 25px 0; padding: 20px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
         <p style="margin: 10px 0 15px 0; font-weight: bold; font-size: 13px; color: #333;">📱 Connect With Us</p>
-        <div style="margin-top: 12px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; align-items: center;">
-          <a href="https://wa.me/${COMPANY_INFO.contact.whatsapp.replace(/\D/g, '')}" style="display: inline-block; text-decoration: none; margin: 5px;" title="WhatsApp">
-            <img src="${COMPANY_INFO.images.whatsappIcon}" alt="WhatsApp" style="display: block; height: 40px; width: 40px; border: 0; border-radius: 5px; max-width: 100%;">
-          </a>
-          <a href="https://t.me/${COMPANY_INFO.contact.telegram.replace('@', '')}" style="display: inline-block; text-decoration: none; margin: 5px;" title="Telegram">
-            <img src="${COMPANY_INFO.images.telegramIcon}" alt="Telegram" style="display: block; height: 40px; width: 40px; border: 0; border-radius: 5px; max-width: 100%;">
-          </a>
-          <a href="mailto:${COMPANY_INFO.contact.email}" style="display: inline-block; text-decoration: none; margin: 5px;" title="Email Support">
-            <img src="${COMPANY_INFO.images.emailIcon}" alt="Support" style="display: block; height: 40px; width: 40px; border: 0; border-radius: 5px; max-width: 100%;">
-          </a>
+        <div style="margin-top: 12px; display: flex; justify-content: space-around; gap: 30px; flex-wrap: wrap; align-items: center; max-width: 400px; margin-left: auto; margin-right: auto;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <a href="https://wa.me/${COMPANY_INFO.contact.whatsapp.replace(/\D/g, '')}" style="display: inline-block; text-decoration: none;" title="WhatsApp">
+              <img src="${COMPANY_INFO.images.whatsappIcon}" alt="WhatsApp" style="display: block; height: 30px; width: 30px; border: 0; border-radius: 5px; max-width: 100%;">
+            </a>
+            <span style="font-size: 11px; color: #666;">WhatsApp</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <a href="https://t.me/${COMPANY_INFO.contact.telegram.replace('@', '')}" style="display: inline-block; text-decoration: none;" title="Telegram">
+              <img src="${COMPANY_INFO.images.telegramIcon}" alt="Telegram" style="display: block; height: 30px; width: 30px; border: 0; border-radius: 5px; max-width: 100%;">
+            </a>
+            <span style="font-size: 11px; color: #666;">Telegram</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <a href="mailto:${COMPANY_INFO.contact.email}" style="display: inline-block; text-decoration: none;" title="Email Support">
+              <img src="${COMPANY_INFO.images.emailIcon}" alt="Support" style="display: block; height: 30px; width: 30px; border: 0; border-radius: 5px; max-width: 100%;">
+            </a>
+            <span style="font-size: 11px; color: #666;">Email</span>
+          </div>
         </div>
       </div>
 
       <div style="margin: 25px 0; padding: 20px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
         <p style="margin: 10px 0 15px 0; font-weight: bold; font-size: 13px; color: #333;">✅ Trusted By Thousands</p>
-        <div style="margin-top: 12px; display: flex; justify-content: center; gap: 25px; flex-wrap: wrap; align-items: center;">
-          <div style="display: inline-block; margin: 0 10px;">
-            <img src="${COMPANY_INFO.images.trustpilotLogo}" alt="Trustpilot" style="display: block; height: 35px; max-width: 120px; width: auto; border: 0;">
+        <div style="margin-top: 12px; display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; align-items: center; max-width: 500px; margin-left: auto; margin-right: auto;">
+          <div style="display: flex; justify-content: center; align-items: center;">
+            <img src="${COMPANY_INFO.images.trustpilotLogo}" alt="Trustpilot" style="display: block; height: 50px; max-width: 150px; width: auto; border: 0; object-fit: contain;">
           </div>
-          <div style="display: inline-block; margin: 0 10px;">
-            <img src="${COMPANY_INFO.images.lendingTreeLogo}" alt="LendingTree" style="display: block; height: 35px; max-width: 120px; width: auto; border: 0;">
+          <div style="display: flex; justify-content: center; align-items: center;">
+            <img src="${COMPANY_INFO.images.lendingTreeLogo}" alt="LendingTree" style="display: block; height: 50px; max-width: 150px; width: auto; border: 0; object-fit: contain;">
           </div>
         </div>
       </div>
@@ -98,9 +107,9 @@ export function getEmailFooter(): string {
           © ${new Date().getFullYear()} ${COMPANY_INFO.name}. All rights reserved.
         </p>
         <p style="margin: 8px 0; color: #999; font-size: 11px;">
-          <a href="${COMPANY_INFO.website}/privacy" style="color: #0033A0; text-decoration: none;">Privacy Policy</a>
+          <a href="${COMPANY_INFO.website}/legal/privacy-policy" style="color: #0033A0; text-decoration: none;">Privacy Policy</a>
           <span style="margin: 0 8px; color: #ccc;">•</span>
-          <a href="${COMPANY_INFO.website}/terms" style="color: #0033A0; text-decoration: none;">Terms of Service</a>
+          <a href="${COMPANY_INFO.website}/legal/terms-of-service" style="color: #0033A0; text-decoration: none;">Terms of Service</a>
         </p>
       </div>
     </div>
@@ -114,7 +123,7 @@ export function getEmailHeader(): string {
   return `
     <div style="background-color: #ffffff; padding: 35px 20px; text-align: center; border-bottom: 4px solid #FFA500;">
       <div style="margin-bottom: 15px;">
-        <img src="${COMPANY_INFO.logo.url}" alt="${COMPANY_INFO.logo.alt}" style="height: 55px; max-width: 90%; object-fit: contain;">
+        <img src="${COMPANY_INFO.logo.url}" alt="${COMPANY_INFO.logo.alt}" style="height: 110px; max-width: 90%; object-fit: contain;">
       </div>
       <h1 style="color: #0033A0; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 0.5px;">AmeriLend</h1>
       <p style="color: #666; margin: 10px 0 0 0; font-size: 14px; font-weight: 500;">💼 Trusted Lending Solutions</p>

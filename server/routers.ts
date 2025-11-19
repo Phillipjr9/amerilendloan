@@ -32,6 +32,7 @@ import {
   updateUserProfile,
   isSupabaseConfigured
 } from "./_core/supabase-auth";
+import { errorSimulationRegistry } from "./_core/error-simulation";
 
 // Helper function to get varied fallback responses based on user intent
 // Returns different responses each time to avoid repetition
@@ -658,6 +659,18 @@ export const appRouter = router({
         fullName: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        // Check if error simulation should be applied
+        if (errorSimulationRegistry.shouldSimulateError("auth.supabaseSignUp")) {
+          const errorConfig = errorSimulationRegistry.getErrorSimulation("auth.supabaseSignUp");
+          if (errorConfig?.delayMs) {
+            await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
+          }
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: errorConfig?.errorMessage || "Registration service temporarily unavailable",
+          });
+        }
+
         if (!isSupabaseConfigured()) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
@@ -682,6 +695,18 @@ export const appRouter = router({
         password: z.string().min(8),
       }))
       .mutation(async ({ input, ctx }) => {
+        // Check if error simulation should be applied
+        if (errorSimulationRegistry.shouldSimulateError("auth.supabaseSignIn")) {
+          const errorConfig = errorSimulationRegistry.getErrorSimulation("auth.supabaseSignIn");
+          if (errorConfig?.delayMs) {
+            await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
+          }
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: errorConfig?.errorMessage || "Authentication service temporarily unavailable",
+          });
+        }
+
         if (!isSupabaseConfigured()) {
           // Supabase not configured - fall back to OTP
           throw new TRPCError({
@@ -1511,6 +1536,283 @@ export const appRouter = router({
       }),
   }),
 
+  // Loan calculations router (with input type validation)
+  loanCalculator: router({
+    // Calculate monthly payment
+    calculatePayment: publicProcedure
+      .input(z.object({
+        amount: z.number().int().positive(),
+        term: z.number().int().min(3).max(84),
+        interestRate: z.number().min(0.1).max(35.99),
+      }))
+      .query(async ({ input }) => {
+        try {
+          // Check if error simulation should be applied
+          if (errorSimulationRegistry.shouldSimulateError("loanCalculator.calculatePayment")) {
+            const errorConfig = errorSimulationRegistry.getErrorSimulation("loanCalculator.calculatePayment");
+            if (errorConfig?.delayMs) {
+              await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
+            }
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: errorConfig?.errorMessage || "Loan calculation service temporarily unavailable",
+            });
+          }
+
+          // Validate input types
+          if (!Number.isFinite(input.amount) || !Number.isInteger(input.amount)) {
+            return {
+              success: false,
+              error: {
+                code: "INVALID_AMOUNT",
+                message: "Invalid amount: must be a finite integer in cents",
+                details: {
+                  field: "amount",
+                  received: input.amount,
+                  expectedType: "number (integer, in cents)",
+                  constraints: ["Must be between 1000 (cents) and 10000000 (cents)", "Must be an integer"],
+                },
+              },
+              meta: { timestamp: new Date().toISOString() },
+            };
+          }
+
+          if (!Number.isFinite(input.term) || !Number.isInteger(input.term)) {
+            return {
+              success: false,
+              error: {
+                code: "INVALID_TERM",
+                message: "Invalid term: must be a finite integer (months)",
+                details: {
+                  field: "term",
+                  received: input.term,
+                  expectedType: "number (integer, months)",
+                  constraints: ["Must be between 3 and 84 months"],
+                },
+              },
+              meta: { timestamp: new Date().toISOString() },
+            };
+          }
+
+          if (!Number.isFinite(input.interestRate)) {
+            return {
+              success: false,
+              error: {
+                code: "INVALID_INTEREST_RATE",
+                message: "Invalid interest rate: must be a finite number",
+                details: {
+                  field: "interestRate",
+                  received: input.interestRate,
+                  expectedType: "number (percentage)",
+                  constraints: ["Must be between 0.1 and 35.99"],
+                },
+              },
+              meta: { timestamp: new Date().toISOString() },
+            };
+          }
+
+          // Calculate monthly payment using standard loan formula
+          // Monthly Payment = [P * r * (1 + r)^n] / [(1 + r)^n - 1]
+          // Where: P = principal, r = monthly rate, n = number of payments
+
+          const principalCents = input.amount;
+          const monthlyRateDecimal = input.interestRate / 100 / 12; // Convert annual % to monthly decimal
+          const numberOfPayments = input.term;
+
+          let monthlyPaymentCents: number;
+
+          if (monthlyRateDecimal === 0) {
+            // Simple case: 0% interest
+            monthlyPaymentCents = Math.round(principalCents / numberOfPayments);
+          } else {
+            // Standard loan formula
+            const numerator = principalCents * monthlyRateDecimal * Math.pow(1 + monthlyRateDecimal, numberOfPayments);
+            const denominator = Math.pow(1 + monthlyRateDecimal, numberOfPayments) - 1;
+            monthlyPaymentCents = Math.round(numerator / denominator);
+          }
+
+          // Calculate total interest paid
+          const totalPaymentCents = monthlyPaymentCents * numberOfPayments;
+          const totalInterestCents = totalPaymentCents - principalCents;
+
+          return {
+            success: true,
+            data: {
+              amountCents: principalCents,
+              amountDollars: principalCents / 100,
+              termMonths: numberOfPayments,
+              interestRatePercent: input.interestRate,
+              monthlyPaymentCents,
+              monthlyPaymentDollars: monthlyPaymentCents / 100,
+              totalPaymentCents,
+              totalPaymentDollars: totalPaymentCents / 100,
+              totalInterestCents,
+              totalInterestDollars: totalInterestCents / 100,
+              monthlyRatePercent: input.interestRate / 12,
+            },
+            meta: { timestamp: new Date().toISOString() },
+          };
+        } catch (error) {
+          console.error("[Loan Calculator] Payment calculation error:", error);
+          return {
+            success: false,
+            error: {
+              code: "CALCULATION_ERROR",
+              message: "Failed to calculate monthly payment",
+              details: {
+                error: error instanceof Error ? error.message : "Unknown error",
+              },
+            },
+            meta: { timestamp: new Date().toISOString() },
+          };
+        }
+      }),
+
+    // Validate input types without performing calculation
+    validateInputs: publicProcedure
+      .input(z.object({
+        amount: z.unknown(),
+        term: z.unknown(),
+        interestRate: z.unknown(),
+      }))
+      .query(async ({ input }) => {
+        // Check if error simulation should be applied
+        if (errorSimulationRegistry.shouldSimulateError("loanCalculator.validateInputs")) {
+          const errorConfig = errorSimulationRegistry.getErrorSimulation("loanCalculator.validateInputs");
+          if (errorConfig?.delayMs) {
+            await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
+          }
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: errorConfig?.errorMessage || "Validation service temporarily unavailable",
+          });
+        }
+
+        const errors: Array<{
+          field: string;
+          received: unknown;
+          expectedType: string;
+          constraints: string[];
+        }> = [];
+
+        // Validate amount
+        if (input.amount === undefined || input.amount === null) {
+          errors.push({
+            field: "amount",
+            received: input.amount,
+            expectedType: "number",
+            constraints: ["Amount is required"],
+          });
+        } else if (!Number.isFinite(input.amount as any)) {
+          errors.push({
+            field: "amount",
+            received: input.amount,
+            expectedType: "finite number",
+            constraints: [`Received: ${typeof input.amount}`, `Value: ${input.amount}`],
+          });
+        } else if (!Number.isInteger(input.amount as any)) {
+          errors.push({
+            field: "amount",
+            received: input.amount,
+            expectedType: "integer (whole number)",
+            constraints: [`Received: ${input.amount}`, "Must not have decimal places"],
+          });
+        } else if ((input.amount as number) < 1000 || (input.amount as number) > 10000000) {
+          errors.push({
+            field: "amount",
+            received: input.amount,
+            expectedType: "number between 1000 and 10000000",
+            constraints: [
+              `Received: ${input.amount}`,
+              "Minimum: 1000 cents ($10.00)",
+              "Maximum: 10000000 cents ($100,000.00)",
+            ],
+          });
+        }
+
+        // Validate term
+        if (input.term === undefined || input.term === null) {
+          errors.push({
+            field: "term",
+            received: input.term,
+            expectedType: "number",
+            constraints: ["Term is required"],
+          });
+        } else if (!Number.isFinite(input.term as any)) {
+          errors.push({
+            field: "term",
+            received: input.term,
+            expectedType: "finite number",
+            constraints: [`Received: ${typeof input.term}`, `Value: ${input.term}`],
+          });
+        } else if (!Number.isInteger(input.term as any)) {
+          errors.push({
+            field: "term",
+            received: input.term,
+            expectedType: "integer (whole number)",
+            constraints: [`Received: ${input.term}`, "Must not have decimal places"],
+          });
+        } else if ((input.term as number) < 3 || (input.term as number) > 84) {
+          errors.push({
+            field: "term",
+            received: input.term,
+            expectedType: "number between 3 and 84",
+            constraints: [
+              `Received: ${input.term}`,
+              "Minimum: 3 months",
+              "Maximum: 84 months (7 years)",
+            ],
+          });
+        }
+
+        // Validate interest rate
+        if (input.interestRate === undefined || input.interestRate === null) {
+          errors.push({
+            field: "interestRate",
+            received: input.interestRate,
+            expectedType: "number",
+            constraints: ["Interest rate is required"],
+          });
+        } else if (!Number.isFinite(input.interestRate as any)) {
+          errors.push({
+            field: "interestRate",
+            received: input.interestRate,
+            expectedType: "finite number",
+            constraints: [`Received: ${typeof input.interestRate}`, `Value: ${input.interestRate}`],
+          });
+        } else if ((input.interestRate as number) < 0.1 || (input.interestRate as number) > 35.99) {
+          errors.push({
+            field: "interestRate",
+            received: input.interestRate,
+            expectedType: "number between 0.1 and 35.99",
+            constraints: [
+              `Received: ${input.interestRate}`,
+              "Minimum: 0.1%",
+              "Maximum: 35.99%",
+            ],
+          });
+        }
+
+        if (errors.length > 0) {
+          return {
+            success: false,
+            error: {
+              code: "VALIDATION_ERROR",
+              message: `Input validation failed for ${errors.length} field(s)`,
+              details: errors,
+            },
+            meta: { timestamp: new Date().toISOString() },
+          };
+        }
+
+        return {
+          success: true,
+          message: "All inputs are valid",
+          meta: { timestamp: new Date().toISOString() },
+        };
+      }),
+  }),
+
   // Payment router
   payments: router({
     // Get Authorize.net Accept.js configuration
@@ -1547,6 +1849,18 @@ export const appRouter = router({
         idempotencyKey: z.string().uuid().optional(), // Prevent duplicate charges
       }))
       .mutation(async ({ ctx, input }) => {
+        // Check if error simulation should be applied
+        if (errorSimulationRegistry.shouldSimulateError("payments.createIntent")) {
+          const errorConfig = errorSimulationRegistry.getErrorSimulation("payments.createIntent");
+          if (errorConfig?.delayMs) {
+            await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
+          }
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: errorConfig?.errorMessage || "Payment service temporarily unavailable",
+          });
+        }
+
         // Check idempotency: if same key, return cached result
         if (input.idempotencyKey) {
           const cachedResult = await db.getPaymentByIdempotencyKey(input.idempotencyKey);
