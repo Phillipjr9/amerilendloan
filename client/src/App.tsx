@@ -32,6 +32,7 @@ function Router() {
       <Route path={"/login"} component={OTPLogin} />
       <Route path={"/careers"} component={Careers} />
       <Route path={"/payment-enhanced/:id"} component={EnhancedPaymentPage} />
+      <Route path={"/legal/:document"} component={LegalDocuments} />
       <Route path={"/public/legal/:document"} component={LegalDocuments} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

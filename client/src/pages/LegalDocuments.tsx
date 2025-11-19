@@ -42,8 +42,10 @@ const legalDocuments: Record<string, MarkdownFile> = {
 };
 
 export default function LegalDocuments() {
-  const [match, params] = useRoute("/public/legal/:document");
+  const [match1, params1] = useRoute("/legal/:document");
+  const [match2, params2] = useRoute("/public/legal/:document");
 
+  const params = params1 || params2;
   const documentKey = params?.document || "";
   const documentData = legalDocuments[documentKey];
 
