@@ -217,11 +217,6 @@ async function startServer() {
     })
   );
   
-  // 404 handler - must be after all other routes
-  app.use(notFoundHandler);
-  
-  // Global error handler - must be last
-  app.use(errorHandlerMiddleware);
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     try {
@@ -235,6 +230,12 @@ async function startServer() {
   } else {
     serveStatic(app);
   }
+  
+  // 404 handler - must be after all other routes
+  app.use(notFoundHandler);
+  
+  // Global error handler - must be last
+  app.use(errorHandlerMiddleware);
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
