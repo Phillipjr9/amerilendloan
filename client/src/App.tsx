@@ -15,6 +15,7 @@ import Prequalify from "./pages/Prequalify";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import LegalDocuments from "./pages/LegalDocuments";
+import Careers from "./pages/Careers";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <Route path={"/payment/:id"} component={PaymentPage} />
       <Route path={"/otp-login"} component={OTPLogin} />
       <Route path={"/login"} component={OTPLogin} />
+      <Route path={"/careers"} component={Careers} />
       <Route path={"/payment-enhanced/:id"} component={EnhancedPaymentPage} />
       <Route path={"/public/legal/:document"} component={LegalDocuments} />
       <Route path={"/404"} component={NotFound} />

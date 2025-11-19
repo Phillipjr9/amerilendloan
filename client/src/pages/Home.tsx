@@ -869,7 +869,7 @@ export default function Home() {
                   Help customers navigate their loan applications and provide exceptional support throughout the process.
                 </p>
                 <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
-                  <a href="mailto:careers@amerilendloan.com?subject=Loan%20Advocate%20Position" className="no-underline">
+                  <a href="/careers" className="no-underline">
                     Learn More
                   </a>
                 </Button>
@@ -886,7 +886,7 @@ export default function Home() {
                   Analyze loan applications and ensure responsible lending practices while helping qualified applicants.
                 </p>
                 <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
-                  <a href="mailto:careers@amerilendloan.com?subject=Risk%20Analyst%20Position" className="no-underline">
+                  <a href="/careers" className="no-underline">
                     Learn More
                   </a>
                 </Button>
@@ -903,7 +903,7 @@ export default function Home() {
                   Develop strategies to reach customers and educate them about responsible borrowing options.
                 </p>
                 <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
-                  <a href="mailto:careers@amerilendloan.com?subject=Marketing%20Specialist%20Position" className="no-underline">
+                  <a href="/careers" className="no-underline">
                     Learn More
                   </a>
                 </Button>
@@ -915,8 +915,10 @@ export default function Home() {
             <p className="text-gray-600 mb-6">
               Don't see a position that matches your skills? We're always interested in hearing from talented individuals.
             </p>
-            <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-8">
-              View All Openings
+            <Button asChild className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-8">
+              <a href="/careers">
+                View All Openings
+              </a>
             </Button>
           </div>
         </div>
