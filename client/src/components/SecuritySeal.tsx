@@ -11,6 +11,9 @@ export function SecuritySeal() {
         <div className="text-xs font-bold text-gray-800 tracking-wider">SECURE</div>
         <div className="text-xs text-gray-700 font-semibold">SSL ENCRYPTED</div>
         <div className="text-xs text-gray-600 mt-0.5">Let&apos;s Encrypt</div>
+        <div className="text-xs text-gray-500 mt-1 font-mono text-center break-all max-w-xs">
+          SHA256: 7ef0d8cc...1d6f2f
+        </div>
       </div>
     </div>
   );
@@ -46,6 +49,14 @@ export function SecurityBadgeFooter() {
           <p className="text-xs text-gray-600 mt-1">
             Valid until: February 15, 2026
           </p>
+          <div className="mt-3 pt-3 border-t border-gray-300">
+            <p className="text-xs text-gray-600">
+              <span className="font-bold">SHA256 Thumbprint:</span>
+            </p>
+            <p className="text-xs font-mono text-gray-700 mt-1 break-all">
+              7ef0d8cc0eb8822c0ed5d5f6df1d6f2f
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -112,6 +123,14 @@ export function TrustIndicators() {
         <p className="text-xs text-gray-600 mt-2">
           <span className="font-bold">Expires:</span> February 15, 2026
         </p>
+        <div className="mt-4 pt-4 border-t border-gray-300">
+          <p className="text-xs text-gray-600">
+            <span className="font-bold">Certificate Hash (SHA256):</span>
+          </p>
+          <p className="text-xs font-mono text-gray-700 mt-2 break-all text-center bg-gray-100 p-2 rounded">
+            7ef0d8cc0eb8822c0ed5d5f6df1d6f2f
+          </p>
+        </div>
       </div>
     </div>
   );
