@@ -259,6 +259,17 @@ export async function createUser(email: string, fullName?: string) {
   try {
     console.log("[Database] createUser: Starting user creation for", email);
     
+    // Check if user with this email already exists
+    const existingUser = await db.select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+    
+    if (existingUser.length > 0) {
+      console.warn(`[Database] createUser: User with email ${email} already exists`);
+      throw new Error(`User with email ${email} already exists`);
+    }
+    
     // Generate a unique openId for email-based auth (format: email_timestamp_random)
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substring(2, 8);

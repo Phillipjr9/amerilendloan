@@ -123,7 +123,11 @@ export async function sendOTPEmail(email: string, code: string, purpose: "signup
     </html>
   `;
 
-  await sendEmail({ to: email, subject, text, html });
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send OTP verification email to ${email}:`, result.error);
+    throw new Error(`Failed to send OTP verification email: ${result.error}`);
+  }
 }
 
 /**
