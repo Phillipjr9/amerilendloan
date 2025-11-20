@@ -240,7 +240,7 @@ If you have questions about these Terms, please contact us at:
 **AmeriLend**  
 Email: support@amerilendloan.com  
 Phone: +1 945 212-1609  
-Address: [Your Business Address]
+Address: 12707 High Bluff Drive, Suite 200, San Diego, CA 92130, USA
 
 ## 22. State-Specific Disclosures
 

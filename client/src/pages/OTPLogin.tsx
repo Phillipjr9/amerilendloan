@@ -27,6 +27,7 @@ export default function OTPLogin() {
   const [loginPassword, setLoginPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<"password" | "email-code">("password"); // Toggle between password and email code
   
   // Signup form state
   const [signupEmail, setSignupEmail] = useState("");
@@ -93,7 +94,39 @@ export default function OTPLogin() {
     },
   });
 
-  // Password login mutation (Supabase)
+  // Password login mutation - tries custom password login first, then falls back to Supabase or OTP
+  const passwordLoginMutation = trpc.auth.loginWithPassword.useMutation({
+    onSuccess: () => {
+      toast.success("Login successful!");
+      setTimeout(() => setLocation("/dashboard"), 300);
+    },
+    onError: (error) => {
+      const errorMsg = error.message || "Failed to sign in";
+      
+      // If password not set or invalid password, try to fall back
+      if (errorMsg.includes("not set up with a password") || errorMsg.includes("Invalid email or password")) {
+        // Check if Supabase is enabled - if so, try Supabase login
+        const supabaseEnabled = supabaseEnabledQuery.data?.enabled;
+        if (supabaseEnabled) {
+          supabaseLoginMutation.mutate({ email: loginIdentifier, password: loginPassword });
+          return;
+        }
+        
+        // Otherwise fall back to OTP email code
+        toast.info("Using email verification instead...");
+        setPendingIdentifier(loginIdentifier);
+        requestEmailCodeMutation.mutate({
+          email: loginIdentifier,
+          purpose: "login",
+        });
+      } else {
+        // Network or other error - show error
+        toast.error(errorMsg);
+      }
+    },
+  });
+
+  // Fallback password login mutation (Supabase)
   const supabaseLoginMutation = trpc.auth.supabaseSignIn.useMutation({
     onSuccess: () => {
       toast.success("Login successful!");
@@ -139,24 +172,28 @@ export default function OTPLogin() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!loginIdentifier || !loginPassword) {
-      toast.error("Please fill in all fields");
+    if (!loginIdentifier) {
+      toast.error("Please enter your email or username");
       return;
     }
 
-    // If Supabase is enabled, use password login; else fall back to OTP
-    const supabaseEnabled = supabaseEnabledQuery.data?.enabled;
-    if (supabaseEnabled) {
-      supabaseLoginMutation.mutate({ email: loginIdentifier, password: loginPassword });
-      return;
+    if (loginMethod === "password") {
+      // Password login
+      if (!loginPassword) {
+        toast.error("Please enter your password");
+        return;
+      }
+      // Always try custom password login first (for users who signed up with OTP and set password)
+      // This will succeed for most users in OTP-only environments
+      passwordLoginMutation.mutate({ email: loginIdentifier, password: loginPassword });
+    } else {
+      // Email code login
+      setPendingIdentifier(loginIdentifier);
+      requestEmailCodeMutation.mutate({
+        email: loginIdentifier,
+        purpose: "login",
+      });
     }
-
-    // Fallback: use OTP email code
-    setPendingIdentifier(loginIdentifier);
-    requestEmailCodeMutation.mutate({
-      email: loginIdentifier,
-      purpose: "login",
-    });
   };
 
   const handleSignup = (e: React.FormEvent) => {
@@ -308,6 +345,32 @@ export default function OTPLogin() {
             <div className="p-8">
               {isLogin && !isResetMode && (
                 <form onSubmit={handleLogin} className="space-y-4">
+                  {/* Login Method Toggle */}
+                  <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setLoginMethod("password")}
+                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                        loginMethod === "password"
+                          ? "bg-white text-[#0033A0] shadow-sm"
+                          : "text-gray-600 hover:text-gray-800"
+                      }`}
+                    >
+                      Password
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginMethod("email-code")}
+                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                        loginMethod === "email-code"
+                          ? "bg-white text-[#0033A0] shadow-sm"
+                          : "text-gray-600 hover:text-gray-800"
+                      }`}
+                    >
+                      Email Code
+                    </button>
+                  </div>
+
                   <div>
                     <Input
                       type="text"
@@ -319,7 +382,7 @@ export default function OTPLogin() {
                     />
                   </div>
 
-                  {supabaseEnabledQuery.data?.enabled ? (
+                  {loginMethod === "password" ? (
                     <div className="relative">
                       <Input
                         type={showLoginPassword ? "text" : "password"}
@@ -338,40 +401,46 @@ export default function OTPLogin() {
                       </button>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-600">We'll send a 6-digit code to your email to verify your login.</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-900">
+                        We'll send a 6-digit code to your email to verify your login.
+                      </p>
+                    </div>
                   )}
                   
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="w-4 h-4 text-[#0033A0] border-gray-300 rounded focus:ring-[#0033A0]"
-                      />
-                      <span className="ml-2 text-sm text-gray-600">Remember me</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleForgotPassword}
-                      className="text-[#0033A0] hover:underline text-sm font-medium"
-                    >
-                      Forgotten account?
-                    </button>
-                  </div>
+                  {loginMethod === "password" && (
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          className="w-4 h-4 text-[#0033A0] border-gray-300 rounded focus:ring-[#0033A0]"
+                        />
+                        <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        className="text-[#0033A0] hover:underline text-sm font-medium"
+                      >
+                        Forgotten account?
+                      </button>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"
-                    disabled={isLoading || supabaseLoginMutation.isPending}
+                    disabled={isLoading || supabaseLoginMutation.isPending || passwordLoginMutation.isPending}
                     className="w-full bg-[#0033A0] hover:bg-[#002080] text-white py-3 rounded-lg font-semibold text-lg transition-all"
                   >
-                    {isLoading || supabaseLoginMutation.isPending ? (
+                    {isLoading || supabaseLoginMutation.isPending || passwordLoginMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        {supabaseEnabledQuery.data?.enabled ? "Logging in..." : "Processing..."}
+                        {loginMethod === "password" ? "Logging in..." : "Sending code..."}
                       </>
                     ) : (
-                      supabaseEnabledQuery.data?.enabled ? "Log In" : "Send Login Code"
+                      loginMethod === "password" ? "Log In with Password" : "Send Login Code"
                     )}
                   </Button>
 

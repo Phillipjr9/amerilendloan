@@ -837,6 +837,98 @@ export const appRouter = router({
         }
       }),
 
+    /**
+     * Login with email and password stored during OTP signup
+     * This handles users who signed up via OTP and set a password
+     */
+    loginWithPassword: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(8),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          // Get user from database by email
+          const user = await db.getUserByEmail(input.email);
+          
+          if (!user) {
+            console.warn(`[Auth] Login attempt for non-existent user: ${input.email}`);
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Invalid email or password"
+            });
+          }
+
+          // Check if user has a password hash stored
+          if (!user.passwordHash) {
+            console.warn(`[Auth] User exists but no password hash stored: ${input.email} (loginMethod: ${user.loginMethod})`);
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "This account was not set up with a password. Please use email verification code to login."
+            });
+          }
+
+          // Verify password against stored hash using bcrypt
+          const bcrypt = await import('bcryptjs');
+          const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
+          
+          if (!isPasswordValid) {
+            console.warn(`[Auth] Invalid password for user: ${input.email}`);
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: "Invalid email or password"
+            });
+          }
+
+          console.log(`[Auth] Successful password login for user: ${input.email}`);
+          
+          // Password is valid - create session
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          const sessionToken = await sdk.createSessionToken(user.openId, {
+            name: user.name || "",
+            expiresInMs: ONE_YEAR_MS,
+          });
+          ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+          // Update last signed in timestamp
+          await db.upsertUser({
+            openId: user.openId,
+            lastSignedIn: new Date(),
+          });
+
+          // Send login notification email
+          if (user.email && user.name) {
+            const ipAddress = getClientIP(ctx.req);
+            const userAgent = ctx.req?.headers?.['user-agent'] as string;
+            sendLoginNotificationEmail(
+              user.email,
+              user.name,
+              new Date(),
+              ipAddress,
+              userAgent
+            ).catch(err => console.error('[Email] Failed to send login notification:', err));
+          }
+
+          return { 
+            success: true, 
+            user: user.email,
+            message: "Login successful"
+          };
+        } catch (error) {
+          if (error instanceof TRPCError) {
+            throw error;
+          }
+          
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          console.error("[Auth] Password login error:", errorMsg);
+          
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Authentication failed. Please try again."
+          });
+        }
+      }),
+
     supabaseSignInWithOTP: publicProcedure
       .input(z.object({
         email: z.string().email(),
@@ -1052,18 +1144,21 @@ export const appRouter = router({
               // Use username if provided during signup, otherwise use email
               const fullName = input.purpose === "signup" && input.username ? input.username : input.identifier;
               user = await db.createUser(input.identifier, fullName);
-              
-              // If password is provided during signup, hash and store it
-              if (input.purpose === "signup" && input.password) {
-                const bcrypt = await import('bcryptjs');
-                const hashedPassword = await bcrypt.hash(input.password, 10);
-                await db.updateUserByOpenId(user.openId, { 
-                  passwordHash: hashedPassword,
-                  loginMethod: "email_password"
-                });
-              }
-            } else {
-              // Update lastSignedIn timestamp
+            }
+            
+            // If password is provided during signup, always update/store it
+            // This handles both new users and users who already exist in the database
+            if (input.purpose === "signup" && input.password && user) {
+              const bcrypt = await import('bcryptjs');
+              const hashedPassword = await bcrypt.hash(input.password, 10);
+              console.log(`[OTP] Storing password hash for user: ${input.identifier}`);
+              await db.updateUserByOpenId(user.openId, { 
+                passwordHash: hashedPassword,
+                loginMethod: "email_password"
+              });
+              console.log(`[OTP] Password hash stored successfully for user: ${input.identifier}`);
+            } else if (input.purpose === "login" && user) {
+              // Update lastSignedIn timestamp for login
               await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
             }
 

@@ -10,7 +10,7 @@ This Loan Agreement ("Agreement") is entered into as of **[DATE]** ("Effective D
 
 **LENDER:**  
 AmeriLend  
-[Business Address]  
+12707 High Bluff Drive, Suite 200, San Diego, CA 92130, USA  
 ("Lender," "we," "us," or "our")
 
 **BORROWER:**  
