@@ -304,6 +304,14 @@ export function validateJsonRequest(
   res: Response,
   next: NextFunction
 ): void {
+  // Skip validation for file upload endpoints or multipart/form-data
+  if (
+    req.path.includes("/upload") ||
+    req.headers["content-type"]?.includes("multipart/form-data")
+  ) {
+    return next();
+  }
+
   // Check Content-Type header
   if (
     req.method !== "GET" &&
