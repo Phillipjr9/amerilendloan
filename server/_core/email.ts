@@ -2330,6 +2330,167 @@ AmeriLend Support Team
 }
 
 /**
+ * Send payment failure notification to user
+ */
+export async function sendPaymentFailureEmail(
+  email: string,
+  fullName: string,
+  trackingNumber: string,
+  amount: number,
+  failureReason: string,
+  paymentMethod: "card" | "crypto" = "card"
+): Promise<void> {
+  const formattedAmount = (amount / 100).toFixed(2);
+  const subject = `Payment Failed - Action Required - AmeriLend Loan #${trackingNumber}`;
+  
+  const failureReasons: Record<string, { title: string; instructions: string }> = {
+    "insufficient_funds": {
+      title: "Insufficient Funds",
+      instructions: "Your account doesn't have enough funds to process this payment. Please ensure your account has at least $" + formattedAmount + " available."
+    },
+    "card_expired": {
+      title: "Card Expired",
+      instructions: "Your card has expired. Please update your payment method with a valid, non-expired card."
+    },
+    "invalid_card": {
+      title: "Invalid Card Information",
+      instructions: "The card information provided is invalid or doesn't match our records. Please verify all card details are correct."
+    },
+    "card_declined": {
+      title: "Card Declined",
+      instructions: "Your card was declined by your financial institution. Please contact your bank or try a different payment method."
+    },
+    "processor_error": {
+      title: "Payment Processor Error",
+      instructions: "A temporary error occurred while processing your payment. Please try again in a few moments."
+    },
+  };
+
+  const errorInfo = failureReasons[failureReason] || {
+    title: "Payment Processing Failed",
+    instructions: failureReason || "An error occurred while processing your payment. Please try again or contact support."
+  };
+
+  const text = `
+Payment Failed Notification
+
+Hello ${fullName},
+
+Unfortunately, your recent payment of $${formattedAmount} for loan application #${trackingNumber} could not be processed.
+
+Failure Reason: ${errorInfo.title}
+Details: ${errorInfo.instructions}
+
+What You Should Do:
+1. Review the failure details above
+2. Update your payment method if needed
+3. Try processing the payment again from your dashboard
+4. Contact our support team if you need assistance
+
+Your loan application will remain in "fee_pending" status until the processing fee payment is completed successfully.
+
+Important: Your application cannot proceed to disbursement until this fee payment is processed.
+
+For questions or assistance, contact us at:
+Email: support@amerilendloan.com
+Phone: Available through your dashboard
+
+Thank you for your business.
+AmeriLend Team
+  `;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333;">
+        ${getEmailHeader()}
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 30px; border-radius: 8px;">
+          
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="background-color: #dc3545; color: white; display: inline-block; padding: 15px 25px; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 32px;">
+              ✕
+            </div>
+          </div>
+
+          <h1 style="color: #dc3545; text-align: center; margin: 20px 0 10px;">Payment Failed</h1>
+          <p style="text-align: center; color: #666; margin-bottom: 30px; font-size: 16px;">
+            We were unable to process your payment for loan application <strong>#${trackingNumber}</strong>
+          </p>
+
+          <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 30px 0; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #721c24; font-size: 16px;">Failure Reason</h3>
+            <p style="margin: 10px 0 0 0; color: #721c24;"><strong>${errorInfo.title}</strong></p>
+            <p style="margin: 10px 0 0 0; color: #721c24; font-size: 14px;">${errorInfo.instructions}</p>
+          </div>
+
+          <div style="background-color: #e7f3ff; border-left: 4px solid #0033A0; padding: 20px; margin: 30px 0; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #0033A0;">Payment Details</h3>
+            <table style="width: 100%; margin-top: 10px;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;"><strong>Amount:</strong></td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #dc3545;">$${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;"><strong>Application:</strong></td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold;">#${trackingNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;"><strong>Payment Method:</strong></td>
+                <td style="padding: 8px 0; text-align: right;">${paymentMethod === "card" ? "Credit/Debit Card" : "Cryptocurrency"}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #f9f9f9; padding: 20px; margin: 30px 0; border-radius: 4px; border: 1px solid #e0e0e0;">
+            <h3 style="margin-top: 0; color: #333; font-size: 16px;">What You Should Do Next</h3>
+            <ol style="margin: 10px 0; padding-left: 20px; color: #555;">
+              <li style="margin-bottom: 10px;">Review the failure reason above</li>
+              <li style="margin-bottom: 10px;">Update your payment method if needed (e.g., renew expired card)</li>
+              <li style="margin-bottom: 10px;">Try processing the payment again from your dashboard</li>
+              <li style="margin-bottom: 0;">Contact support if the issue persists</li>
+            </ol>
+          </div>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 30px 0; border-radius: 4px;">
+            <p style="margin: 0; color: #856404;"><strong>⚠️ Important:</strong> Your loan application cannot proceed to funding until this processing fee is successfully paid. Your application will remain in pending status.</p>
+          </div>
+
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="${COMPANY_INFO.website}/dashboard/payments" style="background-color: #0033A0; color: white; padding: 14px 32px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">Retry Payment</a>
+          </div>
+
+          <hr style="border: none; border-top: 2px solid #f0f0f0; margin: 40px 0;">
+
+          <div style="background-color: #f9f9f9; padding: 20px; border-radius: 4px;">
+            <h4 style="margin-top: 0; color: #0033A0; font-size: 14px;">Need Help?</h4>
+            <p style="margin: 5px 0; color: #666; font-size: 13px;">
+              If you have questions or need assistance:
+            </p>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #666; font-size: 13px;">
+              <li><strong>Email Support:</strong> <a href="mailto:support@amerilendloan.com" style="color: #0033A0;">support@amerilendloan.com</a></li>
+              <li><strong>Visit Dashboard:</strong> <a href="${COMPANY_INFO.website}/dashboard" style="color: #0033A0;">Your Dashboard</a></li>
+              <li><strong>Payment Help:</strong> <a href="${COMPANY_INFO.website}/help/payments" style="color: #0033A0;">Payment FAQ</a></li>
+            </ul>
+          </div>
+
+          <p style="margin-top: 30px; color: #999; font-size: 12px; text-align: center;">
+            This is an automated notification. Please do not reply to this email. For inquiries, contact our support team using the links above.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
+
+/**
  * Send document approval notification to user
  */
 export async function sendDocumentApprovedEmail(
@@ -2672,6 +2833,239 @@ AmeriLend Admin System
   `;
 
   await sendEmail({ to: COMPANY_INFO.admin.email, subject, text, html });
+}
+
+/**
+ * Send check disbursement tracking notification to user
+ */
+export async function sendCheckTrackingNotificationEmail(
+  email: string,
+  fullName: string,
+  trackingNumber: string,
+  trackingCompany: string,
+  checkTrackingNumber: string,
+  loanAmount: number,
+  street?: string,
+  city?: string,
+  state?: string,
+  zipCode?: string
+): Promise<void> {
+  // Generate tracking links based on carrier
+  const trackingLinks: Record<string, { name: string; url: (tn: string) => string }> = {
+    "USPS": {
+      name: "United States Postal Service",
+      url: (tn: string) => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${tn}`
+    },
+    "UPS": {
+      name: "United Parcel Service",
+      url: (tn: string) => `https://www.ups.com/track?tracknum=${tn}`
+    },
+    "FedEx": {
+      name: "Federal Express",
+      url: (tn: string) => `https://tracking.fedex.com/en/tracking/${tn}`
+    },
+    "DHL": {
+      name: "DHL Express",
+      url: (tn: string) => `https://www.dhl.com/en/en/home/tracking.html?tracking-id=${tn}`
+    },
+    "Other": {
+      name: "Your Tracking Company",
+      url: (tn: string) => `#`
+    }
+  };
+
+  const carrier = trackingLinks[trackingCompany] || trackingLinks["Other"];
+  const trackingUrl = trackingCompany !== "Other" ? carrier.url(checkTrackingNumber) : undefined;
+  const formattedAmount = (loanAmount / 100).toFixed(2);
+  
+  // Format delivery address
+  const deliveryAddress = street && city && state && zipCode
+    ? `${street}, ${city}, ${state} ${zipCode}`
+    : "Address on file";
+
+  const subject = `📦 Check Disbursement Tracking - AmeriLend Loan #${trackingNumber}`;
+  const text = `
+Dear ${fullName},
+
+Exciting news! Your check disbursement has been sent and is now in transit. Here are your tracking details:
+
+CHECK DISBURSEMENT TRACKING INFORMATION
+========================================
+
+Recipient Information:
+Name: ${fullName}
+Delivery Address: ${deliveryAddress}
+
+Loan Tracking #: ${trackingNumber}
+Disbursement Amount: $${formattedAmount}
+Shipping Carrier: ${carrier.name}
+Tracking Number: ${checkTrackingNumber}
+Status: In Transit
+
+TRACK YOUR CHECK ONLINE:
+${trackingUrl ? `Visit: ${trackingUrl}` : `Enter your tracking number "${checkTrackingNumber}" on ${carrier.name}'s website`}
+
+IMPORTANT INFORMATION:
+- Your check is being shipped via ${carrier.name}
+- Tracking updates are provided in real-time by ${carrier.name}
+- Typical delivery time: 3-7 business days
+- Please sign for delivery when it arrives
+- If you don't receive your check within 7 business days, please contact us immediately
+
+For questions or concerns about your disbursement, please contact our support team:
+Email: support@amerilendloan.com
+Phone: (945) 212-1609
+
+Thank you for choosing AmeriLend!
+
+Best regards,
+The AmeriLend Disbursement Team
+  `;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333;">
+        ${getEmailHeader()}
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="background-color: #28a745; color: white; display: inline-block; padding: 15px 25px; border-radius: 8px; font-size: 20px; font-weight: bold;">
+              📦 Check In Transit
+            </div>
+          </div>
+
+          <h1 style="margin: 0 0 10px 0; color: #0033A0; text-align: center; font-size: 28px;">Your Check Has Been Shipped</h1>
+          <p style="text-align: center; color: #666; margin-bottom: 30px; font-size: 16px;">
+            Track your disbursement using the tracking information below
+          </p>
+
+          <div style="background-color: #f0f8ff; border-left: 4px solid #0033A0; padding: 25px; margin-bottom: 30px; border-radius: 5px;">
+            <h2 style="margin-top: 0; color: #0033A0; font-size: 18px;">👤 Recipient Information</h2>
+            <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+              <tr style="border-bottom: 1px solid #b3d9ff;">
+                <td style="padding: 12px 0; color: #0033A0;"><strong>Name:</strong></td>
+                <td style="padding: 12px 0; text-align: right;">${fullName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; color: #0033A0;"><strong>Delivery Address:</strong></td>
+                <td style="padding: 12px 0; text-align: right;">${deliveryAddress}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 25px; margin-bottom: 30px; border-radius: 5px;">
+            <h2 style="margin-top: 0; color: #155724; font-size: 18px;">📋 Tracking Details</h2>
+            <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+              <tr style="border-bottom: 1px solid #b8e6c9;">
+                <td style="padding: 12px 0; color: #155724;"><strong>Loan Tracking #:</strong></td>
+                <td style="padding: 12px 0; text-align: right; font-family: monospace; font-weight: bold; color: #0033A0;">${trackingNumber}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #b8e6c9;">
+                <td style="padding: 12px 0; color: #155724;"><strong>Disbursement Amount:</strong></td>
+                <td style="padding: 12px 0; text-align: right; font-size: 18px; font-weight: bold; color: #28a745;">$${formattedAmount}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #b8e6c9;">
+                <td style="padding: 12px 0; color: #155724;"><strong>Shipping Carrier:</strong></td>
+                <td style="padding: 12px 0; text-align: right;"><strong>${carrier.name}</strong></td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; color: #155724;"><strong>Status:</strong></td>
+                <td style="padding: 12px 0; text-align: right; color: #28a745;"><strong>✓ In Transit</strong></td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #e7f3ff; border-left: 4px solid #0033A0; padding: 25px; margin-bottom: 30px; border-radius: 5px;">
+            <h2 style="margin-top: 0; color: #0033A0; font-size: 18px;">🔍 Your Tracking Number</h2>
+            <div style="background-color: white; border: 2px dashed #0033A0; padding: 20px; text-align: center; border-radius: 5px; margin: 15px 0;">
+              <p style="margin: 0; color: #666; font-size: 12px; font-weight: bold; text-transform: uppercase;">${trackingCompany} Tracking Number</p>
+              <p style="margin: 8px 0 0 0; color: #0033A0; font-size: 28px; font-family: monospace; font-weight: bold; word-break: break-all;">${checkTrackingNumber}</p>
+            </div>
+            <p style="margin: 0; color: #555; font-size: 14px; line-height: 1.6;">
+              Save this tracking number to monitor your check's delivery status. You can use it to track your package online or contact ${carrier.name} customer service if you have any questions.
+            </p>
+          </div>
+
+          ${trackingUrl ? `
+          <div style="text-align: center; margin-bottom: 30px;">
+            <a href="${trackingUrl}" style="background-color: #FFA500; color: white; padding: 14px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">
+              Track Your Check Online →
+            </a>
+          </div>
+          ` : `
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 30px; border-radius: 5px;">
+            <p style="margin: 0; color: #856404;"><strong>📌 How to Track:</strong> Visit ${carrier.name}'s website and enter your tracking number "<strong>${checkTrackingNumber}</strong>" to monitor delivery status.</p>
+          </div>
+          `}
+
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
+            <h3 style="margin-top: 0; color: #0033A0; font-size: 18px;">ℹ️ Important Information</h3>
+            <ul style="margin: 15px 0; padding-left: 20px; color: #555; line-height: 2;">
+              <li><strong>Delivery Time:</strong> Typically 3-7 business days from shipment</li>
+              <li><strong>Signature Required:</strong> Please be present to sign for delivery</li>
+              <li><strong>Real-Time Updates:</strong> ${carrier.name} will provide tracking updates automatically</li>
+              <li><strong>Delivery Confirmation:</strong> You will receive an email once delivered</li>
+              <li><strong>Issues?:</strong> Contact us within 7 days if you don't receive your check</li>
+            </ul>
+          </div>
+
+          <div style="background-color: #f0f8ff; border: 1px solid #b3d9ff; padding: 20px; margin-bottom: 30px; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #0033A0;">✓ What to Expect</h3>
+            <ol style="margin: 10px 0; padding-left: 20px; color: #555; line-height: 1.8;">
+              <li>Check is picked up by ${carrier.name}</li>
+              <li>Tracking information becomes available (may take 24 hours)</li>
+              <li>Check moves through ${carrier.name}'s distribution network</li>
+              <li>Delivery attempt to your address</li>
+              <li>You receive and sign for the check</li>
+            </ol>
+          </div>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin-bottom: 30px; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #856404;">⚠️ Important</h3>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #856404; line-height: 1.8;">
+              <li>Be sure to sign for the check upon delivery</li>
+              <li>Do not leave the check unattended</li>
+              <li>If you're not home, ${carrier.name} will leave a notice with delivery instructions</li>
+              <li>Contact support immediately if delivery address is incorrect</li>
+              <li>If the check is not received within 7 business days, please notify us</li>
+            </ul>
+          </div>
+
+          <hr style="border: none; border-top: 2px solid #eee; margin: 30px 0;">
+
+          <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #0033A0; font-size: 16px;">Need Help?</h3>
+            <p style="margin: 5px 0; color: #666; font-size: 14px;">
+              If you have questions about your disbursement or tracking:
+            </p>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #666; font-size: 13px;">
+              <li><strong>AmeriLend Support:</strong> <a href="mailto:support@amerilendloan.com" style="color: #0033A0;">support@amerilendloan.com</a></li>
+              <li><strong>Phone:</strong> (945) 212-1609</li>
+              <li><strong>Carrier Support:</strong> Contact ${carrier.name} with your tracking number for shipping questions</li>
+              <li><strong>Dashboard:</strong> <a href="${COMPANY_INFO.website}/dashboard" style="color: #0033A0;">View Your Loan</a></li>
+            </ul>
+          </div>
+
+          <p style="margin-top: 30px; color: #999; font-size: 12px; text-align: center;">
+            This is an automated notification from AmeriLend. Please do not reply to this email. For inquiries, contact our support team using the information above.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send check tracking notification to ${email}:`, result.error);
+    throw new Error(`Failed to send check tracking notification: ${result.error}`);
+  }
 }
 
 

@@ -263,6 +263,10 @@ export const disbursements = pgTable("disbursements", {
   accountNumber: varchar("accountNumber", { length: 50 }).notNull(),
   routingNumber: varchar("routingNumber", { length: 20 }).notNull(),
   
+  // Check tracking information (optional - for check disbursements)
+  trackingNumber: varchar("trackingNumber", { length: 255 }), // Tracking number for check shipments
+  trackingCompany: varchar("trackingCompany", { length: 50 }), // e.g., "USPS", "UPS", "FedEx"
+  
   // Status tracking
   status: disbursementStatusEnum("status").default("pending").notNull(),
   

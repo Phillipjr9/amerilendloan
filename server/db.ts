@@ -688,6 +688,19 @@ export async function updateDisbursementStatus(
     .where(eq(disbursements.id, id));
 }
 
+export async function updateDisbursementTracking(
+  id: number,
+  trackingNumber: string,
+  trackingCompany: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.update(disbursements)
+    .set({ trackingNumber, trackingCompany, updatedAt: new Date() })
+    .where(eq(disbursements.id, id));
+}
+
 // ============================================
 // Verification Documents Queries
 // ============================================

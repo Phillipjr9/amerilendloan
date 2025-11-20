@@ -12,7 +12,7 @@ import { verifyCryptoTransactionWeb3, getNetworkStatus } from "./_core/web3-veri
 import { legalAcceptances, loanApplications } from "../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { getDb } from "./db";
-import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail, sendAuthorizeNetPaymentConfirmedEmail, sendAdminAuthorizeNetPaymentNotification, sendCryptoPaymentConfirmedEmail, sendAdminCryptoPaymentNotification, sendPaymentReceiptEmail, sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendAdminNewDocumentUploadNotification } from "./_core/email";
+import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail, sendAuthorizeNetPaymentConfirmedEmail, sendAdminAuthorizeNetPaymentNotification, sendCryptoPaymentConfirmedEmail, sendAdminCryptoPaymentNotification, sendPaymentReceiptEmail, sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendAdminNewDocumentUploadNotification, sendPaymentFailureEmail, sendCheckTrackingNotificationEmail } from "./_core/email";
 import { sendPasswordResetConfirmationEmail } from "./_core/password-reset-email";
 import { successResponse, errorResponse, duplicateResponse, ERROR_CODES, HTTP_STATUS } from "./_core/response-handler";
 import { invokeLLM } from "./_core/llm";
@@ -2125,6 +2125,25 @@ export const appRouter = router({
               input.loanApplicationId, 
               "fee_pending"
             );
+
+            // Send payment failure notification email to user (don't block on email failure)
+            const userEmailValue = ctx.user.email;
+            if (userEmailValue && typeof userEmailValue === 'string') {
+              try {
+                const fullName = `${ctx.user.firstName || ""} ${ctx.user.lastName || ""}`.trim() || "Valued Customer";
+                await sendPaymentFailureEmail(
+                  userEmailValue,
+                  fullName,
+                  application!.trackingNumber,
+                  application!.processingFeeAmount,
+                  result.error || "Card payment failed",
+                  "card"
+                );
+              } catch (emailErr) {
+                console.warn("[Email] Failed to send payment failure email:", emailErr);
+                // Don't throw - email failure shouldn't block error response
+              }
+            }
             
             throw new TRPCError({ 
               code: "BAD_REQUEST", 
@@ -2747,6 +2766,63 @@ export const appRouter = router({
         }
 
         return db.getDisbursementByLoanApplicationId(input.loanApplicationId);
+      }),
+
+    // Admin: Update check tracking information
+    adminUpdateTracking: protectedProcedure
+      .input(z.object({
+        disbursementId: z.number(),
+        trackingNumber: z.string().min(1, "Tracking number is required"),
+        trackingCompany: z.enum(["USPS", "UPS", "FedEx", "DHL", "Other"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+
+        const disbursement = await db.getDisbursementById(input.disbursementId);
+        
+        if (!disbursement) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Disbursement not found" });
+        }
+
+        // Update the tracking information
+        await db.updateDisbursementTracking(
+          input.disbursementId,
+          input.trackingNumber,
+          input.trackingCompany
+        );
+
+        // Get user information to send tracking notification email
+        try {
+          const user = await db.getUserById(disbursement.userId);
+          if (user && user.email) {
+            // Get loan application to get the amount and address for email
+            const loanApp = await db.getLoanApplicationById(disbursement.loanApplicationId);
+            
+            // Send tracking notification email to user with address information
+            await sendCheckTrackingNotificationEmail(
+              user.email,
+              user.name || "Valued Customer",
+              disbursement.id.toString(),
+              input.trackingCompany,
+              input.trackingNumber,
+              loanApp?.approvedAmount || 0,
+              loanApp?.street,
+              loanApp?.city,
+              loanApp?.state,
+              loanApp?.zipCode
+            );
+          }
+        } catch (emailError) {
+          console.error(`[Email] Failed to send tracking notification for disbursement ${input.disbursementId}:`, emailError);
+          // Don't throw - email failure shouldn't block the tracking update
+        }
+
+        return { 
+          success: true, 
+          message: `Tracking information updated: ${input.trackingCompany} #${input.trackingNumber}` 
+        };
       }),
   }),
 
