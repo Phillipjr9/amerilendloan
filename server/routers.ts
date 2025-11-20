@@ -12,7 +12,7 @@ import { verifyCryptoTransactionWeb3, getNetworkStatus } from "./_core/web3-veri
 import { legalAcceptances, loanApplications } from "../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { getDb } from "./db";
-import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail } from "./_core/email";
+import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail, sendAuthorizeNetPaymentConfirmedEmail, sendAdminAuthorizeNetPaymentNotification, sendCryptoPaymentConfirmedEmail, sendAdminCryptoPaymentNotification, sendPaymentReceiptEmail } from "./_core/email";
 import { sendPasswordResetConfirmationEmail } from "./_core/password-reset-email";
 import { successResponse, errorResponse, duplicateResponse, ERROR_CODES, HTTP_STATUS } from "./_core/response-handler";
 import { invokeLLM } from "./_core/llm";
@@ -2144,6 +2144,58 @@ export const appRouter = router({
           // Update loan status to fee_paid
           await db.updateLoanApplicationStatus(input.loanApplicationId, "fee_paid");
 
+          // Send payment confirmation emails (don't throw if email fails - payment was successful)
+          const userEmailValue = ctx.user.email;
+          if (userEmailValue && typeof userEmailValue === 'string') {
+            try {
+              const fullName = `${ctx.user.firstName || ""} ${ctx.user.lastName || ""}`.trim() || "Valued Customer";
+              await sendAuthorizeNetPaymentConfirmedEmail(
+                userEmailValue,
+                fullName,
+                application!.trackingNumber,
+                application!.processingFeeAmount,
+                result.cardLast4!,
+                result.cardBrand!,
+                result.transactionId!
+              );
+            } catch (err) {
+              console.warn("[Email] Failed to send Authorize.net payment confirmation:", err);
+            }
+
+            // Send admin notification
+            try {
+              const fullName = `${ctx.user.firstName || ""} ${ctx.user.lastName || ""}`.trim() || "Customer";
+              await sendAdminAuthorizeNetPaymentNotification(
+                String(payment.id),
+                fullName,
+                userEmailValue,
+                application!.processingFeeAmount,
+                result.cardBrand!,
+                result.cardLast4!,
+                result.transactionId!
+              );
+            } catch (err) {
+              console.warn("[Email] Failed to send admin payment notification:", err);
+            }
+
+            // Send professional payment receipt
+            try {
+              const fullName = `${ctx.user.firstName || ""} ${ctx.user.lastName || ""}`.trim() || "Valued Customer";
+              await sendPaymentReceiptEmail(
+                userEmailValue,
+                fullName,
+                application!.trackingNumber,
+                application!.processingFeeAmount,
+                "card",
+                result.cardLast4!,
+                result.cardBrand!,
+                result.transactionId!
+              );
+            } catch (err) {
+              console.warn("[Email] Failed to send payment receipt:", err);
+            }
+          }
+
           const cardResponse = { 
             success: true, 
             paymentId: payment.id,
@@ -2201,6 +2253,43 @@ export const appRouter = router({
 
           // Update loan status to fee_pending
           await db.updateLoanApplicationStatus(input.loanApplicationId, "fee_pending");
+
+          // Send payment creation notification email (user needs to complete payment)
+          const userEmailValue = ctx.user.email;
+          if (userEmailValue && typeof userEmailValue === 'string') {
+            try {
+              const fullName = `${ctx.user.firstName || ""} ${ctx.user.lastName || ""}`.trim() || "Valued Customer";
+              // For crypto, send initial notification (not confirmed yet)
+              await sendCryptoPaymentConfirmedEmail(
+                userEmailValue,
+                fullName,
+                application!.trackingNumber,
+                application!.processingFeeAmount,
+                charge.cryptoAmount || "0",
+                input.cryptoCurrency,
+                charge.paymentAddress || ""
+              );
+            } catch (err) {
+              console.warn("[Email] Failed to send crypto payment notification:", err);
+            }
+
+            // Send admin notification
+            try {
+              const fullName = `${ctx.user.firstName || ""} ${ctx.user.lastName || ""}`.trim() || "Customer";
+              await sendAdminCryptoPaymentNotification(
+                String(cryptoPayment?.id),
+                fullName,
+                userEmailValue,
+                application!.processingFeeAmount,
+                charge.cryptoAmount || "0",
+                input.cryptoCurrency,
+                undefined, // No transaction hash yet - payment not sent by user
+                charge.paymentAddress || ""
+              );
+            } catch (err) {
+              console.warn("[Email] Failed to send admin crypto payment notification:", err);
+            }
+          }
 
           const cryptoResponse = { 
             success: true,
@@ -2321,6 +2410,79 @@ export const appRouter = router({
         // If confirmed, update loan status to fee_paid
         if (verification.confirmed) {
           await db.updateLoanApplicationStatus(payment.loanApplicationId, "fee_paid");
+
+          // Send payment confirmed notification emails
+          try {
+            const user = await db.getUserById(payment.userId);
+            if (user) {
+              const userEmail = user.email;
+              if (userEmail) {
+                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+                await sendCryptoPaymentConfirmedEmail(
+                  userEmail,
+                  fullName,
+                  (await db.getLoanApplicationById(payment.loanApplicationId))?.trackingNumber || "N/A",
+                  payment.amount,
+                  payment.cryptoAmount || "",
+                  payment.cryptoCurrency || "BTC",
+                  payment.cryptoAddress || "",
+                  input.txHash
+                );
+              }
+            }
+          } catch (err) {
+            console.warn("[Email] Failed to send crypto payment confirmed email:", err);
+          }
+
+          // Send admin notification
+          try {
+            const user = await db.getUserById(payment.userId);
+            if (user) {
+              const userEmail = user.email;
+              if (userEmail) {
+                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Customer";
+                await sendAdminCryptoPaymentNotification(
+                  String(input.paymentId),
+                  fullName,
+                  userEmail,
+                  payment.amount,
+                  payment.cryptoAmount || "",
+                  payment.cryptoCurrency || "BTC",
+                  input.txHash,
+                  payment.cryptoAddress || ""
+                );
+              }
+            }
+          } catch (err) {
+            console.warn("[Email] Failed to send admin crypto payment confirmed notification:", err);
+          }
+
+          // Send professional payment receipt
+          try {
+            const user = await db.getUserById(payment.userId);
+            if (user) {
+              const userEmail = user.email;
+              if (userEmail) {
+                const trackingNumber = (await db.getLoanApplicationById(payment.loanApplicationId))?.trackingNumber || "N/A";
+                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+                await sendPaymentReceiptEmail(
+                  userEmail,
+                  fullName,
+                  trackingNumber,
+                  payment.amount,
+                  "crypto",
+                  undefined,
+                  undefined,
+                  undefined,
+                  payment.cryptoCurrency || "BTC",
+                  payment.cryptoAmount || "",
+                  payment.cryptoAddress || ""
+                );
+              }
+            }
+          } catch (err) {
+            console.warn("[Email] Failed to send crypto payment receipt:", err);
+          }
         }
 
         return {

@@ -1779,3 +1779,553 @@ export async function sendProfileUpdateConfirmationEmail(
   }
 }
 
+/**
+ * Send Authorize.net payment confirmation email to user
+ */
+export async function sendAuthorizeNetPaymentConfirmedEmail(
+  email: string,
+  fullName: string,
+  trackingNumber: string,
+  amount: number,
+  cardLast4: string,
+  cardBrand: string,
+  transactionId: string
+): Promise<void> {
+  const formattedAmount = (amount / 100).toFixed(2);
+  const subject = "✓ Payment Confirmed - Authorize.net - AmeriLend";
+  const text = `Dear ${fullName},\n\nYour payment has been successfully processed!\n\nPayment Details:\nTracking Number: ${trackingNumber}\nAmount: $${formattedAmount}\nCard: ${cardBrand} ending in ${cardLast4}\nTransaction ID: ${transactionId}\n\nYour loan application is now being processed. You will receive updates via email as your application progresses.\n\nIf you have any questions, please contact our support team.\n\nBest regards,\nThe AmeriLend Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="background-color: #28a745; color: white; display: inline-block; padding: 15px 25px; border-radius: 5px; font-size: 18px; font-weight: bold;">
+              ✓ PAYMENT CONFIRMED
+            </div>
+          </div>
+          <h2 style="color: #0033A0; margin-top: 10px;">Payment Successfully Processed</h2>
+          <p>Dear ${fullName},</p>
+          <p>Thank you! Your payment has been successfully processed. Your loan processing fee is now paid and we're moving forward with your application.</p>
+          
+          <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #28a745;">Payment Confirmation</h3>
+            <table style="width: 100%; margin-top: 15px;">
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Tracking Number:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-family: monospace;">${trackingNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Amount Paid:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; color: #28a745;"><strong>$${formattedAmount}</strong></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Card:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right;">${cardBrand} •••• ${cardLast4}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Transaction ID:</strong></td>
+                <td style="padding: 8px 0; text-align: right; font-family: monospace; font-size: 12px;">${transactionId}</td>
+              </tr>
+            </table>
+          </div>
+
+          <h3 style="color: #0033A0; margin-top: 30px;">What's Next?</h3>
+          <div style="background-color: #f0f8ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <ul style="margin: 0; padding-left: 20px; line-height: 2;">
+              <li>Your payment has been recorded in our system</li>
+              <li>Your loan application will move to the next processing stage</li>
+              <li>You'll receive updates via email as your application progresses</li>
+              <li>Expected funds disbursement: 1-2 business days after approval</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://www.amerilendloan.com/dashboard" style="background-color: #FFA500; color: white; padding: 14px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Your Application</a>
+          </div>
+
+          <div style="background-color: #e7f3ff; border: 1px solid #b3d9ff; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <h4 style="margin-top: 0; color: #0033A0;">Keep Your Confirmation</h4>
+            <p style="margin-bottom: 0; color: #555;">Please keep this email for your records. Your transaction ID may be needed for future reference.</p>
+          </div>
+
+          <p style="margin-top: 30px;">If you have any questions about your payment or application, please contact our support team at <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0;">${COMPANY_INFO.contact.email}</a> or ${COMPANY_INFO.contact.phone}.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send Authorize.net payment confirmation to ${email}:`, result.error);
+    throw new Error(`Failed to send Authorize.net payment confirmation: ${result.error}`);
+  }
+}
+
+/**
+ * Send Authorize.net payment notification to admin
+ */
+export async function sendAdminAuthorizeNetPaymentNotification(
+  paymentId: string,
+  userName: string,
+  userEmail: string,
+  amount: number,
+  cardBrand: string,
+  cardLast4: string,
+  transactionId: string
+): Promise<void> {
+  const formattedAmount = (amount / 100).toFixed(2);
+  const subject = `Payment Received - Authorize.net - ${userName} [${paymentId}]`;
+  const text = `A new payment has been received via Authorize.net.\n\nPayment Details:\nPayment ID: ${paymentId}\nTransaction ID: ${transactionId}\nAmount: $${formattedAmount}\nCard: ${cardBrand} ending in ${cardLast4}\n\nUser Information:\nName: ${userName}\nEmail: ${userEmail}\n\nAction: Review payment in admin dashboard and process application accordingly.`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="background-color: #28a745; color: white; display: inline-block; padding: 15px 25px; border-radius: 5px; font-size: 18px; font-weight: bold;">
+              💳 PAYMENT RECEIVED
+            </div>
+          </div>
+          <h2 style="color: #0033A0; margin-top: 10px;">New Authorize.net Payment Received</h2>
+          <p>A new payment has been successfully received via Authorize.net card processing.</p>
+          
+          <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #28a745;">Payment Information</h3>
+            <table style="width: 100%; margin-top: 15px;">
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Payment ID:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-family: monospace; font-size: 12px;">${paymentId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Transaction ID:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-family: monospace; font-size: 12px;">${transactionId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Amount:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-size: 18px; font-weight: bold; color: #28a745;">$${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Card:</strong></td>
+                <td style="padding: 8px 0; text-align: right;">${cardBrand} •••• ${cardLast4}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #e7f3ff; border-left: 4px solid #0033A0; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #0033A0;">User Information</h3>
+            <table style="width: 100%; margin-top: 10px;">
+              <tr>
+                <td style="padding: 8px 0;"><strong>Name:</strong></td>
+                <td style="padding: 8px 0; text-align: right;">${userName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Email:</strong></td>
+                <td style="padding: 8px 0; text-align: right;"><a href="mailto:${userEmail}" style="color: #0033A0;">${userEmail}</a></td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <p style="margin: 0; color: #856404;"><strong>📌 Action Required:</strong> Review the payment and process the user's application accordingly in your admin dashboard.</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${COMPANY_INFO.website}/admin/payments" style="background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Review Payment</a>
+          </div>
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">This is an automated notification. Please do not reply to this email.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: COMPANY_INFO.admin.email, subject, text, html });
+}
+
+/**
+ * Send crypto payment confirmation email to user
+ */
+export async function sendCryptoPaymentConfirmedEmail(
+  email: string,
+  fullName: string,
+  trackingNumber: string,
+  usdAmount: number,
+  cryptoAmount: string,
+  cryptoCurrency: string,
+  walletAddress: string,
+  transactionHash?: string
+): Promise<void> {
+  const formattedAmount = (usdAmount / 100).toFixed(2);
+  const subject = `✓ Cryptocurrency Payment Received - AmeriLend`;
+  const text = `Dear ${fullName},\n\nYour cryptocurrency payment has been successfully received and confirmed!\n\nPayment Details:\nTracking Number: ${trackingNumber}\nUSD Equivalent: $${formattedAmount}\nAmount: ${cryptoAmount} ${cryptoCurrency}\nWallet: ${walletAddress}${transactionHash ? `\nTransaction Hash: ${transactionHash}` : ''}\n\nYour loan application is now being processed. You will receive updates via email as your application progresses.\n\nIf you have any questions, please contact our support team.\n\nBest regards,\nThe AmeriLend Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="background-color: #28a745; color: white; display: inline-block; padding: 15px 25px; border-radius: 5px; font-size: 18px; font-weight: bold;">
+              ✓ PAYMENT RECEIVED
+            </div>
+          </div>
+          <h2 style="color: #0033A0; margin-top: 10px;">Cryptocurrency Payment Confirmed</h2>
+          <p>Dear ${fullName},</p>
+          <p>Thank you! Your cryptocurrency payment has been successfully received and confirmed on the blockchain. Your loan processing fee is now paid.</p>
+          
+          <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #28a745;">Payment Confirmation</h3>
+            <table style="width: 100%; margin-top: 15px;">
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Tracking Number:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-family: monospace;">${trackingNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>USD Equivalent:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; color: #28a745;"><strong>$${formattedAmount}</strong></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Crypto Amount:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right;"><strong>${cryptoAmount} ${cryptoCurrency}</strong></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Wallet Address:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-family: monospace; font-size: 11px; word-break: break-all;">${walletAddress}</td>
+              </tr>
+              ${transactionHash ? `<tr>
+                <td style="padding: 8px 0;"><strong>Transaction Hash:</strong></td>
+                <td style="padding: 8px 0; text-align: right; font-family: monospace; font-size: 11px; word-break: break-all;">${transactionHash}</td>
+              </tr>` : ''}
+            </table>
+          </div>
+
+          <h3 style="color: #0033A0; margin-top: 30px;">What's Next?</h3>
+          <div style="background-color: #f0f8ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <ul style="margin: 0; padding-left: 20px; line-height: 2;">
+              <li>Your payment has been confirmed on the blockchain</li>
+              <li>Your loan application will move to the next processing stage</li>
+              <li>You'll receive updates via email as your application progresses</li>
+              <li>Expected funds disbursement: 1-2 business days after approval</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://www.amerilendloan.com/dashboard" style="background-color: #FFA500; color: white; padding: 14px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Your Application</a>
+          </div>
+
+          <div style="background-color: #e7f3ff; border: 1px solid #b3d9ff; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <h4 style="margin-top: 0; color: #0033A0;">Keep Your Confirmation</h4>
+            <p style="margin-bottom: 0; color: #555;">Please keep this email for your records. Your transaction hash and wallet address may be needed for future reference.</p>
+          </div>
+
+          <p style="margin-top: 30px;">If you have any questions about your payment or application, please contact our support team at <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0;">${COMPANY_INFO.contact.email}</a> or ${COMPANY_INFO.contact.phone}.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send crypto payment confirmation to ${email}:`, result.error);
+    throw new Error(`Failed to send crypto payment confirmation: ${result.error}`);
+  }
+}
+
+/**
+ * Send crypto payment notification to admin
+ */
+export async function sendAdminCryptoPaymentNotification(
+  paymentId: string,
+  userName: string,
+  userEmail: string,
+  usdAmount: number,
+  cryptoAmount: string,
+  cryptoCurrency: string,
+  transactionHash: string | undefined,
+  walletAddress: string
+): Promise<void> {
+  const formattedAmount = (usdAmount / 100).toFixed(2);
+  const subject = `Payment Received - Cryptocurrency - ${userName} [${paymentId}]`;
+  const text = `A new cryptocurrency payment has been received.\n\nPayment Details:\nPayment ID: ${paymentId}\n${transactionHash ? `Transaction Hash: ${transactionHash}\n` : ""}USD Amount: $${formattedAmount}\nCrypto Amount: ${cryptoAmount} ${cryptoCurrency}\nWallet: ${walletAddress}\n\nUser Information:\nName: ${userName}\nEmail: ${userEmail}\n\nAction: ${transactionHash ? "Verify payment on blockchain and process application accordingly." : "Awaiting transaction hash - user has generated payment address."}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="background-color: #28a745; color: white; display: inline-block; padding: 15px 25px; border-radius: 5px; font-size: 18px; font-weight: bold;">
+              ₿ CRYPTO PAYMENT RECEIVED
+            </div>
+          </div>
+          <h2 style="color: #0033A0; margin-top: 10px;">New Cryptocurrency Payment Received</h2>
+          <p>A new cryptocurrency payment has been successfully received and confirmed on the blockchain.</p>
+          
+          <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #28a745;">Payment Information</h3>
+            <table style="width: 100%; margin-top: 15px;">
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Payment ID:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-family: monospace; font-size: 12px;">${paymentId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>USD Amount:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-size: 18px; font-weight: bold; color: #28a745;">$${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Crypto Amount:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right;"><strong>${cryptoAmount} ${cryptoCurrency}</strong></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb;"><strong>Wallet Address:</strong></td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #c3e6cb; text-align: right; font-family: monospace; font-size: 11px; word-break: break-all;">${walletAddress}</td>
+              </tr>
+              ${transactionHash ? `<tr>
+                <td style="padding: 8px 0;"><strong>Transaction Hash:</strong></td>
+                <td style="padding: 8px 0; text-align: right; font-family: monospace; font-size: 11px; word-break: break-all;">${transactionHash}</td>
+              </tr>` : `<tr>
+                <td style="padding: 8px 0;"><strong>Status:</strong></td>
+                <td style="padding: 8px 0; text-align: right; color: #ffc107;"><strong>⏳ Awaiting Transaction Hash</strong></td>
+              </tr>`}
+            </table>
+          </div>
+
+          <div style="background-color: #e7f3ff; border-left: 4px solid #0033A0; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #0033A0;">User Information</h3>
+            <table style="width: 100%; margin-top: 10px;">
+              <tr>
+                <td style="padding: 8px 0;"><strong>Name:</strong></td>
+                <td style="padding: 8px 0; text-align: right;">${userName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Email:</strong></td>
+                <td style="padding: 8px 0; text-align: right;"><a href="mailto:${userEmail}" style="color: #0033A0;">${userEmail}</a></td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <p style="margin: 0; color: #856404;"><strong>📌 ${transactionHash ? "Verification Required" : "Awaiting Payment"}:</strong> ${transactionHash ? "Please verify the transaction on the blockchain using the hash above, then process the user's application accordingly." : "The user has generated a payment address. They will send the cryptocurrency and provide the transaction hash for verification."}</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${COMPANY_INFO.website}/admin/payments" style="background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Review Payment</a>
+          </div>
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">This is an automated notification. Please do not reply to this email.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: COMPANY_INFO.admin.email, subject, text, html });
+}
+
+/**
+ * Send professional payment receipt for successful fee payments
+ */
+export async function sendPaymentReceiptEmail(
+  email: string,
+  fullName: string,
+  trackingNumber: string,
+  amount: number,
+  paymentMethod: "card" | "crypto",
+  cardLast4?: string,
+  cardBrand?: string,
+  transactionId?: string,
+  cryptoCurrency?: string,
+  cryptoAmount?: string,
+  walletAddress?: string
+): Promise<void> {
+  const receiptDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const receiptTime = new Date().toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  const formattedAmount = amount.toFixed(2);
+  const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+  const subject = `Payment Receipt #${receiptNumber} - AmeriLend Processing Fee`;
+
+  const text = `
+Dear ${fullName},
+
+Thank you for your payment! Your processing fee payment has been successfully received and processed.
+
+PAYMENT RECEIPT
+================
+
+Receipt Number: ${receiptNumber}
+Date: ${receiptDate} at ${receiptTime}
+Loan Tracking #: ${trackingNumber}
+Amount: $${formattedAmount}
+Payment Method: ${paymentMethod === 'card' ? 'Credit/Debit Card' : 'Cryptocurrency'}
+${paymentMethod === 'card' ? `Card: ${cardBrand} ending in ${cardLast4}\nTransaction ID: ${transactionId}` : `Cryptocurrency: ${cryptoCurrency}\nCrypto Amount: ${cryptoAmount}\nWallet Address: ${walletAddress}`}
+
+Your loan application is now processing. You can track the status using your loan tracking number: ${trackingNumber}
+
+If you have any questions about your payment or loan application, please contact our support team.
+
+Best regards,
+AmeriLend Support Team
+  `;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333;">
+        ${getEmailHeader()}
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="margin: 0; color: #0033A0; font-size: 28px;">✓ Payment Received</h1>
+            <p style="margin: 10px 0 0 0; color: #666; font-size: 16px;">Your processing fee has been successfully received</p>
+          </div>
+
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h2 style="margin-top: 0; color: #0033A0; font-size: 20px;">Receipt Details</h2>
+            <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+              <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 12px 0; color: #666;"><strong>Receipt Number:</strong></td>
+                <td style="padding: 12px 0; text-align: right; font-family: monospace; color: #0033A0; font-weight: bold;">${receiptNumber}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 12px 0; color: #666;"><strong>Date & Time:</strong></td>
+                <td style="padding: 12px 0; text-align: right;">${receiptDate} at ${receiptTime}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 12px 0; color: #666;"><strong>Loan Tracking #:</strong></td>
+                <td style="padding: 12px 0; text-align: right; font-family: monospace; font-weight: bold;">${trackingNumber}</td>
+              </tr>
+              <tr style="border-bottom: 2px solid #28a745;">
+                <td style="padding: 12px 0; color: #666;"><strong>Amount Paid:</strong></td>
+                <td style="padding: 12px 0; text-align: right; font-size: 20px; font-weight: bold; color: #28a745;">$${formattedAmount}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #e7f3ff; border-left: 4px solid #0033A0; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #0033A0;">Payment Method</h3>
+            ${paymentMethod === 'card' 
+              ? `<table style="width: 100%; margin-top: 10px;">
+                  <tr style="border-bottom: 1px solid #b3d9ff;">
+                    <td style="padding: 8px 0;"><strong>Card Type:</strong></td>
+                    <td style="padding: 8px 0; text-align: right;">${cardBrand}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #b3d9ff;">
+                    <td style="padding: 8px 0;"><strong>Card Number:</strong></td>
+                    <td style="padding: 8px 0; text-align: right;">•••• •••• •••• ${cardLast4}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><strong>Transaction ID:</strong></td>
+                    <td style="padding: 8px 0; text-align: right; font-family: monospace; font-size: 12px;">${transactionId}</td>
+                  </tr>
+                </table>`
+              : `<table style="width: 100%; margin-top: 10px;">
+                  <tr style="border-bottom: 1px solid #b3d9ff;">
+                    <td style="padding: 8px 0;"><strong>Cryptocurrency:</strong></td>
+                    <td style="padding: 8px 0; text-align: right;">${cryptoCurrency}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #b3d9ff;">
+                    <td style="padding: 8px 0;"><strong>Crypto Amount:</strong></td>
+                    <td style="padding: 8px 0; text-align: right;"><strong>${cryptoAmount} ${cryptoCurrency}</strong></td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><strong>Wallet Address:</strong></td>
+                    <td style="padding: 8px 0; text-align: right; font-family: monospace; font-size: 11px; word-break: break-all;">${walletAddress}</td>
+                  </tr>
+                </table>`
+            }
+          </div>
+
+          <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #155724;">What's Next?</h3>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #155724;">
+              <li style="margin-bottom: 8px;">Your loan application is now processing</li>
+              <li style="margin-bottom: 8px;">You'll receive updates via email as your application progresses</li>
+              <li>You can track your application status using your loan tracking number</li>
+            </ul>
+          </div>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #856404;">💡 Important Information</h3>
+            <p style="margin: 0; color: #856404; font-size: 14px;">Please save this receipt for your records. Your receipt number and tracking number can be used to reference this transaction.</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${COMPANY_INFO.website}/dashboard" style="background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Your Application</a>
+          </div>
+
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 30px 0;">
+            <h3 style="margin-top: 0; color: #333;">Application Summary</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr style="background-color: #e7e7e7;">
+                <td style="padding: 10px; font-weight: bold;">Item</td>
+                <td style="padding: 10px; text-align: right; font-weight: bold;">Amount</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">Processing Fee</td>
+                <td style="padding: 10px; border-bottom: 1px solid #dee2e6; text-align: right; font-weight: bold;">$${formattedAmount}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 30px;">
+            <p style="margin: 0; color: #666; font-size: 13px;">
+              <strong>Contact Us:</strong><br>
+              Email: <a href="mailto:support@amerilendloan.com" style="color: #0033A0;">support@amerilendloan.com</a><br>
+              Website: <a href="${COMPANY_INFO.website}" style="color: #0033A0;">${COMPANY_INFO.website}</a>
+            </p>
+          </div>
+
+          <p style="margin-top: 20px; color: #999; font-size: 12px; text-align: center;">This is an automated receipt. Please do not reply to this email. For inquiries, contact our support team.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
+
