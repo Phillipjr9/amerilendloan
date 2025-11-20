@@ -154,15 +154,30 @@ async function startServer() {
   // Document upload endpoint
   app.post("/api/upload-document", upload.single("file"), async (req, res) => {
     try {
+      console.log("[Upload] Endpoint called");
+
       // Authenticate user from request
-      const user = await sdk.authenticateRequest(req);
+      let user;
+      try {
+        user = await sdk.authenticateRequest(req);
+      } catch (authError) {
+        console.warn("[Upload] Authentication failed:", authError instanceof Error ? authError.message : "");
+        return res.status(401).json({ error: "Unauthorized - please log in again" });
+      }
+
       if (!user) {
+        console.warn("[Upload] No user after authentication");
         return res.status(401).json({ error: "Unauthorized" });
       }
 
+      console.log("[Upload] User authenticated:", user.id);
+
       if (!req.file) {
+        console.warn("[Upload] No file provided in request");
         return res.status(400).json({ error: "No file provided" });
       }
+
+      console.log("[Upload] File received:", { name: req.file.originalname, size: req.file.size, mime: req.file.mimetype });
 
       let url: string;
       
@@ -170,34 +185,43 @@ async function startServer() {
       if (ENV.forgeApiUrl && ENV.forgeApiKey) {
         try {
           const key = `verification-documents/${user.id}/${Date.now()}-${req.file.originalname}`;
+          console.log("[Upload] Uploading to storage:", key);
+          
           const { url: storageUrl } = await storagePut(
             key,
             req.file.buffer,
             req.file.mimetype
           );
           url = storageUrl;
+          console.log("[Upload] Storage upload successful, URL length:", url.length);
         } catch (storageError) {
-          console.warn("[Upload] Storage failed, using fallback:", storageError instanceof Error ? storageError.message : "");
+          const errorMsg = storageError instanceof Error ? storageError.message : String(storageError);
+          console.warn("[Upload] Storage failed, using fallback:", errorMsg);
           // Fallback: convert to base64 data URL
           url = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+          console.log("[Upload] Using base64 fallback, URL length:", url.length);
         }
       } else {
         // No external storage configured, use base64 data URL as fallback
-        console.warn("[Upload] Storage not configured, using base64 fallback");
+        console.warn("[Upload] Storage not configured (missing FORGE_API_URL or FORGE_API_KEY), using base64 fallback");
         url = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
       }
 
-      res.json({ 
+      const response = { 
         success: true,
         url, 
         fileName: req.file.originalname,
         fileSize: req.file.size,
         mimeType: req.file.mimetype,
-      });
+      };
+
+      console.log("[Upload] Sending response with URL");
+      res.json(response);
     } catch (error) {
-      console.error("[Upload] Document upload error:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error("[Upload] Document upload error:", errorMsg, error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : "Upload failed",
+        error: errorMsg || "Upload failed",
       });
     }
   });

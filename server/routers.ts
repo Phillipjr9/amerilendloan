@@ -2674,39 +2674,51 @@ export const appRouter = router({
           "tax_return",
           "other"
         ]),
-        fileName: z.string(),
-        filePath: z.string(),
-        fileSize: z.number(),
-        mimeType: z.string(),
+        fileName: z.string().min(1, "File name is required"),
+        filePath: z.string().min(1, "File path/URL is required"),
+        fileSize: z.number().min(1, "File size must be greater than 0"),
+        mimeType: z.string().min(1, "MIME type is required"),
         loanApplicationId: z.number().optional(),
         expiryDate: z.string().optional(),
         documentNumber: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        await db.createVerificationDocument({
-          userId: ctx.user.id,
-          documentType: input.documentType,
-          fileName: input.fileName,
-          filePath: input.filePath,
-          fileSize: input.fileSize,
-          mimeType: input.mimeType,
-          loanApplicationId: input.loanApplicationId,
-          expiryDate: input.expiryDate,
-          documentNumber: input.documentNumber,
-        });
+        try {
+          console.log("[tRPC] uploadDocument called for user:", ctx.user.id, "Document type:", input.documentType);
 
-        // Send admin notification email in background
-        if (ctx.user.email && ctx.user.name) {
-          sendAdminDocumentUploadNotification(
-            ctx.user.name,
-            ctx.user.email,
-            input.documentType,
-            input.fileName,
-            new Date()
-          ).catch(err => console.error('[Email] Failed to send admin document notification:', err));
+          const result = await db.createVerificationDocument({
+            userId: ctx.user.id,
+            documentType: input.documentType,
+            fileName: input.fileName,
+            filePath: input.filePath,
+            fileSize: input.fileSize,
+            mimeType: input.mimeType,
+            loanApplicationId: input.loanApplicationId,
+            expiryDate: input.expiryDate,
+            documentNumber: input.documentNumber,
+          });
+
+          console.log("[tRPC] Document created successfully, ID:", (result as any).insertId);
+
+          // Send admin notification email in background
+          if (ctx.user.email && ctx.user.name) {
+            sendAdminDocumentUploadNotification(
+              ctx.user.name,
+              ctx.user.email,
+              input.documentType,
+              input.fileName,
+              new Date()
+            ).catch(err => console.error('[Email] Failed to send admin document notification:', err));
+          }
+
+          return { success: true };
+        } catch (error) {
+          console.error('[tRPC] uploadDocument error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: error instanceof Error ? error.message : "Failed to upload document"
+          });
         }
-
-        return { success: true };
       }),
 
     // Get user's uploaded documents

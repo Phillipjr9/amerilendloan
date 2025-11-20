@@ -103,6 +103,21 @@ export default function VerificationUpload() {
       return;
     }
 
+    // Validate file size
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      setUploading(false);
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+    if (!allowedTypes.includes(selectedFile.type)) {
+      toast.error("Only JPEG, PNG, and PDF files are allowed");
+      setUploading(false);
+      return;
+    }
+
     setUploading(true);
 
     try {
@@ -110,29 +125,46 @@ export default function VerificationUpload() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      // Get session token from cookies
-      const sessionToken = document.cookie
-        .split("; ")
-        .find(row => row.startsWith("app_session_id="))
-        ?.split("=")[1];
+      console.log("[Upload] Starting upload for:", selectedFile.name, "Type:", selectedFile.type, "Size:", selectedFile.size);
 
       const uploadResponse = await fetch("/api/upload-document", {
         method: "POST",
         body: formData,
-        headers: {
-          "Authorization": `Bearer ${sessionToken || ""}`,
-        },
         credentials: "include", // Include cookies in request
       });
 
+      console.log("[Upload] Upload endpoint response status:", uploadResponse.status);
+
       if (!uploadResponse.ok) {
-        const error = await uploadResponse.json();
-        throw new Error(error.error || "Storage upload failed");
+        let errorMessage = "Storage upload failed";
+        try {
+          const errorData = await uploadResponse.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          // If response isn't JSON, use status text
+          errorMessage = uploadResponse.statusText || `Upload failed with status ${uploadResponse.status}`;
+        }
+        
+        console.error("[Upload] Upload failed:", errorMessage);
+        throw new Error(errorMessage);
       }
 
-      const uploadedFile = await uploadResponse.json();
-      
+      let uploadedFile;
+      try {
+        uploadedFile = await uploadResponse.json();
+        console.log("[Upload] Upload response received:", { fileName: uploadedFile.fileName, url: uploadedFile.url ? "✓" : "✗" });
+      } catch (parseError) {
+        console.error("[Upload] Failed to parse upload response:", parseError);
+        throw new Error("Invalid response from upload endpoint");
+      }
+
+      if (!uploadedFile.url) {
+        console.error("[Upload] Upload response missing URL");
+        throw new Error("Upload endpoint did not return a file URL");
+      }
+
       // Step 2: Register document in database with URL (not Base64)
+      console.log("[Upload] Registering document in database...");
       await uploadMutation.mutateAsync({
         documentType: selectedType as any,
         fileName: uploadedFile.fileName,
@@ -141,10 +173,12 @@ export default function VerificationUpload() {
         mimeType: uploadedFile.mimeType,
       });
 
+      console.log("[Upload] Document registration complete");
       setUploading(false);
     } catch (error) {
-      console.error("Upload error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to upload document");
+      console.error("[Upload] Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to upload document";
+      toast.error(message);
       setUploading(false);
     }
   };
