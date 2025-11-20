@@ -42,6 +42,7 @@ export default function OTPLogin() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const requestEmailCodeMutation = trpc.otp.requestCode.useMutation({
     onSuccess: () => {
@@ -178,8 +179,13 @@ export default function OTPLogin() {
       return;
     }
 
-    if (signupPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (signupUsername.length > 50) {
+      toast.error("Username must be at most 50 characters");
+      return;
+    }
+
+    if (signupPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
       return;
     }
 
@@ -251,6 +257,8 @@ export default function OTPLogin() {
       purpose: isResetMode ? "reset" : isLogin ? "login" : "signup",
       // Include password for signup flow to store it in database
       password: !isLogin && !isResetMode ? signupPassword : undefined,
+      // Include username for signup flow
+      username: !isLogin && !isResetMode ? signupUsername : undefined,
     });
   };
 
@@ -451,7 +459,7 @@ export default function OTPLogin() {
                       onChange={(e) => setSignupPassword(e.target.value)}
                       className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
                       required
-                      minLength={6}
+                      minLength={8}
                     />
                     <button
                       type="button"
@@ -522,7 +530,7 @@ export default function OTPLogin() {
 
               <div className="relative">
                 <Input
-                  type={showNewPassword ? "text" : "password"}
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm new password"
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
@@ -532,10 +540,10 @@ export default function OTPLogin() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-3 text-gray-500 hover:text-[#0033A0]"
                 >
-                  {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
 

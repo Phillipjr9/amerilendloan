@@ -65,9 +65,11 @@ trpc.otp.requestCode.useMutation({
 
 ```typescript
 trpc.otp.verifyCode.useMutation({
-  email: "user@example.com",
+  identifier: "user@example.com",
   code: "123456",
-  purpose: "login" | "signup"
+  purpose: "login" | "signup" | "reset",
+  password: "optional_password_for_signup", // Optional: password to store during signup
+  username: "optional_username_for_signup" // Optional: username to store during signup
 })
 ```
 
@@ -76,13 +78,20 @@ trpc.otp.verifyCode.useMutation({
 2. Checks if code has expired
 3. Verifies code matches
 4. Marks code as verified (prevents reuse)
-5. Creates user session (for login)
-6. Returns success or error
+5. For signup: Creates user with optional username and password (if provided)
+6. For login: Creates user session
+7. Returns success or error
+
+**Signup Details:**
+- If username is provided, it's stored as the user's display name
+- If password is provided, it's hashed and stored for password-based authentication
+- Email becomes the unique identifier for login
 
 **Security Features:**
 - Maximum 5 verification attempts per code
 - Automatic code invalidation after expiration
 - Single-use codes (marked as verified after successful use)
+- Passwords hashed with bcrypt (10 rounds)
 
 ## Frontend Implementation
 

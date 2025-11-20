@@ -12,7 +12,7 @@ import { verifyCryptoTransactionWeb3, getNetworkStatus } from "./_core/web3-veri
 import { legalAcceptances, loanApplications } from "../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { getDb } from "./db";
-import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification } from "./_core/email";
+import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail } from "./_core/email";
 import { sendPasswordResetConfirmationEmail } from "./_core/password-reset-email";
 import { successResponse, errorResponse, duplicateResponse, ERROR_CODES, HTTP_STATUS } from "./_core/response-handler";
 import { invokeLLM } from "./_core/llm";
@@ -139,13 +139,43 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         try {
           const userId = ctx.user.id;
+          const userEmail = ctx.user.email;
+          const userName = ctx.user.name || "User";
+          
+          // Get current password hash from database
+          const user = await db.getUserById(userId);
+          if (!user || !user.passwordHash) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Current password not set on this account"
+            });
+          }
+          
+          // Verify current password
+          const bcrypt = await import('bcryptjs');
+          const isPasswordValid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+          if (!isPasswordValid) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Current password is incorrect"
+            });
+          }
           
           // Hash the new password
-          const bcrypt = await import('bcryptjs');
           const newPasswordHash = await bcrypt.hash(input.newPassword, 10);
           
           // Update password in database
           await db.updateUserPassword(userId, newPasswordHash);
+          
+          // Send password change confirmation email
+          try {
+            if (userEmail) {
+              await sendPasswordChangeConfirmationEmail(userEmail, userName);
+            }
+          } catch (emailErr) {
+            console.error('[Email] Failed to send password change notification:', emailErr);
+            // Don't throw - email notification is not critical
+          }
           
           // Log the activity
           await db.logAccountActivity({
@@ -158,6 +188,7 @@ export const appRouter = router({
           
           return { success: true, message: 'Password updated successfully' };
         } catch (error) {
+          if (error instanceof TRPCError) throw error;
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to update password"
@@ -187,6 +218,15 @@ export const appRouter = router({
           });
           
           // Send notification email to old and new addresses
+          try {
+            if (ctx.user.email) {
+              const changesDescription = `Your email has been changed from ${ctx.user.email} to ${input.newEmail}.\n\nIf you did not make this change, please contact support immediately.`;
+              await sendProfileUpdateConfirmationEmail(ctx.user.email, ctx.user.name || 'User', changesDescription);
+            }
+          } catch (emailErr) {
+            console.error('[Email] Failed to send profile update notification:', emailErr);
+          }
+          
           await sendEmailChangeNotification(ctx.user.email || '', input.newEmail, ctx.user.name || 'User');
           
           // Send admin notification for email change
@@ -228,6 +268,14 @@ export const appRouter = router({
           
           // Send bank update notification
           if (ctx.user.email) {
+            // Send profile update confirmation
+            try {
+              const changesDescription = `Bank Account Holder Name: ${input.bankAccountHolderName}\nAccount Type: ${input.bankAccountType}\n\nThe last 4 digits of the account number are secured.`;
+              await sendProfileUpdateConfirmationEmail(ctx.user.email, ctx.user.name || 'User', changesDescription);
+            } catch (emailErr) {
+              console.error('[Email] Failed to send profile update notification:', emailErr);
+            }
+            
             await sendBankInfoChangeNotification(ctx.user.email, ctx.user.name || 'User');
             
             // Send admin notification for bank info change
@@ -958,6 +1006,7 @@ export const appRouter = router({
         code: z.string().length(6),
         purpose: z.enum(["signup", "login", "reset"]),
         password: z.string().optional(), // Optional password for signup
+        username: z.string().min(3).max(50).optional(), // Optional username for signup
       }))
       .mutation(async ({ input, ctx }) => {
         const result = await verifyOTP(input.identifier, input.code, input.purpose);
@@ -1000,7 +1049,9 @@ export const appRouter = router({
             
             if (!user) {
               // Create a user for email-based OTP auth
-              user = await db.createUser(input.identifier);
+              // Use username if provided during signup, otherwise use email
+              const fullName = input.purpose === "signup" && input.username ? input.username : input.identifier;
+              user = await db.createUser(input.identifier, fullName);
               
               // If password is provided during signup, hash and store it
               if (input.purpose === "signup" && input.password) {

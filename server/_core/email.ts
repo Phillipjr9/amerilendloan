@@ -1662,3 +1662,120 @@ export async function sendAdminBankInfoChangeNotification(
   await sendEmail({ to: COMPANY_INFO.admin.email, subject, text, html });
 }
 
+/**
+ * Send password change confirmation email to user
+ */
+export async function sendPasswordChangeConfirmationEmail(
+  email: string,
+  userName: string
+): Promise<void> {
+  const subject = "Password Changed Successfully - AmeriLend";
+  const text = `Dear ${userName},\n\nYour password has been successfully changed. If you did not make this change, please contact us immediately at support@amerilendloan.com.\n\nFor security reasons, we recommend:\n- Using a strong, unique password\n- Never sharing your password with anyone\n- Logging out of all devices if you suspect unauthorized access\n\nBest regards,\nThe AmeriLend Security Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="background-color: #28a745; color: white; display: inline-block; padding: 15px 25px; border-radius: 5px; font-size: 18px; font-weight: bold;">
+              ✓ Password Changed
+            </div>
+          </div>
+
+          <h2 style="color: #0033A0; margin-top: 10px;">Your Password Has Been Changed</h2>
+          <p style="font-size: 16px; color: #555;">Hi ${userName},</p>
+          <p style="font-size: 16px; color: #555;">Your password was successfully changed on your AmeriLend account. If you did not make this change, please secure your account immediately.</p>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #856404;">⚠️ Security Reminder</h3>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #856404;">
+              <li>Use a strong, unique password (at least 8 characters with numbers and special characters)</li>
+              <li>Never share your password with anyone</li>
+              <li>If you notice suspicious activity, change your password immediately</li>
+              <li>Log out of all devices if you suspect unauthorized access</li>
+            </ul>
+          </div>
+
+          <div style="background-color: #e3f2fd; border-left: 4px solid #0033A0; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <p style="margin: 0; color: #1565c0;">
+              <strong>Questions?</strong> Contact our support team at <a href="mailto:support@amerilendloan.com" style="color: #0033A0;">support@amerilendloan.com</a> or call <strong>(945) 212-1609</strong>
+            </p>
+          </div>
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">This is an automated security notification. Please do not reply to this email.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send password change confirmation to ${email}:`, result.error);
+    throw new Error(`Failed to send password change confirmation: ${result.error}`);
+  }
+}
+
+/**
+ * Send profile update confirmation email to user
+ */
+export async function sendProfileUpdateConfirmationEmail(
+  email: string,
+  userName: string,
+  changesDescription: string
+): Promise<void> {
+  const subject = "Profile Information Updated - AmeriLend";
+  const text = `Dear ${userName},\n\nYour profile information has been successfully updated:\n\n${changesDescription}\n\nIf you did not make this change, please contact us immediately at support@amerilendloan.com.\n\nBest regards,\nThe AmeriLend Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="background-color: #0033A0; color: white; display: inline-block; padding: 15px 25px; border-radius: 5px; font-size: 18px; font-weight: bold;">
+              ✓ Profile Updated
+            </div>
+          </div>
+
+          <h2 style="color: #0033A0; margin-top: 10px;">Your Profile Has Been Updated</h2>
+          <p style="font-size: 16px; color: #555;">Hi ${userName},</p>
+          <p style="font-size: 16px; color: #555;">Your profile information was successfully updated. Here are the changes:</p>
+
+          <div style="background-color: #f0f8ff; border-left: 4px solid #0033A0; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <p style="margin: 0; color: #1565c0; white-space: pre-wrap;">${changesDescription}</p>
+          </div>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <p style="margin: 0; color: #856404;">
+              <strong>⚠️ Unauthorized changes?</strong> If you didn't make these changes, please <a href="https://www.amerilendloan.com/contact" style="color: #856404; text-decoration: underline;">contact us immediately</a>.
+            </p>
+          </div>
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">This is an automated notification. Please do not reply to this email.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send profile update confirmation to ${email}:`, result.error);
+    throw new Error(`Failed to send profile update confirmation: ${result.error}`);
+  }
+}
+
