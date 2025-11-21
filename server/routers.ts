@@ -2240,21 +2240,7 @@ export const appRouter = router({
           details: JSON.stringify({ approvedAmount: input.approvedAmount }),
         });
 
-        // Send approval notification email to user
-        const user = await db.getUserById(application.userId);
-        if (user?.email) {
-          await sendApplicationApprovedNotificationEmail(
-            user.email,
-            user.name || user.email,
-            application.trackingNumber || `APP-${input.id}`,
-            input.approvedAmount,
-            processingFeeAmount,
-            input.adminNotes
-          ).catch((error) => {
-            console.error("Failed to send approval notification email:", error);
-            // Don't throw - email failure shouldn't fail the approval
-          });
-        }
+        // Note: Approval email is sent automatically by updateLoanApplicationStatus in db.ts
 
         return { success: true, processingFeeAmount };
       }),
