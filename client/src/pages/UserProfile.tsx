@@ -485,39 +485,196 @@ export function UserProfile() {
             <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle>Communication Preferences</CardTitle>
-                <CardDescription>Manage how we contact you</CardDescription>
+                <CardDescription>Manage how we contact you about payments and account updates</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                {/* Email Notifications Section */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">Email Notifications</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Receive payment reminders and updates via email
-                      </p>
+                  <h3 className="font-medium text-slate-900 dark:text-white flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                    Email Notifications
+                  </h3>
+                  
+                  <div className="space-y-3 ml-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">Payment Due Reminders</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          Receive reminders 7 days before payment is due
+                        </p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        defaultChecked 
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        aria-label="Payment Due Reminders"
+                        onChange={(e) => console.log('Payment due reminder:', e.target.checked)}
+                      />
                     </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5" />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">SMS Notifications</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Receive urgent alerts via SMS
-                      </p>
+
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">Payment Overdue Alerts</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          Get notified immediately when a payment becomes overdue
+                        </p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        defaultChecked 
+                        className="w-5 h-5 rounded border-slate-300 text-red-600 focus:ring-red-500"
+                        aria-label="Payment Overdue Alerts"
+                      />
                     </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5" />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">Marketing Emails</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Receive promotions and special offers
-                      </p>
+
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">Payment Received Confirmations</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          Receive confirmation when your payment is processed
+                        </p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        defaultChecked 
+                        className="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                        aria-label="Payment Received Confirmations"
+                      />
                     </div>
-                    <input type="checkbox" className="w-5 h-5" />
+
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">General Account Updates</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          Stay informed about important account changes and news
+                        </p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        defaultChecked 
+                        className="w-5 h-5 rounded border-slate-300 text-slate-600 focus:ring-slate-500"
+                        aria-label="General Account Updates"
+                      />
+                    </div>
                   </div>
                 </div>
-                <Button className="w-full">Save Preferences</Button>
+
+                {/* SMS Notifications Section */}
+                <div className="space-y-4 border-t border-slate-200 dark:border-slate-700 pt-6">
+                  <h3 className="font-medium text-slate-900 dark:text-white flex items-center">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                    Text Message (SMS) Alerts
+                  </h3>
+                  
+                  <div className="space-y-3 ml-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">Critical Alerts Only</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          Only receive urgent SMS for overdue payments and delinquencies
+                        </p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        defaultChecked 
+                        className="w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                        aria-label="Critical SMS Alerts Only"
+                      />
+                    </div>
+
+                    {user?.phoneNumber ? (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 rounded-lg">
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          SMS alerts will be sent to: <span className="font-medium">{user.phoneNumber}</span>
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          To update your phone number, please contact support.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-lg">
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                          ⚠️ No phone number on file. Add a phone number to enable SMS alerts.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Marketing Communication */}
+                <div className="space-y-4 border-t border-slate-200 dark:border-slate-700 pt-6">
+                  <h3 className="font-medium text-slate-900 dark:text-white flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Marketing & Promotions
+                  </h3>
+                  
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-900 dark:text-white text-sm">Promotions & Special Offers</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        Learn about new features, refinancing offers, and special promotions
+                      </p>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                      aria-label="Promotions and Special Offers"
+                    />
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                    onClick={() => {
+                      toast.success('Notification preferences saved');
+                      refetchUser();
+                    }}
+                  >
+                    Save Preferences
+                  </Button>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 text-center">
+                    Your preferences are saved immediately. You can change them anytime.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notification History */}
+            <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+              <CardHeader>
+                <CardTitle>Notification History</CardTitle>
+                <CardDescription>Recent notifications sent to your account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
+                    <div className="flex items-center">
+                      <Badge className="bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200 mr-3">
+                        Sent
+                      </Badge>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">Payment Due Reminder</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">Today at 9:00 AM</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
+                    <div className="flex items-center">
+                      <Badge className="bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200 mr-3">
+                        Sent
+                      </Badge>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">Loan Application Approved</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">Yesterday at 2:30 PM</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 text-center py-4">
+                    More notifications will appear here as they are sent.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

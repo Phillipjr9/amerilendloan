@@ -3068,5 +3068,311 @@ The AmeriLend Disbursement Team
   }
 }
 
+/**
+ * Send payment due reminder email (7 days before due date)
+ */
+export async function sendPaymentDueReminderEmail(
+  email: string,
+  fullName: string,
+  loanNumber: string,
+  dueAmount: number,
+  dueDate: Date,
+  paymentLink?: string
+): Promise<void> {
+  const dueDateFormatted = dueDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const dueAmountFormatted = (dueAmount / 100).toFixed(2);
+
+  const subject = `Payment Due Reminder - ${loanNumber} on ${dueDateFormatted}`;
+  const text = `Dear ${fullName},\n\nThis is a friendly reminder that your loan payment is due on ${dueDateFormatted}.\n\nPayment Details:\nLoan Number: ${loanNumber}\nAmount Due: $${dueAmountFormatted}\nDue Date: ${dueDateFormatted}\n\nPlease make your payment on time to avoid late fees.\n\n${
+    paymentLink ? `Make Payment: ${paymentLink}\n\n` : ""
+  }Best regards,\nThe AmeriLend Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <h2 style="color: #0033A0; margin-top: 0;">Payment Due Reminder</h2>
+          <p>Dear ${fullName},</p>
+          <p>This is a friendly reminder that your loan payment is due soon.</p>
+
+          <div style="background-color: #e3f2fd; padding: 20px; border-left: 4px solid #0033A0; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 5px 0;"><strong>Loan Number:</strong> ${loanNumber}</p>
+            <p style="margin: 5px 0;"><strong>Amount Due:</strong> $${dueAmountFormatted}</p>
+            <p style="margin: 5px 0;"><strong>Due Date:</strong> ${dueDateFormatted}</p>
+          </div>
+
+          <p><strong>Why This Matters:</strong></p>
+          <ul>
+            <li>On-time payments help maintain your credit score</li>
+            <li>Late payments may result in additional fees</li>
+            <li>30+ days late can result in delinquency status</li>
+          </ul>
+
+          ${
+            paymentLink
+              ? `<p style="text-align: center; margin: 30px 0;">
+            <a href="${paymentLink}" style="background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">Make Payment Now</a>
+          </p>`
+              : ""
+          }
+
+          <p>You can also log in to your dashboard to make a payment or set up autopay.</p>
+          <p style="margin-top: 30px; color: #999; font-size: 12px; text-align: center;">
+            This is an automated notification from AmeriLend. Please do not reply to this email. For inquiries, contact our support team.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send payment due reminder to ${email}:`, result.error);
+    throw new Error(`Failed to send payment due reminder: ${result.error}`);
+  }
+}
+
+/**
+ * Send payment overdue alert email (when payment is past due)
+ */
+export async function sendPaymentOverdueAlertEmail(
+  email: string,
+  fullName: string,
+  loanNumber: string,
+  dueAmount: number,
+  daysOverdue: number,
+  originalDueDate: Date,
+  paymentLink?: string
+): Promise<void> {
+  const originalDueDateFormatted = originalDueDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const dueAmountFormatted = (dueAmount / 100).toFixed(2);
+
+  const subject = `⚠️ URGENT: Payment Overdue - ${loanNumber}`;
+  const text = `Dear ${fullName},\n\nYour loan payment is now ${daysOverdue} days overdue.\n\nPayment Details:\nLoan Number: ${loanNumber}\nAmount Due: $${dueAmountFormatted}\nOriginal Due Date: ${originalDueDateFormatted}\nDays Overdue: ${daysOverdue}\n\nIMPORTANT: Please make payment immediately to avoid:\n- Additional late fees\n- Delinquency on your credit report\n- Potential legal action\n\n${
+    paymentLink ? `Make Payment: ${paymentLink}\n\n` : ""
+  }If you are experiencing financial hardship, please contact our support team immediately.\n\nBest regards,\nThe AmeriLend Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <h2 style="color: #d32f2f; margin-top: 0;">⚠️ URGENT: Payment Overdue</h2>
+          <p>Dear ${fullName},</p>
+          <p style="color: #d32f2f; font-weight: bold;">Your loan payment is <strong>${daysOverdue} days overdue</strong>.</p>
+
+          <div style="background-color: #ffebee; padding: 20px; border-left: 4px solid #d32f2f; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 5px 0;"><strong>Loan Number:</strong> ${loanNumber}</p>
+            <p style="margin: 5px 0;"><strong>Amount Due:</strong> $${dueAmountFormatted}</p>
+            <p style="margin: 5px 0;"><strong>Original Due Date:</strong> ${originalDueDateFormatted}</p>
+            <p style="margin: 5px 0;"><strong>Days Overdue:</strong> ${daysOverdue}</p>
+          </div>
+
+          <p style="color: #d32f2f;"><strong>⚠️ Immediate Action Required</strong></p>
+          <p>Please make payment immediately to avoid:</p>
+          <ul style="color: #d32f2f;">
+            <li>Additional late fees and penalties</li>
+            <li>Negative impact on your credit score</li>
+            <li>Delinquency status on your account</li>
+            <li>Potential legal action</li>
+          </ul>
+
+          ${
+            paymentLink
+              ? `<p style="text-align: center; margin: 30px 0;">
+            <a href="${paymentLink}" style="background-color: #d32f2f; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">Pay Now</a>
+          </p>`
+              : ""
+          }
+
+          <p style="background-color: #fff3e0; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <strong>Experiencing Financial Hardship?</strong><br>
+            If you're unable to make a full payment, please <a href="https://amerilendloan.com/support" style="color: #0033A0;">contact our support team</a> to discuss payment options or hardship programs.
+          </p>
+
+          <p style="margin-top: 30px; color: #999; font-size: 12px; text-align: center;">
+            This is an automated notification from AmeriLend. Please do not reply to this email. For urgent inquiries, contact our support team.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send payment overdue alert to ${email}:`, result.error);
+    throw new Error(`Failed to send payment overdue alert: ${result.error}`);
+  }
+}
+
+/**
+ * Send payment received confirmation email
+ */
+export async function sendPaymentReceivedEmail(
+  email: string,
+  fullName: string,
+  loanNumber: string,
+  paymentAmount: number,
+  paymentDate: Date,
+  paymentMethod: string,
+  newBalance?: number
+): Promise<void> {
+  const paymentDateFormatted = paymentDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const paymentAmountFormatted = (paymentAmount / 100).toFixed(2);
+  const newBalanceFormatted = newBalance ? (newBalance / 100).toFixed(2) : "N/A";
+
+  const subject = `Payment Received - ${loanNumber}`;
+  const text = `Dear ${fullName},\n\nWe have received your payment.\n\nPayment Details:\nLoan Number: ${loanNumber}\nAmount Paid: $${paymentAmountFormatted}\nPayment Date: ${paymentDateFormatted}\nPayment Method: ${paymentMethod}\nNew Balance: $${newBalanceFormatted}\n\nThank you for your on-time payment.\n\nBest regards,\nThe AmeriLend Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <h2 style="color: #28a745; margin-top: 0;">✓ Payment Received</h2>
+          <p>Dear ${fullName},</p>
+          <p>Thank you! We have successfully received your payment.</p>
+
+          <div style="background-color: #e8f5e9; padding: 20px; border-left: 4px solid #28a745; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 5px 0;"><strong>Loan Number:</strong> ${loanNumber}</p>
+            <p style="margin: 5px 0;"><strong>Amount Paid:</strong> $${paymentAmountFormatted}</p>
+            <p style="margin: 5px 0;"><strong>Payment Date:</strong> ${paymentDateFormatted}</p>
+            <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${paymentMethod}</p>
+            <p style="margin: 5px 0;"><strong>New Balance:</strong> $${newBalanceFormatted}</p>
+          </div>
+
+          <p>Your payment has been applied to your account. You can view your updated payment schedule and account balance in your dashboard.</p>
+
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="https://amerilendloan.com/payment-history" style="background-color: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">View Payment History</a>
+          </p>
+
+          <p><strong>Next Payment:</strong> Check your dashboard or next reminder email for your next payment due date.</p>
+          <p>Thank you for choosing AmeriLend and for your on-time payment!</p>
+
+          <p style="margin-top: 30px; color: #999; font-size: 12px; text-align: center;">
+            This is an automated notification from AmeriLend. Please do not reply to this email. For inquiries, contact our support team.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send payment received confirmation to ${email}:`, result.error);
+    throw new Error(`Failed to send payment received confirmation: ${result.error}`);
+  }
+}
+
+/**
+ * Send payment failed alert email
+ */
+export async function sendPaymentFailedEmail(
+  email: string,
+  fullName: string,
+  loanNumber: string,
+  paymentAmount: number,
+  failureReason: string,
+  paymentLink?: string
+): Promise<void> {
+  const paymentAmountFormatted = (paymentAmount / 100).toFixed(2);
+
+  const subject = `Payment Failed - Action Required - ${loanNumber}`;
+  const text = `Dear ${fullName},\n\nYour payment attempt failed.\n\nPayment Details:\nLoan Number: ${loanNumber}\nAttempted Amount: $${paymentAmountFormatted}\nReason: ${failureReason}\n\nPlease try again or use a different payment method.\n\n${
+    paymentLink ? `Retry Payment: ${paymentLink}\n\n` : ""
+  }If the problem persists, please contact our support team.\n\nBest regards,\nThe AmeriLend Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <h2 style="color: #ff9800; margin-top: 0;">⚠️ Payment Failed</h2>
+          <p>Dear ${fullName},</p>
+          <p>Unfortunately, your payment attempt was unsuccessful.</p>
+
+          <div style="background-color: #fff3e0; padding: 20px; border-left: 4px solid #ff9800; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 5px 0;"><strong>Loan Number:</strong> ${loanNumber}</p>
+            <p style="margin: 5px 0;"><strong>Attempted Amount:</strong> $${paymentAmountFormatted}</p>
+            <p style="margin: 5px 0;"><strong>Reason:</strong> ${failureReason}</p>
+          </div>
+
+          <p><strong>Next Steps:</strong></p>
+          <ul>
+            <li>Check your payment method for sufficient funds</li>
+            <li>Verify your card or bank account is not expired</li>
+            <li>Try again with a different payment method</li>
+            <li>Contact your bank if you think the decline was a mistake</li>
+          </ul>
+
+          ${
+            paymentLink
+              ? `<p style="text-align: center; margin: 30px 0;">
+            <a href="${paymentLink}" style="background-color: #ff9800; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">Retry Payment</a>
+          </p>`
+              : ""
+          }
+
+          <p style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <strong>Need Help?</strong><br>
+            If the issue persists, please <a href="https://amerilendloan.com/support" style="color: #0033A0;">contact our support team</a> for assistance.
+          </p>
+
+          <p style="margin-top: 30px; color: #999; font-size: 12px; text-align: center;">
+            This is an automated notification from AmeriLend. Please do not reply to this email.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  const result = await sendEmail({ to: email, subject, text, html });
+  if (!result.success) {
+    console.error(`[Email] Failed to send payment failure notification to ${email}:`, result.error);
+    throw new Error(`Failed to send payment failure notification: ${result.error}`);
+  }
+}
 
 

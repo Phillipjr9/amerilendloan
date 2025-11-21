@@ -24,6 +24,9 @@ import SupportCenter from "./pages/SupportCenter";
 import PaymentHistory from "./pages/PaymentHistory";
 import ReferralsAndRewards from "./pages/ReferralsAndRewards";
 import BankAccountManagement from "./pages/BankAccountManagement";
+import AdminUserManagement from "./pages/AdminUserManagement";
+import AdminKYCManagement from "./pages/AdminKYCManagement";
+import AdminSupportManagement from "./pages/AdminSupportManagement";
 
 function Router() {
   return (
@@ -43,6 +46,9 @@ function Router() {
       <Route path={"/bank-accounts"} component={BankAccountManagement} />
       <Route path={"/settings"} component={Settings} />
       <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin/users"} component={AdminUserManagement} />
+      <Route path={"/admin/kyc"} component={AdminKYCManagement} />
+      <Route path={"/admin/support"} component={AdminSupportManagement} />
       <Route path={"/payment/:id"} component={PaymentPage} />
       <Route path={"/otp-login"} component={OTPLogin} />
       <Route path={"/login"} component={OTPLogin} />

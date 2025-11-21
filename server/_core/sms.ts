@@ -81,3 +81,64 @@ export async function sendOTPSMS(phone: string, code: string, purpose: "signup" 
 export async function sendNotificationSMS(phone: string, message: string): Promise<{ success: boolean; error?: string }> {
   return sendSMS(phone, message);
 }
+
+/**
+ * Send payment overdue alert SMS (only SMS alert - more immediate than email)
+ * NOTE: We only send SMS for critical alerts (overdue) to avoid SMS fatigue
+ */
+export async function sendPaymentOverdueAlertSMS(
+  phone: string,
+  loanNumber: string,
+  daysOverdue: number,
+  amount: number
+): Promise<{ success: boolean; error?: string }> {
+  const amountFormatted = (amount / 100).toFixed(2);
+  const message = `URGENT: Your AmeriLend loan ${loanNumber} payment is ${daysOverdue} days overdue. Amount due: $${amountFormatted}. Act now to avoid fees. https://amerilendloan.com/payment-history`;
+  
+  return sendSMS(phone, message);
+}
+
+/**
+ * Send critical delinquency alert SMS (30+ days overdue)
+ */
+export async function sendDelinquencyAlertSMS(
+  phone: string,
+  loanNumber: string,
+  daysOverdue: number,
+  amount: number
+): Promise<{ success: boolean; error?: string }> {
+  const amountFormatted = (amount / 100).toFixed(2);
+  const message = `CRITICAL: Your AmeriLend loan ${loanNumber} is ${daysOverdue} days delinquent. Amount due: $${amountFormatted}. Contact support immediately: https://amerilendloan.com/support`;
+  
+  return sendSMS(phone, message);
+}
+
+/**
+ * Send payment received confirmation SMS
+ * NOTE: Only if user has SMS notifications enabled for confirmations
+ */
+export async function sendPaymentReceivedSMS(
+  phone: string,
+  loanNumber: string,
+  paymentAmount: number
+): Promise<{ success: boolean; error?: string }> {
+  const amountFormatted = (paymentAmount / 100).toFixed(2);
+  const message = `Your AmeriLend payment of $${amountFormatted} for loan ${loanNumber} has been received. Thank you!`;
+  
+  return sendSMS(phone, message);
+}
+
+/**
+ * Send payment failed alert SMS
+ */
+export async function sendPaymentFailedSMS(
+  phone: string,
+  loanNumber: string,
+  amount: number,
+  failureReason: string
+): Promise<{ success: boolean; error?: string }> {
+  const amountFormatted = (amount / 100).toFixed(2);
+  const message = `Payment failed for AmeriLend loan ${loanNumber}. Amount: $${amountFormatted}. Reason: ${failureReason}. Retry: https://amerilendloan.com/payment-history`;
+  
+  return sendSMS(phone, message);
+}

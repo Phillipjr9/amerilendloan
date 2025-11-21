@@ -14,6 +14,7 @@ import { sdk } from "./sdk";
 import { errorHandlerMiddleware, malformedJsonHandler, notFoundHandler, healthCheckHandler, validateJsonRequest } from "./error-handler";
 import { ensureJsonHeaders } from "./response-formatter";
 import { validatePayload, validateContentLength } from "./payload-validator";
+import { initializePaymentNotificationScheduler, shutdownPaymentNotificationScheduler } from "./paymentScheduler";
 
 // Validate critical environment variables at startup
 function validateEnvironment() {
@@ -273,11 +274,25 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
     console.log("[Server] ✅ Server is ready to accept connections");
+    
+    // Initialize background job schedulers
+    try {
+      initializePaymentNotificationScheduler();
+    } catch (error) {
+      console.warn("[Server] Failed to initialize payment notification scheduler:", error);
+      // Don't exit - scheduler is optional
+    }
   });
 
   // Keep the process alive
   process.on('exit', (code) => {
     console.log(`[Server] Process exiting with code ${code}`);
+    // Shutdown schedulers
+    try {
+      shutdownPaymentNotificationScheduler();
+    } catch (error) {
+      console.warn("[Server] Error shutting down payment scheduler:", error);
+    }
   });
 }
 
