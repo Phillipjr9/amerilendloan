@@ -426,6 +426,47 @@ export default function PaymentPage() {
                     </p>
                   </div>
 
+                  {/* Accepted Cards */}
+                  <div className="flex items-center justify-center gap-3 pb-4 border-b">
+                    <span className="text-sm text-muted-foreground mr-2">We accept:</span>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-white border rounded px-2 py-1 h-8 flex items-center">
+                        <svg className="h-5" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect width="48" height="32" rx="4" fill="#1434CB"/>
+                          <path d="M18 10h12v12h-12z" fill="#EB001B"/>
+                          <path d="M20 16c0-2.4 1.1-4.5 2.8-5.9 1.7 1.4 2.8 3.5 2.8 5.9s-1.1 4.5-2.8 5.9c-1.7-1.4-2.8-3.5-2.8-5.9z" fill="#FF5F00"/>
+                        </svg>
+                      </div>
+                      <div className="bg-white border rounded px-2 py-1 h-8 flex items-center">
+                        <svg className="h-5" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect width="48" height="32" rx="4" fill="#00579F"/>
+                          <text x="24" y="20" fontSize="12" fill="white" fontWeight="bold" textAnchor="middle" fontFamily="Arial">VISA</text>
+                        </svg>
+                      </div>
+                      <div className="bg-white border rounded px-2 py-1 h-8 flex items-center">
+                        <svg className="h-5" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect width="48" height="32" rx="4" fill="#016FD0"/>
+                          <text x="24" y="20" fontSize="9" fill="white" fontWeight="bold" textAnchor="middle" fontFamily="Arial">AMEX</text>
+                        </svg>
+                      </div>
+                      <div className="bg-white border rounded px-2 py-1 h-8 flex items-center">
+                        <svg className="h-5" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect width="48" height="32" rx="4" fill="#FF6000"/>
+                          <circle cx="18" cy="16" r="8" fill="#EB001B"/>
+                          <circle cx="30" cy="16" r="8" fill="#F79E1B"/>
+                          <path d="M24 10c1.7 1.4 2.8 3.5 2.8 5.9s-1.1 4.5-2.8 5.9c-1.7-1.4-2.8-3.5-2.8-5.9s1.1-4.5 2.8-5.9z" fill="#FF5F00"/>
+                        </svg>
+                      </div>
+                      <div className="bg-white border rounded px-2 py-1 h-8 flex items-center">
+                        <svg className="h-5" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect width="48" height="32" rx="4" fill="#0079BE"/>
+                          <text x="24" y="12" fontSize="7" fill="white" fontWeight="bold" textAnchor="middle" fontFamily="Arial">discover</text>
+                          <rect x="28" y="16" width="12" height="8" rx="1" fill="#FF6000"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="cardName">Cardholder Name</Label>
