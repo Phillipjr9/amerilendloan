@@ -196,6 +196,83 @@ const userPreferencesRouter = router({
     }),
 });
 
+const userAddressRouter = router({
+  add: protectedProcedure
+    .input(z.object({
+      type: z.enum(['residential', 'business', 'mailing']),
+      street: z.string().min(1, 'Street is required'),
+      city: z.string().min(1, 'City is required'),
+      state: z.string().min(2, 'State is required'),
+      zipCode: z.string().min(5, 'Valid ZIP code is required'),
+      country: z.string().default('US'),
+      isPrimary: z.boolean().default(false),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const result = await db.createAddress({
+          userId: ctx.user.id,
+          ...input,
+          isVerified: false,
+        });
+        return { success: true, data: result };
+      } catch (error) {
+        console.error('Error adding address:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to add address',
+        });
+      }
+    }),
+
+  list: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      return await db.getUserAddresses(ctx.user.id);
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+      return [];
+    }
+  }),
+
+  update: protectedProcedure
+    .input(z.object({
+      addressId: z.number(),
+      type: z.enum(['residential', 'business', 'mailing']).optional(),
+      street: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      zipCode: z.string().optional(),
+      isPrimary: z.boolean().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const { addressId, ...updateData } = input;
+        await db.updateAddress(addressId, updateData);
+        return { success: true };
+      } catch (error) {
+        console.error('Error updating address:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update address',
+        });
+      }
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ addressId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await db.deleteAddress(input.addressId);
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting address:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to delete address',
+        });
+      }
+    }),
+});
+
 const bankAccountRouter = router({
   add: protectedProcedure
     .input(z.object({
@@ -465,6 +542,7 @@ const referralRouter = router({
 const userFeaturesRouter = router({
   devices: userDeviceRouter,
   preferences: userPreferencesRouter,
+  addresses: userAddressRouter,
   bankAccounts: bankAccountRouter,
   kyc: kycRouter,
   loanOffers: loanOfferRouter,

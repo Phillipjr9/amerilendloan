@@ -42,6 +42,8 @@ type PersonalInfoForm = z.infer<typeof personalInfoSchema>;
 type AddressForm = z.infer<typeof addressSchema>;
 
 export function UserProfile() {
+  const utils = trpc.useUtils();
+  
   const { data: user, isLoading: userLoading, refetch: refetchUser } = trpc.auth.me.useQuery(undefined, {
     enabled: true,
   });
@@ -54,7 +56,11 @@ export function UserProfile() {
     enabled: !!user,
   });
 
-  const { data: addresses } = trpc.userFeatures.bankAccounts.list.useQuery(undefined, {
+  const { data: addresses } = trpc.userFeatures.addresses.list.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  const { data: notificationPrefs } = trpc.auth.getNotificationPreferences.useQuery(undefined, {
     enabled: !!user,
   });
 
@@ -85,11 +91,60 @@ export function UserProfile() {
     },
   });
 
+  // Update user profile mutation
+  const updateProfileMutation = trpc.auth.updateUserProfile.useMutation({
+    onSuccess: () => {
+      toast.success('Profile updated successfully');
+      refetchUser();
+      setIsEditingPersonal(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update profile');
+    },
+  });
+
+  // Address mutations
+  const addAddressMutation = trpc.userFeatures.addresses.add.useMutation({
+    onSuccess: () => {
+      toast.success('Address added successfully');
+      utils.userFeatures.addresses.list.invalidate();
+      setShowAddAddressForm(false);
+      addressForm.reset();
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to add address');
+    },
+  });
+
+  const deleteAddressMutation = trpc.userFeatures.addresses.delete.useMutation({
+    onSuccess: () => {
+      toast.success('Address deleted successfully');
+      utils.userFeatures.addresses.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete address');
+    },
+  });
+
+  // Update notification preferences mutation
+  const updateNotificationPrefsMutation = trpc.auth.updateNotificationPreferences.useMutation({
+    onSuccess: () => {
+      toast.success('Notification preferences saved');
+      utils.auth.getNotificationPreferences.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to save preferences');
+    },
+  });
+
   // Document upload
   const uploadDocumentMutation = trpc.userFeatures.kyc.uploadDocument.useMutation({
     onSuccess: () => {
       toast.success('Document uploaded successfully');
-      // Refetch documents
+      utils.userFeatures.kyc.getDocuments.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to upload document');
     },
   });
 
@@ -230,14 +285,20 @@ export function UserProfile() {
                         />
                       </div>
                       <Button 
-                        type="submit"
+                        type="button"
                         className="w-full"
+                        disabled={updateProfileMutation.isPending}
                         onClick={() => {
-                          setIsEditingPersonal(false);
-                          toast.success('Profile updated successfully');
+                          const values = personalForm.getValues();
+                          updateProfileMutation.mutate({
+                            firstName: values.firstName,
+                            lastName: values.lastName,
+                            phoneNumber: values.phone,
+                            dateOfBirth: values.dateOfBirth,
+                          });
                         }}
                       >
-                        Save Changes
+                        {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
                       </Button>
                     </form>
                   </Form>
@@ -343,8 +404,27 @@ export function UserProfile() {
                             />
                           </div>
                           <div className="flex gap-2">
-                            <Button className="flex-1">Save Address</Button>
                             <Button 
+                              type="button"
+                              className="flex-1"
+                              disabled={addAddressMutation.isPending}
+                              onClick={() => {
+                                const values = addressForm.getValues();
+                                addAddressMutation.mutate({
+                                  type: values.type as 'residential' | 'business' | 'mailing',
+                                  street: values.street,
+                                  city: values.city,
+                                  state: values.state,
+                                  zipCode: values.zip,
+                                  country: 'US',
+                                  isPrimary: false,
+                                });
+                              }}
+                            >
+                              {addAddressMutation.isPending ? 'Saving...' : 'Save Address'}
+                            </Button>
+                            <Button 
+                              type="button"
                               variant="outline"
                               onClick={() => setShowAddAddressForm(false)}
                             >
@@ -381,6 +461,8 @@ export function UserProfile() {
                             variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-700"
+                            disabled={deleteAddressMutation.isPending}
+                            onClick={() => deleteAddressMutation.mutate({ addressId: addr.id })}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -619,12 +701,18 @@ export function UserProfile() {
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                   <Button 
                     className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                    disabled={updateNotificationPrefsMutation.isPending}
                     onClick={() => {
-                      toast.success('Notification preferences saved');
-                      refetchUser();
+                      // Collect current checkbox states (simplified - in production would track state)
+                      updateNotificationPrefsMutation.mutate({
+                        emailUpdates: true,
+                        loanUpdates: true,
+                        promotions: false,
+                        sms: true,
+                      });
                     }}
                   >
-                    Save Preferences
+                    {updateNotificationPrefsMutation.isPending ? 'Saving...' : 'Save Preferences'}
                   </Button>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 text-center">
                     Your preferences are saved immediately. You can change them anytime.

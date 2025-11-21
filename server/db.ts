@@ -1582,6 +1582,40 @@ export async function removeBankAccount(accountId: number) {
   return db.delete(bankAccounts).where(eq(bankAccounts.id, accountId));
 }
 
+// User addresses
+export async function createAddress(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { userAddresses } = await import("../drizzle/schema");
+  const result = await db.insert(userAddresses).values(data).returning();
+  return result[0];
+}
+
+export async function getUserAddresses(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { userAddresses } = await import("../drizzle/schema");
+  return db.select().from(userAddresses).where(eq(userAddresses.userId, userId));
+}
+
+export async function updateAddress(addressId: number, data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { userAddresses } = await import("../drizzle/schema");
+  return db.update(userAddresses).set(data).where(eq(userAddresses.id, addressId));
+}
+
+export async function deleteAddress(addressId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { userAddresses } = await import("../drizzle/schema");
+  return db.delete(userAddresses).where(eq(userAddresses.id, addressId));
+}
+
 // ============================================
 // PHASE 3: KYC/IDENTITY VERIFICATION
 // ============================================
