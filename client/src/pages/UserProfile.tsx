@@ -67,6 +67,26 @@ export function UserProfile() {
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
 
+  // Notification preferences state
+  const [emailPaymentDue, setEmailPaymentDue] = useState(true);
+  const [emailPaymentOverdue, setEmailPaymentOverdue] = useState(true);
+  const [emailPaymentReceived, setEmailPaymentReceived] = useState(true);
+  const [emailAccountUpdates, setEmailAccountUpdates] = useState(true);
+  const [smsCriticalAlerts, setSmsCriticalAlerts] = useState(true);
+  const [emailPromotions, setEmailPromotions] = useState(false);
+
+  // Update notification preferences from server data
+  useState(() => {
+    if (notificationPrefs) {
+      setEmailPaymentDue(notificationPrefs.emailUpdates ?? true);
+      setEmailPaymentOverdue(notificationPrefs.emailUpdates ?? true);
+      setEmailPaymentReceived(notificationPrefs.emailUpdates ?? true);
+      setEmailAccountUpdates(notificationPrefs.loanUpdates ?? true);
+      setSmsCriticalAlerts(notificationPrefs.sms ?? true);
+      setEmailPromotions(notificationPrefs.promotions ?? false);
+    }
+  });
+
   // Personal info form
   const personalForm = useForm<PersonalInfoForm>({
     resolver: zodResolver(personalInfoSchema),
@@ -579,10 +599,10 @@ export function UserProfile() {
                       </div>
                       <input 
                         type="checkbox" 
-                        defaultChecked 
+                        checked={emailPaymentDue}
                         className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         aria-label="Payment Due Reminders"
-                        onChange={(e) => console.log('Payment due reminder:', e.target.checked)}
+                        onChange={(e) => setEmailPaymentDue(e.target.checked)}
                       />
                     </div>
 
@@ -595,9 +615,10 @@ export function UserProfile() {
                       </div>
                       <input 
                         type="checkbox" 
-                        defaultChecked 
+                        checked={emailPaymentOverdue}
                         className="w-5 h-5 rounded border-slate-300 text-red-600 focus:ring-red-500"
                         aria-label="Payment Overdue Alerts"
+                        onChange={(e) => setEmailPaymentOverdue(e.target.checked)}
                       />
                     </div>
 
@@ -610,9 +631,10 @@ export function UserProfile() {
                       </div>
                       <input 
                         type="checkbox" 
-                        defaultChecked 
+                        checked={emailPaymentReceived}
                         className="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
                         aria-label="Payment Received Confirmations"
+                        onChange={(e) => setEmailPaymentReceived(e.target.checked)}
                       />
                     </div>
 
@@ -625,9 +647,10 @@ export function UserProfile() {
                       </div>
                       <input 
                         type="checkbox" 
-                        defaultChecked 
+                        checked={emailAccountUpdates}
                         className="w-5 h-5 rounded border-slate-300 text-slate-600 focus:ring-slate-500"
                         aria-label="General Account Updates"
+                        onChange={(e) => setEmailAccountUpdates(e.target.checked)}
                       />
                     </div>
                   </div>
@@ -650,9 +673,10 @@ export function UserProfile() {
                       </div>
                       <input 
                         type="checkbox" 
-                        defaultChecked 
+                        checked={smsCriticalAlerts}
                         className="w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
                         aria-label="Critical SMS Alerts Only"
+                        onChange={(e) => setSmsCriticalAlerts(e.target.checked)}
                       />
                     </div>
 
@@ -691,8 +715,10 @@ export function UserProfile() {
                     </div>
                     <input 
                       type="checkbox" 
+                      checked={emailPromotions}
                       className="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
                       aria-label="Promotions and Special Offers"
+                      onChange={(e) => setEmailPromotions(e.target.checked)}
                     />
                   </div>
                 </div>
@@ -703,12 +729,11 @@ export function UserProfile() {
                     className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                     disabled={updateNotificationPrefsMutation.isPending}
                     onClick={() => {
-                      // Collect current checkbox states (simplified - in production would track state)
                       updateNotificationPrefsMutation.mutate({
-                        emailUpdates: true,
-                        loanUpdates: true,
-                        promotions: false,
-                        sms: true,
+                        emailUpdates: emailPaymentDue || emailPaymentOverdue || emailPaymentReceived,
+                        loanUpdates: emailAccountUpdates,
+                        promotions: emailPromotions,
+                        sms: smsCriticalAlerts,
                       });
                     }}
                   >
