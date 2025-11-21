@@ -630,7 +630,7 @@ export async function getUserPayments(userId: number) {
   return result.map((r) => ({
     ...r.payment,
     loanTrackingNumber: r.loan?.trackingNumber,
-    loanAmount: r.loan?.loanAmount,
+    loanAmount: r.loan?.approvedAmount,
   }));
 }
 
@@ -2529,6 +2529,66 @@ export async function updateNotificationSettings(data: {
     }
   } catch (error) {
     console.error("[db.updateNotificationSettings] Error:", error);
+    return null;
+  }
+}
+
+/**
+ * Crypto Wallet Settings Management
+ */
+export async function getCryptoWalletSettings() {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { cryptoWalletSettings } = await import("../drizzle/schema");
+  
+  try {
+    const [settings] = await db.select().from(cryptoWalletSettings).where(eq(cryptoWalletSettings.isActive, true)).limit(1);
+    return settings || null;
+  } catch (error) {
+    console.error("[db.getCryptoWalletSettings] Error:", error);
+    return null;
+  }
+}
+
+export async function updateCryptoWalletSettings(data: {
+  btcAddress?: string;
+  ethAddress?: string;
+  usdtAddress?: string;
+  usdcAddress?: string;
+  updatedBy?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { cryptoWalletSettings } = await import("../drizzle/schema");
+  
+  try {
+    const existing = await getCryptoWalletSettings();
+    
+    if (existing) {
+      await db.update(cryptoWalletSettings)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(cryptoWalletSettings.id, existing.id));
+      
+      return await getCryptoWalletSettings();
+    } else {
+      await db.insert(cryptoWalletSettings).values({
+        btcAddress: data.btcAddress || null,
+        ethAddress: data.ethAddress || null,
+        usdtAddress: data.usdtAddress || null,
+        usdcAddress: data.usdcAddress || null,
+        isActive: true,
+        updatedBy: data.updatedBy,
+      });
+      
+      return await getCryptoWalletSettings();
+    }
+  } catch (error) {
+    console.error("[db.updateCryptoWalletSettings] Error:", error);
     return null;
   }
 }

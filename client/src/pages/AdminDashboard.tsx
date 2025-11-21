@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import VerificationDocumentsAdmin from "@/components/VerificationDocumentsAdmin";
+import CryptoWalletSettings from "@/components/CryptoWalletSettings";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
@@ -570,11 +571,12 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="applications">Loan Applications</TabsTrigger>
             <TabsTrigger value="tracking">Check Tracking</TabsTrigger>
             <TabsTrigger value="verification">Verification Documents</TabsTrigger>
             <TabsTrigger value="settings">Fee Configuration</TabsTrigger>
+            <TabsTrigger value="crypto">Crypto Wallets</TabsTrigger>
           </TabsList>
 
           {/* Applications Tab */}
@@ -914,6 +916,11 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Crypto Wallet Settings Tab */}
+          <TabsContent value="crypto">
+            <CryptoWalletSettings />
           </TabsContent>
         </Tabs>
       </main>

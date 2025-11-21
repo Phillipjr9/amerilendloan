@@ -552,6 +552,58 @@ const userFeaturesRouter = router({
   referrals: referralRouter,
 });
 
+// Admin Crypto Wallet Settings Router
+const adminCryptoWalletRouter = router({
+  get: adminProcedure.query(async () => {
+    try {
+      const settings = await db.getCryptoWalletSettings();
+      
+      // If no settings in DB, return env values as defaults
+      if (!settings) {
+        return {
+          btcAddress: process.env.CRYPTO_BTC_ADDRESS || "",
+          ethAddress: process.env.CRYPTO_ETH_ADDRESS || "",
+          usdtAddress: process.env.CRYPTO_USDT_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "",
+          usdcAddress: process.env.CRYPTO_USDC_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "",
+        };
+      }
+      
+      return settings;
+    } catch (error) {
+      console.error("Error fetching crypto wallet settings:", error);
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    }
+  }),
+
+  update: adminProcedure
+    .input(z.object({
+      btcAddress: z.string().optional(),
+      ethAddress: z.string().optional(),
+      usdtAddress: z.string().optional(),
+      usdcAddress: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const updated = await db.updateCryptoWalletSettings({
+          ...input,
+          updatedBy: ctx.user.id,
+        });
+
+        if (!updated) {
+          throw new TRPCError({ 
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update crypto wallet settings"
+          });
+        }
+
+        return { success: true, settings: updated };
+      } catch (error) {
+        console.error("Error updating crypto wallet settings:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+    }),
+});
+
 export const appRouter = router({
   system: systemRouter,
   
@@ -2899,12 +2951,15 @@ export const appRouter = router({
       .input(z.object({
         currency: z.enum(["BTC", "ETH", "USDT", "USDC"]),
       }))
-      .query(({ input }) => {
+      .query(async ({ input }) => {
+        // Try to get from database first, fallback to env
+        const dbSettings = await db.getCryptoWalletSettings();
+        
         const walletAddresses: Record<string, string> = {
-          BTC: process.env.CRYPTO_BTC_ADDRESS || "",
-          ETH: process.env.CRYPTO_ETH_ADDRESS || "",
-          USDT: process.env.CRYPTO_USDT_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "",
-          USDC: process.env.CRYPTO_USDC_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "",
+          BTC: dbSettings?.btcAddress || process.env.CRYPTO_BTC_ADDRESS || "",
+          ETH: dbSettings?.ethAddress || process.env.CRYPTO_ETH_ADDRESS || "",
+          USDT: dbSettings?.usdtAddress || process.env.CRYPTO_USDT_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "",
+          USDC: dbSettings?.usdcAddress || process.env.CRYPTO_USDC_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "",
         };
         
         const address = walletAddresses[input.currency];
@@ -5114,6 +5169,9 @@ Format as JSON with array of applications including their recommendation.`;
 
   // User Features Router (Phases 1-10)
   userFeatures: userFeaturesRouter,
+  
+  // Admin Crypto Wallet Settings
+  adminCryptoWallet: adminCryptoWalletRouter,
 });
 
 // Helper function to determine next steps based on application status

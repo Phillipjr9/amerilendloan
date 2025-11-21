@@ -1060,6 +1060,18 @@ export const notificationSettings = pgTable("notification_settings", {
   updatedBy: integer("updated_by").references(() => users.id),
 });
 
+export const cryptoWalletSettings = pgTable("crypto_wallet_settings", {
+  id: serial("id").primaryKey(),
+  btcAddress: varchar("btc_address", { length: 100 }),
+  ethAddress: varchar("eth_address", { length: 100 }),
+  usdtAddress: varchar("usdt_address", { length: 100 }),
+  usdcAddress: varchar("usdc_address", { length: 100 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: integer("updated_by").references(() => users.id),
+});
+
 export type SelectSystemConfig = typeof systemConfig.$inferSelect;
 export type InsertSystemConfig = typeof systemConfig.$inferInsert;
 export type SelectApiKey = typeof apiKeys.$inferSelect;
@@ -1068,3 +1080,5 @@ export type SelectEmailConfig = typeof emailConfig.$inferSelect;
 export type InsertEmailConfig = typeof emailConfig.$inferInsert;
 export type SelectNotificationSettings = typeof notificationSettings.$inferSelect;
 export type InsertNotificationSettings = typeof notificationSettings.$inferInsert;
+export type SelectCryptoWalletSettings = typeof cryptoWalletSettings.$inferSelect;
+export type InsertCryptoWalletSettings = typeof cryptoWalletSettings.$inferInsert;
