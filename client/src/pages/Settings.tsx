@@ -609,19 +609,55 @@ export default function Settings() {
               <CardContent className="space-y-6">
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    Control how you receive updates about your loan applications, payments, and promotions.
+                    <strong>Security notifications are mandatory</strong> to protect your account. You can customize optional notifications below.
                   </p>
                 </div>
 
+                {/* Mandatory Security Notifications */}
                 <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-green-600" />
+                    Security Notifications (Always Active)
+                  </h3>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                    {[
+                      { label: "New Login Alerts", description: "Notifies you when someone logs into your account with location, IP address, device, and browser details" },
+                      { label: "Password Changes", description: "Immediate notification when your password is changed" },
+                      { label: "Email Changes", description: "Alert when your email address is updated" },
+                      { label: "Bank Account Changes", description: "Notification when bank account information is modified" },
+                      { label: "Suspicious Activity", description: "Alerts for unusual account activity" },
+                    ].map(({ label, description }) => (
+                      <div key={label} className="flex items-start gap-3 p-3 bg-white rounded border border-green-300">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center">
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800 text-sm">{label}</p>
+                          <p className="text-xs text-gray-600 mt-1">{description}</p>
+                        </div>
+                        <span className="flex-shrink-0 text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded">
+                          REQUIRED
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Optional Notifications */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900 text-lg">Optional Notifications</h3>
                   {[
                     { key: "emailUpdates" as const, label: "Account & Loan Updates via Email", description: "Receive emails about account changes and loan status" },
                     { key: "loanUpdates" as const, label: "Loan Application Updates", description: "Get notified when your loan status changes" },
                     { key: "promotions" as const, label: "Promotional Offers", description: "Receive information about special offers" },
                     { key: "sms" as const, label: "SMS Notifications", description: "Get text messages for urgent updates" },
                   ].map(({ key, label, description }) => (
-                    <div key={key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div>
+                    <div key={key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                      <div className="flex-1">
                         <p className="font-semibold text-gray-800">{label}</p>
                         <p className="text-sm text-gray-600">{description}</p>
                       </div>
@@ -637,7 +673,7 @@ export default function Settings() {
                             };
                             setNotifications(newNotifications);
                           }}
-                          className="w-5 h-5 rounded border-gray-300 text-[#0033A0]"
+                          className="w-5 h-5 rounded border-gray-300 text-[#0033A0] focus:ring-2 focus:ring-[#0033A0]"
                           aria-label={label}
                         />
                         <span className="sr-only">{label}</span>

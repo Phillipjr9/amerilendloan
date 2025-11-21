@@ -1293,15 +1293,21 @@ export const appRouter = router({
               lastSignedIn: new Date(),
             });
 
-            // Send login notification email
+            // Send login notification email (REQUIRED for security)
             if (user.email && user.user_metadata?.full_name) {
-              sendLoginNotificationEmail(
-                user.email,
-                user.user_metadata.full_name,
-                new Date(),
-                ipAddress,
-                userAgent
-              ).catch(err => console.error('[Email] Failed to send login notification:', err));
+              try {
+                await sendLoginNotificationEmail(
+                  user.email,
+                  user.user_metadata.full_name,
+                  new Date(),
+                  ipAddress,
+                  userAgent
+                );
+                console.log('[Security] Login notification sent to:', user.email);
+              } catch (err) {
+                console.error('[Security] CRITICAL: Failed to send login notification:', err);
+                // Continue login but log the security issue
+              }
             }
           }
 
@@ -1384,17 +1390,23 @@ export const appRouter = router({
             lastSignedIn: new Date(),
           });
 
-          // Send login notification email
+          // Send login notification email (REQUIRED for security)
           if (user.email && user.name) {
             const ipAddress = getClientIP(ctx.req);
             const userAgent = ctx.req?.headers?.['user-agent'] as string;
-            sendLoginNotificationEmail(
-              user.email,
-              user.name,
-              new Date(),
-              ipAddress,
-              userAgent
-            ).catch(err => console.error('[Email] Failed to send login notification:', err));
+            try {
+              await sendLoginNotificationEmail(
+                user.email,
+                user.name,
+                new Date(),
+                ipAddress,
+                userAgent
+              );
+              console.log('[Security] Login notification sent to:', user.email);
+            } catch (err) {
+              console.error('[Security] CRITICAL: Failed to send login notification:', err);
+              // Continue login but log the security issue
+            }
           }
 
           return { 
@@ -1597,7 +1609,7 @@ export const appRouter = router({
           });
         }
         
-        // Send login notification email for login purpose
+        // Send login notification email for login purpose (REQUIRED for security)
         if (input.purpose === "login") {
           const ipAddress = getClientIP(ctx.req);
           const userAgent = ctx.req?.headers?.['user-agent'] as string;
@@ -1607,18 +1619,24 @@ export const appRouter = router({
             const user = await db.getUserByEmailOrPhone(input.identifier);
             
             if (user && user.email && user.name) {
-              // Send email in background, don't block the response
-              sendLoginNotificationEmail(
-                user.email,
-                user.name,
-                new Date(),
-                ipAddress,
-                userAgent
-              ).catch(err => console.error('[Email] Failed to send login notification:', err));
+              // Send login notification - this is a security requirement
+              try {
+                await sendLoginNotificationEmail(
+                  user.email,
+                  user.name,
+                  new Date(),
+                  ipAddress,
+                  userAgent
+                );
+                console.log('[Security] Login notification sent to:', user.email);
+              } catch (emailErr) {
+                console.error('[Security] CRITICAL: Failed to send login notification:', emailErr);
+                // Continue with login but log the security issue
+              }
             }
           } catch (err) {
-            console.error('[Login] Error getting user info for notification:', err);
-            // Don't throw - email notification is not critical to login
+            console.error('[Security] Error getting user info for login notification:', err);
+            // Continue with login - user lookup failure shouldn't block authentication
           }
         }
         // For signup/login, create or fetch user and set our session cookie

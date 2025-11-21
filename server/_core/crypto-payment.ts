@@ -93,12 +93,8 @@ export async function createCryptoCharge(
 }> {
   const config = getCryptoPaymentConfig();
 
-  if (!config.apiKey) {
-    return {
-      success: false,
-      error: "Cryptocurrency payment gateway not configured",
-    };
-  }
+  // Note: We don't require config.apiKey for direct wallet payments
+  // Only needed if using Coinbase Commerce integration
 
   try {
     // Convert USD to crypto

@@ -233,13 +233,13 @@ export default function Home() {
             loop
             muted
             playsInline
-            className="absolute inset-0 w-full h-full object-cover opacity-20"
+            className="absolute inset-0 w-full h-full object-cover opacity-60"
           >
             <source src="/hero-background.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
-          {/* Video Overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0033A0]/80 via-[#0044BB]/70 to-[#0055CC]/80"></div>
+          {/* Video Overlay for better text readability with enhanced blur */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0033A0]/30 via-[#0044BB]/25 to-[#0055CC]/30 backdrop-blur-sm"></div>
         </div>
 
         {/* Decorative Background Elements */}
