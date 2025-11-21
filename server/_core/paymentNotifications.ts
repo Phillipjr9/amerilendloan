@@ -4,7 +4,7 @@
  * Respects user preferences for notification channels
  */
 
-import { db } from "../db";
+import { getUserById, getNotificationPreferences } from "../db";
 import {
   sendPaymentDueReminderEmail,
   sendPaymentOverdueAlertEmail,
@@ -29,7 +29,7 @@ export async function notifyPaymentDueReminder(
   dueDate: Date
 ): Promise<{ success: boolean; errors?: string[] }> {
   try {
-    const user = await db.getUserById(userId);
+    const user = await getUserById(userId);
     if (!user || !user.email) {
       console.warn(`[Payment Notification] User ${userId} not found or has no email`);
       return { success: false, errors: ["User not found or has no email"] };
@@ -37,9 +37,13 @@ export async function notifyPaymentDueReminder(
 
     const errors: string[] = [];
 
-    // Send email (always, if enabled in preferences)
+    // Check email notification preferences
     try {
-      if (user.emailNotificationsEnabled !== false) {
+      const prefs = await getNotificationPreferences(userId);
+      const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
+      
+      // Send email if preference is enabled (default to enabled if not set)
+      if (emailPrefEnabled || prefs.length === 0) {
         await sendPaymentDueReminderEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
@@ -72,28 +76,33 @@ export async function notifyPaymentOverdue(
   loanNumber: string,
   dueAmount: number,
   daysOverdue: number,
-  originalDueDate: Date
+  dueDate: Date
 ): Promise<{ success: boolean; errors?: string[] }> {
   try {
-    const user = await db.getUserById(userId);
+    const user = await getUserById(userId);
     if (!user || !user.email) {
       console.warn(`[Payment Notification] User ${userId} not found or has no email`);
       return { success: false, errors: ["User not found or has no email"] };
     }
 
     const errors: string[] = [];
+    
+    // Get notification preferences
+    const prefs = await getNotificationPreferences(userId);
+    const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
+    const smsPrefEnabled = prefs.some(p => p.preferenceType === "sms" && p.enabled);
 
     // Send email
     try {
-      if (user.emailNotificationsEnabled !== false) {
+      if (emailPrefEnabled || prefs.length === 0) {
         await sendPaymentOverdueAlertEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
           loanNumber,
           dueAmount,
           daysOverdue,
-          originalDueDate,
-          `https://amerilendloan.com/payment-history`
+          dueDate,
+          `https://amerilendloan.com/make-payment`
         );
       }
     } catch (error) {
@@ -102,23 +111,18 @@ export async function notifyPaymentOverdue(
       errors.push(`Email: ${errorMsg}`);
     }
 
-    // Send SMS if phone is available and SMS alerts are enabled
-    if (user.phoneNumber && user.smsNotificationsEnabled !== false) {
+    // Send SMS (only if enabled and phone available)
+    if (user.phoneNumber && smsPrefEnabled) {
       try {
-        const smsResult = await sendPaymentOverdueAlertSMS(
+        await sendPaymentOverdueAlertSMS(
           user.phoneNumber,
           loanNumber,
           daysOverdue,
           dueAmount
         );
-
-        if (!smsResult.success) {
-          console.warn(`[Payment Notification] SMS error for overdue alert:`, smsResult.error);
-          errors.push(`SMS: ${smsResult.error || "Unknown error"}`);
-        }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Unknown error";
-        console.error(`[Payment Notification] Error sending overdue SMS:`, errorMsg);
+        console.error(`[Payment Notification] SMS error for overdue alert:`, errorMsg);
         errors.push(`SMS: ${errorMsg}`);
       }
     }
@@ -126,7 +130,7 @@ export async function notifyPaymentOverdue(
     return { success: errors.length === 0, errors: errors.length > 0 ? errors : undefined };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[Payment Notification] Error sending payment overdue notification:`, errorMsg);
+    console.error(`[Payment Notification] Error sending payment overdue alert:`, errorMsg);
     return { success: false, errors: [errorMsg] };
   }
 }
@@ -142,17 +146,22 @@ export async function notifyDelinquency(
   daysOverdue: number
 ): Promise<{ success: boolean; errors?: string[] }> {
   try {
-    const user = await db.getUserById(userId);
+    const user = await getUserById(userId);
     if (!user || !user.email) {
       console.warn(`[Payment Notification] User ${userId} not found or has no email`);
       return { success: false, errors: ["User not found or has no email"] };
     }
 
     const errors: string[] = [];
+    
+    // Get notification preferences
+    const prefs = await getNotificationPreferences(userId);
+    const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
+    const smsPrefEnabled = prefs.some(p => p.preferenceType === "sms" && p.enabled);
 
     // Send email - even more urgent
     try {
-      if (user.emailNotificationsEnabled !== false) {
+      if (emailPrefEnabled || prefs.length === 0) {
         await sendPaymentOverdueAlertEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
@@ -169,20 +178,15 @@ export async function notifyDelinquency(
       errors.push(`Email: ${errorMsg}`);
     }
 
-    // Send SMS - more aggressive for critical situation
+    // Send SMS - more aggressive for critical situation (even if SMS pref disabled)
     if (user.phoneNumber) {
       try {
-        const smsResult = await sendDelinquencyAlertSMS(
+        await sendDelinquencyAlertSMS(
           user.phoneNumber,
           loanNumber,
           daysOverdue,
           dueAmount
         );
-
-        if (!smsResult.success) {
-          console.warn(`[Payment Notification] SMS error for delinquency alert:`, smsResult.error);
-          errors.push(`SMS: ${smsResult.error || "Unknown error"}`);
-        }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Unknown error";
         console.error(`[Payment Notification] Error sending delinquency SMS:`, errorMsg);
@@ -211,17 +215,22 @@ export async function notifyPaymentReceived(
   newBalance?: number
 ): Promise<{ success: boolean; errors?: string[] }> {
   try {
-    const user = await db.getUserById(userId);
+    const user = await getUserById(userId);
     if (!user || !user.email) {
       console.warn(`[Payment Notification] User ${userId} not found or has no email`);
       return { success: false, errors: ["User not found or has no email"] };
     }
 
     const errors: string[] = [];
+    
+    // Get notification preferences
+    const prefs = await getNotificationPreferences(userId);
+    const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
+    const smsPrefEnabled = prefs.some(p => p.preferenceType === "sms" && p.enabled);
 
     // Send email
     try {
-      if (user.emailNotificationsEnabled !== false) {
+      if (emailPrefEnabled || prefs.length === 0) {
         await sendPaymentReceivedEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
@@ -239,18 +248,13 @@ export async function notifyPaymentReceived(
     }
 
     // Send SMS if user opted in for confirmation SMS (less common)
-    if (user.phoneNumber && user.smsNotificationsEnabled === true && user.smsPaymentConfirmations === true) {
+    if (user.phoneNumber && smsPrefEnabled) {
       try {
-        const smsResult = await sendPaymentReceivedSMS(
+        await sendPaymentReceivedSMS(
           user.phoneNumber,
           loanNumber,
           paymentAmount
         );
-
-        if (!smsResult.success) {
-          console.warn(`[Payment Notification] SMS error for payment confirmation:`, smsResult.error);
-          // Don't add to errors - confirmations are not critical
-        }
       } catch (error) {
         console.warn(`[Payment Notification] Error sending confirmation SMS:`, error);
         // Don't add to errors - confirmations are not critical
@@ -276,17 +280,22 @@ export async function notifyPaymentFailed(
   failureReason: string
 ): Promise<{ success: boolean; errors?: string[] }> {
   try {
-    const user = await db.getUserById(userId);
+    const user = await getUserById(userId);
     if (!user || !user.email) {
       console.warn(`[Payment Notification] User ${userId} not found or has no email`);
       return { success: false, errors: ["User not found or has no email"] };
     }
 
     const errors: string[] = [];
+    
+    // Get notification preferences
+    const prefs = await getNotificationPreferences(userId);
+    const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
+    const smsPrefEnabled = prefs.some(p => p.preferenceType === "sms" && p.enabled);
 
     // Send email
     try {
-      if (user.emailNotificationsEnabled !== false) {
+      if (emailPrefEnabled || prefs.length === 0) {
         await sendPaymentFailedEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
@@ -303,19 +312,14 @@ export async function notifyPaymentFailed(
     }
 
     // Send SMS if phone available and SMS alerts enabled
-    if (user.phoneNumber && user.smsNotificationsEnabled !== false) {
+    if (user.phoneNumber && smsPrefEnabled) {
       try {
-        const smsResult = await sendPaymentFailedSMS(
+        await sendPaymentFailedSMS(
           user.phoneNumber,
           loanNumber,
           paymentAmount,
           failureReason
         );
-
-        if (!smsResult.success) {
-          console.warn(`[Payment Notification] SMS error for payment failed alert:`, smsResult.error);
-          errors.push(`SMS: ${smsResult.error || "Unknown error"}`);
-        }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Unknown error";
         console.error(`[Payment Notification] Error sending payment failed SMS:`, errorMsg);

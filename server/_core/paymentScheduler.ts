@@ -6,7 +6,11 @@
  * - Delinquencies (send critical alerts)
  */
 
-import { db } from "../db";
+import {
+  getPaymentsDueReminder,
+  getOverduePayments,
+  getDelinquentPayments,
+} from "../db";
 import {
   notifyPaymentDueReminder,
   notifyPaymentOverdue,
@@ -153,45 +157,35 @@ class PaymentNotificationScheduler {
     let errors = 0;
 
     try {
-      // Query payment schedules with dueDate = today + 7 days (approximately)
-      // This is a placeholder - actual implementation depends on your DB schema
-      // You would query payment_schedules table where:
-      // - dueDate is approximately today + 7 days
-      // - status is 'pending' or 'not_paid'
-      // - loan is not delinquent
-      // - user has email notifications enabled
+      // Query payments due in approximately 7 days
+      const paymentsDue = await getPaymentsDueReminder(7);
 
-      // For now, log placeholder
-      console.log(
-        "[Payment Scheduler] [PLACEHOLDER] Would check for payments due in 7 days"
-      );
+      for (const payment of paymentsDue) {
+        try {
+          const result = await notifyPaymentDueReminder(
+            payment.userId,
+            payment.trackingNumber,
+            payment.dueAmount,
+            payment.dueDate
+          );
 
-      // Example of what the actual query might look like:
-      // const paymentsDue = await db.query(
-      //   `SELECT ps.*, u.id as userId, u.email, u.firstName, u.lastName, la.trackingNumber
-      //    FROM payment_schedules ps
-      //    JOIN loans la ON ps.loanId = la.id
-      //    JOIN users u ON la.userId = u.id
-      //    WHERE ps.status IN ('pending', 'not_paid')
-      //    AND DATE(ps.dueDate) = DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-      //    AND la.status NOT IN ('delinquent', 'defaulted')
-      //    AND (u.emailNotificationsEnabled IS NULL OR u.emailNotificationsEnabled = true)`
-      // );
-
-      // for (const payment of paymentsDue) {
-      //   try {
-      //     await notifyPaymentDueReminder(
-      //       payment.userId,
-      //       payment.trackingNumber,
-      //       payment.amount,
-      //       new Date(payment.dueDate)
-      //     );
-      //     processed++;
-      //   } catch (error) {
-      //     console.error(`Failed to send reminder for payment ${payment.id}:`, error);
-      //     errors++;
-      //   }
-      // }
+          if (result.success) {
+            processed++;
+          } else {
+            errors++;
+            console.warn(
+              `[Payment Scheduler] Due reminder errors for payment ${payment.paymentId}:`,
+              result.errors
+            );
+          }
+        } catch (error) {
+          console.error(
+            `[Payment Scheduler] Failed to send due reminder for payment ${payment.paymentId}:`,
+            error
+          );
+          errors++;
+        }
+      }
     } catch (error) {
       console.error("[Payment Scheduler] Error in checkPaymentDueReminders:", error);
       errors++;
@@ -216,43 +210,37 @@ class PaymentNotificationScheduler {
     let errors = 0;
 
     try {
-      // Query payment schedules with dueDate in the past
-      // Status: pending/not_paid, 1-29 days overdue
+      // Query payments 1-29 days overdue
+      const overduePayments = await getOverduePayments(1, 29);
 
-      // Example query:
-      // const overduePayments = await db.query(
-      //   `SELECT ps.*, u.id as userId, u.email, u.firstName, u.lastName, u.phone,
-      //           u.smsNotificationsEnabled, la.trackingNumber,
-      //           DATEDIFF(CURDATE(), DATE(ps.dueDate)) as daysOverdue
-      //    FROM payment_schedules ps
-      //    JOIN loans la ON ps.loanId = la.id
-      //    JOIN users u ON la.userId = u.id
-      //    WHERE ps.status IN ('pending', 'not_paid')
-      //    AND ps.dueDate < CURDATE()
-      //    AND DATEDIFF(CURDATE(), DATE(ps.dueDate)) BETWEEN 1 AND 29
-      //    AND la.status NOT IN ('delinquent', 'defaulted')
-      //    AND (u.emailNotificationsEnabled IS NULL OR u.emailNotificationsEnabled = true)`
-      // );
+      for (const payment of overduePayments) {
+        try {
+          const daysOverdue = payment.daysOverdue || 0;
+          const result = await notifyPaymentOverdue(
+            payment.userId,
+            payment.trackingNumber,
+            payment.dueAmount,
+            daysOverdue,
+            payment.dueDate
+          );
 
-      // for (const payment of overduePayments) {
-      //   try {
-      //     await notifyPaymentOverdue(
-      //       payment.userId,
-      //       payment.trackingNumber,
-      //       payment.amount,
-      //       payment.daysOverdue,
-      //       new Date(payment.dueDate)
-      //     );
-      //     processed++;
-      //   } catch (error) {
-      //     console.error(`Failed to send overdue alert for payment ${payment.id}:`, error);
-      //     errors++;
-      //   }
-      // }
-
-      console.log(
-        "[Payment Scheduler] [PLACEHOLDER] Would check for overdue payments (1-29 days)"
-      );
+          if (result.success) {
+            processed++;
+          } else {
+            errors++;
+            console.warn(
+              `[Payment Scheduler] Overdue alert errors for payment ${payment.paymentId}:`,
+              result.errors
+            );
+          }
+        } catch (error) {
+          console.error(
+            `[Payment Scheduler] Failed to send overdue alert for payment ${payment.paymentId}:`,
+            error
+          );
+          errors++;
+        }
+      }
     } catch (error) {
       console.error("[Payment Scheduler] Error in checkPaymentOverdue:", error);
       errors++;
@@ -277,46 +265,40 @@ class PaymentNotificationScheduler {
     let errors = 0;
 
     try {
-      // Query payment schedules with dueDate 30+ days in past
-      // Mark loan as delinquent if not already
+      // Query payments 30+ days overdue
+      const delinquentPayments = await getDelinquentPayments(30);
 
-      // Example query:
-      // const delinquentPayments = await db.query(
-      //   `SELECT ps.*, u.id as userId, u.email, u.firstName, u.lastName, u.phone,
-      //           la.trackingNumber, la.id as loanId,
-      //           DATEDIFF(CURDATE(), DATE(ps.dueDate)) as daysOverdue
-      //    FROM payment_schedules ps
-      //    JOIN loans la ON ps.loanId = la.id
-      //    JOIN users u ON la.userId = u.id
-      //    WHERE ps.status IN ('pending', 'not_paid')
-      //    AND ps.dueDate < CURDATE()
-      //    AND DATEDIFF(CURDATE(), DATE(ps.dueDate)) >= 30
-      //    AND (u.emailNotificationsEnabled IS NULL OR u.emailNotificationsEnabled = true)`
-      // );
+      for (const payment of delinquentPayments) {
+        try {
+          // Send delinquency notification
+          // Note: Actual loan status update would happen in the payments router
+          // based on business logic for marking loans as delinquent
 
-      // for (const payment of delinquentPayments) {
-      //   try {
-      //     // Mark loan as delinquent
-      //     if (payment.loanStatus !== 'delinquent') {
-      //       await db.updateLoanApplicationStatus(payment.loanId, 'delinquent');
-      //     }
+          const daysOverdue = payment.daysOverdue || 0;
+          const result = await notifyDelinquency(
+            payment.userId,
+            payment.trackingNumber,
+            payment.dueAmount,
+            daysOverdue
+          );
 
-      //     await notifyDelinquency(
-      //       payment.userId,
-      //       payment.trackingNumber,
-      //       payment.amount,
-      //       payment.daysOverdue
-      //     );
-      //     processed++;
-      //   } catch (error) {
-      //     console.error(`Failed to send delinquency alert for payment ${payment.id}:`, error);
-      //     errors++;
-      //   }
-      // }
-
-      console.log(
-        "[Payment Scheduler] [PLACEHOLDER] Would check for delinquencies (30+ days)"
-      );
+          if (result.success) {
+            processed++;
+          } else {
+            errors++;
+            console.warn(
+              `[Payment Scheduler] Delinquency alert errors for payment ${payment.paymentId}:`,
+              result.errors
+            );
+          }
+        } catch (error) {
+          console.error(
+            `[Payment Scheduler] Failed to send delinquency alert for payment ${payment.paymentId}:`,
+            error
+          );
+          errors++;
+        }
+      }
     } catch (error) {
       console.error("[Payment Scheduler] Error in checkDelinquencies:", error);
       errors++;

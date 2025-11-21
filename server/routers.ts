@@ -1908,6 +1908,11 @@ export const appRouter = router({
       return db.getLoanApplicationsByUserId(ctx.user.id);
     }),
 
+    // Alias for myApplications (client compatibility)
+    myLoans: protectedProcedure.query(async ({ ctx }) => {
+      return db.getLoanApplicationsByUserId(ctx.user.id);
+    }),
+
     // Get single loan application by ID
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))

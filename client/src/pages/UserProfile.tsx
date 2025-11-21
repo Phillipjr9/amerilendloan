@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,26 +42,19 @@ type PersonalInfoForm = z.infer<typeof personalInfoSchema>;
 type AddressForm = z.infer<typeof addressSchema>;
 
 export function UserProfile() {
-  const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
-    queryKey: ['auth.me'],
-    queryFn: () => trpc.auth.me.query(),
+  const { data: user, isLoading: userLoading, refetch: refetchUser } = trpc.auth.me.useQuery(undefined, {
+    enabled: true,
   });
 
-  const { data: kyc } = useQuery({
-    queryKey: ['userFeatures.kyc.getStatus'],
-    queryFn: () => trpc.userFeatures.kyc.getStatus.query(),
+  const { data: kyc } = trpc.userFeatures.kyc.getStatus.useQuery(undefined, {
     enabled: !!user,
   });
 
-  const { data: documents } = useQuery({
-    queryKey: ['userFeatures.kyc.getDocuments'],
-    queryFn: () => trpc.userFeatures.kyc.getDocuments.query(),
+  const { data: documents } = trpc.userFeatures.kyc.getDocuments.useQuery(undefined, {
     enabled: !!user,
   });
 
-  const { data: addresses } = useQuery({
-    queryKey: ['userFeatures.bankAccounts.list'],
-    queryFn: () => trpc.userFeatures.bankAccounts.list.query(),
+  const { data: addresses } = trpc.userFeatures.bankAccounts.list.useQuery(undefined, {
     enabled: !!user,
   });
 
@@ -75,7 +68,7 @@ export function UserProfile() {
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
       email: user?.email || '',
-      phone: user?.phone || '',
+      phone: user?.phoneNumber || '',
       dateOfBirth: user?.dateOfBirth || '',
     },
   });
@@ -93,8 +86,7 @@ export function UserProfile() {
   });
 
   // Document upload
-  const uploadDocumentMutation = useMutation({
-    mutationFn: (data: any) => trpc.userFeatures.kyc.uploadDocument.mutate(data),
+  const uploadDocumentMutation = trpc.userFeatures.kyc.uploadDocument.useMutation({
     onSuccess: () => {
       toast.success('Document uploaded successfully');
       // Refetch documents
@@ -176,7 +168,7 @@ export function UserProfile() {
                     <div>
                       <p className="text-sm text-slate-600 dark:text-slate-400">Phone</p>
                       <p className="text-lg font-medium text-slate-900 dark:text-white">
-                        {user?.phone || 'Not set'}
+                        {user?.phoneNumber || 'Not set'}
                       </p>
                     </div>
                   </div>

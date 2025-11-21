@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRoute } from 'wouter';
+import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,33 +8,31 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, Download, DollarSign, Calendar, TrendingUp, Clock } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { useRouter } from 'wouter';
 
 export function LoanDetail() {
-  const router = useRouter();
+  const [, navigate] = useLocation();
   const [, params] = useRoute('/loans/:id');
   const loanId = parseInt(params?.id || '0');
 
-  const { data: loans, isLoading: loansLoading } = useQuery({
-    queryKey: ['loans.myLoans'],
-    queryFn: () => trpc.loans.myLoans.query(),
+  const { data: loans, isLoading: loansLoading } = trpc.loans.myLoans.useQuery(undefined, {
+    enabled: true,
   });
 
-  const loan = loans?.find(l => l.id === loanId);
+  const loan = loans?.find((l: any) => l.id === loanId);
 
-  const { data: paymentSchedule } = useQuery({
-    queryKey: ['userFeatures.payments.get', loanId],
-    queryFn: () => trpc.userFeatures.payments.get.query({ loanApplicationId: loanId }),
-    enabled: !!loanId && !!loan,
-  });
+  const { data: paymentSchedule } = trpc.userFeatures.payments.get.useQuery(
+    { loanApplicationId: loanId },
+    {
+      enabled: !!loanId && !!loan,
+    }
+  );
 
-  const { data: autopaySettings } = useQuery({
-    queryKey: ['userFeatures.payments.autopaySettings.get', loanId],
-    queryFn: () => trpc.userFeatures.payments.autopaySettings.get.query({ 
-      loanApplicationId: loanId 
-    }),
-    enabled: !!loanId && !!loan,
-  });
+  const { data: autopaySettings } = trpc.userFeatures.payments.autopaySettings.get.useQuery(
+    { loanApplicationId: loanId },
+    {
+      enabled: !!loanId && !!loan,
+    }
+  );
 
   if (loansLoading) {
     return (
@@ -58,7 +57,7 @@ export function LoanDetail() {
                 We couldn't find the loan you're looking for.
               </p>
               <Button 
-                onClick={() => router.push('/dashboard')}
+                onClick={() => navigate('/user-dashboard')}
                 className="w-full mt-4"
               >
                 Back to Dashboard
@@ -70,15 +69,17 @@ export function LoanDetail() {
     );
   }
 
-  const totalPaid = loan.paidAmount || 0;
+  // Calculate from payment schedule
+  const paidPayments = paymentSchedule?.filter((p: any) => p.status === 'paid').length || 0;
+  const totalPayments = paymentSchedule?.length || 0;
+  const overduePayments = paymentSchedule?.filter((p: any) => p.status === 'overdue').length || 0;
+  const totalPaid = paymentSchedule?.reduce((sum: number, p: any) => sum + (p.paidAmount || 0), 0) || 0;
+  
   const remainingBalance = (loan.approvedAmount || 0) - totalPaid;
   const paidPercentage = (totalPaid / (loan.approvedAmount || 1)) * 100;
   const nextPaymentDate = new Date();
   nextPaymentDate.setDate(nextPaymentDate.getDate() + 30);
 
-  const paidPayments = paymentSchedule?.filter(p => p.status === 'paid').length || 0;
-  const totalPayments = paymentSchedule?.length || 0;
-  const overduePayments = paymentSchedule?.filter(p => p.status === 'overdue').length || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -87,7 +88,7 @@ export function LoanDetail() {
         <div className="mb-8">
           <Button 
             variant="outline" 
-            onClick={() => router.push('/dashboard')}
+            onClick={() => navigate('/user-dashboard')}
             className="mb-4"
           >
             ← Back
@@ -116,7 +117,7 @@ export function LoanDetail() {
                 </div>
                 <Button 
                   className="ml-auto"
-                  onClick={() => router.push('/payments/make')}
+                  onClick={() => navigate('/payment')}
                 >
                   Make Payment
                 </Button>
@@ -137,49 +138,63 @@ export function LoanDetail() {
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
                 {formatCurrency(loan.requestedAmount)}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Approved: {formatCurrency(loan.approvedAmount)}</p>
+              <p className="text-xs text-slate-500 mt-1">Approved: {formatCurrency(loan.approvedAmount || 0)}</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Interest Rate
+                Loan Amount
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {loan.interestRate}%
+                {formatCurrency(loan.approvedAmount || loan.requestedAmount || 0)}
               </div>
-              <p className="text-xs text-slate-500 mt-1">APR</p>
+              <p className="text-xs text-slate-500 mt-1">Approved</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Loan Term
+                Loan Type
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {loan.loanTerm}
+              <div className="text-2xl font-bold text-slate-900 dark:text-white capitalize">
+                {loan.loanType}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Months</p>
+              <p className="text-xs text-slate-500 mt-1">Application Type</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Monthly Payment
+                Payments
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {formatCurrency(loan.monthlyPayment || 0)}
+                {paidPayments} / {totalPayments}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Estimated</p>
+              <p className="text-xs text-slate-500 mt-1">Completed</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                Remaining Balance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                {formatCurrency(remainingBalance)}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">Amount Due</p>
             </CardContent>
           </Card>
         </div>
@@ -197,7 +212,7 @@ export function LoanDetail() {
                   <div className="flex items-end justify-between mb-2">
                     <span className="text-sm text-slate-600 dark:text-slate-400">Total Paid</span>
                     <span className="font-medium text-slate-900 dark:text-white">
-                      {formatCurrency(totalPaid)} of {formatCurrency(loan.approvedAmount)}
+                      {formatCurrency(totalPaid)} of {formatCurrency(loan.approvedAmount || 0)}
                     </span>
                   </div>
                   <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
@@ -221,7 +236,7 @@ export function LoanDetail() {
                   <div>
                     <p className="text-xs text-slate-600 dark:text-slate-400">Total Interest</p>
                     <p className="text-lg font-bold text-slate-900 dark:text-white">
-                      {formatCurrency((loan.approvedAmount || 0) * (loan.interestRate || 0) / 100)}
+                      {formatCurrency(paymentSchedule?.reduce((sum: number, p: any) => sum + (p.interestAmount || 0), 0) || 0)}
                     </p>
                   </div>
                 </div>
@@ -268,7 +283,7 @@ export function LoanDetail() {
                             {formatDate(new Date(payment.dueDate))}
                           </td>
                           <td className="py-3 px-4 text-right text-slate-900 dark:text-white font-medium">
-                            {formatCurrency(payment.amount)}
+                            {formatCurrency(payment.dueAmount)}
                           </td>
                           <td className="py-3 px-4 text-center">
                             <Badge 
@@ -307,13 +322,13 @@ export function LoanDetail() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button 
-                  onClick={() => router.push('/payments/make')}
+                  onClick={() => navigate('/payment')}
                   className="w-full"
                 >
                   💳 Make a Payment
                 </Button>
                 <Button 
-                  onClick={() => router.push(`/loans/${loanId}/autopay`)}
+                  onClick={() => navigate(`/loans/${loanId}`)}
                   variant="outline"
                   className="w-full"
                 >
@@ -343,9 +358,9 @@ export function LoanDetail() {
                       </span>
                     </div>
                     <div>
-                      <p className="text-xs text-blue-800 dark:text-blue-300">Payment Day</p>
+                      <p className="text-xs text-blue-800 dark:text-blue-300">Payment Status</p>
                       <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                        Day {autopaySettings.paymentDay || 1} of each month
+                        Enabled
                       </p>
                     </div>
                   </>
@@ -366,7 +381,7 @@ export function LoanDetail() {
                   variant="secondary"
                   size="sm"
                   className="w-full mt-2"
-                  onClick={() => router.push(`/loans/${loanId}/autopay`)}
+                  onClick={() => navigate(`/loans/${loanId}`)}
                 >
                   {autopaySettings?.isEnabled ? 'Manage' : 'Enable'} Autopay
                 </Button>
@@ -388,12 +403,12 @@ export function LoanDetail() {
                 <div>
                   <p className="text-xs text-slate-600 dark:text-slate-400">Amount</p>
                   <p className="text-lg font-medium text-slate-900 dark:text-white">
-                    {formatCurrency(loan.monthlyPayment || 0)}
+                    {formatCurrency((paymentSchedule?.[0]?.dueAmount || 0))}
                   </p>
                 </div>
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                   <Button 
-                    onClick={() => router.push('/payments/make')}
+                    onClick={() => navigate('/payment')}
                     className="w-full"
                   >
                     Pay Now
@@ -412,7 +427,7 @@ export function LoanDetail() {
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start text-xs"
-                  onClick={() => router.push('/support')}
+                  onClick={() => navigate('/support')}
                 >
                   📞 Contact Support
                 </Button>

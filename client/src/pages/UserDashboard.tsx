@@ -1,27 +1,22 @@
-import { useQuery } from '@tanstack/react-query';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CreditCard, DollarSign, Calendar, TrendingUp } from 'lucide-react';
-import { useRouter } from 'wouter';
+import { useLocation } from 'wouter';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export function UserDashboard() {
-  const router = useRouter();
-  const { data: user, isLoading: userLoading } = useQuery({
-    queryKey: ['auth.me'],
-    queryFn: () => trpc.auth.me.query(),
+  const [, navigate] = useLocation();
+  const { data: user, isLoading: userLoading } = trpc.auth.me.useQuery(undefined, {
+    enabled: true,
   });
 
-  const { data: loans, isLoading: loansLoading } = useQuery({
-    queryKey: ['loans.myLoans'],
-    queryFn: () => trpc.loans.myLoans.query(),
+  const { data: loans, isLoading: loansLoading } = trpc.loans.myLoans.useQuery(undefined, {
+    enabled: true,
   });
 
-  const { data: preferences } = useQuery({
-    queryKey: ['userFeatures.preferences'],
-    queryFn: () => trpc.userFeatures.preferences.get.query(),
+  const { data: preferences } = trpc.userFeatures.preferences.get.useQuery(undefined, {
     enabled: !!user,
   });
 
@@ -37,8 +32,8 @@ export function UserDashboard() {
   }
 
   const activeLoan = loans?.[0];
-  const totalLoansAmount = loans?.reduce((sum, loan) => sum + (loan.approvedAmount || 0), 0) || 0;
-  const totalPaid = loans?.reduce((sum, loan) => sum + (loan.paidAmount || 0), 0) || 0;
+  const totalLoansAmount = loans?.reduce((sum: number, loan: any) => sum + (loan.approvedAmount || 0), 0) || 0;
+  const totalPaid = loans?.reduce((sum: number, loan: any) => sum + (loan.paidAmount || 0), 0) || 0;
   const remainingBalance = totalLoansAmount - totalPaid;
 
   return (
@@ -66,7 +61,7 @@ export function UserDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">{loans?.length || 0}</div>
               <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                {loans?.filter(l => l.status === 'active').length || 0} active
+                {loans?.filter((l: any) => l.status === 'active').length || 0} active
               </p>
             </CardContent>
           </Card>
@@ -135,7 +130,7 @@ export function UserDashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Your Active Loan</span>
-                    <Badge variant={activeLoan.status === 'active' ? 'default' : 'secondary'}>
+                    <Badge variant={activeLoan.status === 'disbursed' ? 'default' : 'secondary'}>
                       {activeLoan.status}
                     </Badge>
                   </CardTitle>
@@ -152,25 +147,19 @@ export function UserDashboard() {
                     <div>
                       <p className="text-sm text-slate-600 dark:text-slate-400">Approved Amount</p>
                       <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                        {formatCurrency(activeLoan.approvedAmount)}
+                        {formatCurrency(activeLoan.approvedAmount || 0)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Interest Rate</p>
-                      <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                        {activeLoan.interestRate}%
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Term</p>
-                      <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                        {activeLoan.loanTerm} months
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Loan Status</p>
+                      <p className="text-lg font-semibold text-slate-900 dark:text-white capitalize">
+                        {activeLoan.status.replace('_', ' ')}
                       </p>
                     </div>
                   </div>
 
                   <Button 
-                    onClick={() => router.push(`/loans/${activeLoan.id}`)}
+                    onClick={() => navigate(`/loans/${activeLoan.id}`)}
                     className="w-full"
                   >
                     View Full Details & Payment Schedule
@@ -186,7 +175,7 @@ export function UserDashboard() {
                   <p className="text-slate-600 dark:text-slate-400 mb-4">
                     You don't have any active loans yet. Start by applying for a loan.
                   </p>
-                  <Button onClick={() => router.push('/apply')}>Apply for a Loan</Button>
+                  <Button onClick={() => navigate('/apply')}>Apply for a Loan</Button>
                 </CardContent>
               </Card>
             )}
@@ -209,14 +198,14 @@ export function UserDashboard() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600 dark:text-blue-400">Amount Due</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">Requested Amount</p>
                       <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                        {formatCurrency(activeLoan.monthlyPayment || 0)}
+                        {formatCurrency(activeLoan.requestedAmount)}
                       </p>
                     </div>
                   </div>
                   <Button 
-                    onClick={() => router.push('/payments/make')}
+                    onClick={() => navigate('/payment')}
                     className="w-full"
                     variant="default"
                   >
@@ -234,10 +223,10 @@ export function UserDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {loans.map((loan) => (
+                    {loans.map((loan: any) => (
                       <button
                         key={loan.id}
-                        onClick={() => router.push(`/loans/${loan.id}`)}
+                        onClick={() => navigate(`/loans/${loan.id}`)}
                         className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between"
                       >
                         <div>
@@ -266,35 +255,35 @@ export function UserDashboard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button 
-                  onClick={() => router.push('/payments/make')}
+                  onClick={() => navigate('/payment')}
                   variant="outline"
                   className="w-full justify-start"
                 >
                   💳 Make a Payment
                 </Button>
                 <Button 
-                  onClick={() => router.push('/profile')}
+                  onClick={() => navigate('/user-profile')}
                   variant="outline"
                   className="w-full justify-start"
                 >
                   👤 View Profile
                 </Button>
                 <Button 
-                  onClick={() => router.push('/notifications')}
+                  onClick={() => navigate('/notifications')}
                   variant="outline"
                   className="w-full justify-start"
                 >
                   🔔 Notifications
                 </Button>
                 <Button 
-                  onClick={() => router.push('/support')}
+                  onClick={() => navigate('/support')}
                   variant="outline"
                   className="w-full justify-start"
                 >
                   💬 Get Support
                 </Button>
                 <Button 
-                  onClick={() => router.push('/referrals')}
+                  onClick={() => navigate('/referrals')}
                   variant="outline"
                   className="w-full justify-start"
                 >
@@ -323,7 +312,7 @@ export function UserDashboard() {
                 </div>
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
                   <Button 
-                    onClick={() => router.push('/settings/security')}
+                    onClick={() => navigate('/settings')}
                     variant="ghost"
                     className="w-full justify-start text-xs"
                   >
@@ -340,21 +329,21 @@ export function UserDashboard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button 
-                  onClick={() => router.push('/faq')}
+                  onClick={() => navigate('/support')}
                   variant="ghost"
                   className="w-full justify-start text-xs"
                 >
                   ❓ FAQs
                 </Button>
                 <Button 
-                  onClick={() => router.push('/contact')}
+                  onClick={() => navigate('/support')}
                   variant="ghost"
                   className="w-full justify-start text-xs"
                 >
                   📞 Contact Support
                 </Button>
                 <Button 
-                  onClick={() => router.push('/education')}
+                  onClick={() => navigate('/support')}
                   variant="ghost"
                   className="w-full justify-start text-xs"
                 >

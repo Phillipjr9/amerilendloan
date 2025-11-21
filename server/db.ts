@@ -1874,7 +1874,7 @@ export async function updateRewardsBalance(userId: number, creditAmount: number,
     }).where(eq(userRewardsBalance.userId, userId));
   }
   
-  return db.insert(userRewardsBalance).values({
+    return db.insert(userRewardsBalance).values({
     userId,
     creditBalance: creditAmount,
     totalEarned: creditAmount,
@@ -1882,3 +1882,208 @@ export async function updateRewardsBalance(userId: number, creditAmount: number,
   });
 }
 
+// ============================================
+// PHASE 4: PAYMENT NOTIFICATION QUERIES
+// ============================================
+
+/**
+ * Get payments due in N days (e.g., 7 days)
+ * Used for payment reminder notifications
+ */
+export async function getPaymentsDueReminder(daysFromNow: number = 7) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { paymentSchedules, loanApplications, users } = await import("../drizzle/schema");
+  
+  try {
+    // Calculate target date (today + daysFromNow)
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + daysFromNow);
+    const targetDateStr = targetDate.toISOString().split('T')[0];
+    const nextDayStr = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    const result = await db.select({
+      paymentId: paymentSchedules.id,
+      loanApplicationId: paymentSchedules.loanApplicationId,
+      installmentNumber: paymentSchedules.installmentNumber,
+      dueDate: paymentSchedules.dueDate,
+      dueAmount: paymentSchedules.dueAmount,
+      principalAmount: paymentSchedules.principalAmount,
+      interestAmount: paymentSchedules.interestAmount,
+      status: paymentSchedules.status,
+      userId: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      phoneNumber: users.phoneNumber,
+      trackingNumber: loanApplications.trackingNumber,
+      loanStatus: loanApplications.status,
+    })
+      .from(paymentSchedules)
+      .innerJoin(loanApplications, eq(paymentSchedules.loanApplicationId, loanApplications.id))
+      .innerJoin(users, eq(loanApplications.userId, users.id))
+      .where(
+        and(
+          or(
+            eq(paymentSchedules.status, "pending"),
+            eq(paymentSchedules.status, "not_paid"),
+            eq(paymentSchedules.status, "late")
+          ),
+          and(
+            sql`DATE(${paymentSchedules.dueDate}) >= ${sql.raw(`'${targetDateStr}'`)}`
+          ),
+          and(
+            sql`DATE(${paymentSchedules.dueDate}) < ${sql.raw(`'${nextDayStr}'`)}`
+          ),
+          or(
+            sql`${loanApplications.status} != 'delinquent'`,
+            sql`${loanApplications.status} != 'defaulted'`
+          )
+        )
+      );
+    
+    return result;
+  } catch (error) {
+    console.error("[db.getPaymentsDueReminder] Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Get overdue payments (X to Y days)
+ * Used for overdue alert notifications (1-29 days)
+ */
+export async function getOverduePayments(minDays: number = 1, maxDays: number = 29) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { paymentSchedules, loanApplications, users } = await import("../drizzle/schema");
+  
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const result = await db.select({
+      paymentId: paymentSchedules.id,
+      loanApplicationId: paymentSchedules.loanApplicationId,
+      installmentNumber: paymentSchedules.installmentNumber,
+      dueDate: paymentSchedules.dueDate,
+      dueAmount: paymentSchedules.dueAmount,
+      principalAmount: paymentSchedules.principalAmount,
+      interestAmount: paymentSchedules.interestAmount,
+      status: paymentSchedules.status,
+      daysOverdue: sql<number>`EXTRACT(DAY FROM (${sql.raw(`'${today}'::date`)} - DATE(${paymentSchedules.dueDate})))`,
+      userId: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      phoneNumber: users.phoneNumber,
+      trackingNumber: loanApplications.trackingNumber,
+      loanStatus: loanApplications.status,
+    })
+      .from(paymentSchedules)
+      .innerJoin(loanApplications, eq(paymentSchedules.loanApplicationId, loanApplications.id))
+      .innerJoin(users, eq(loanApplications.userId, users.id))
+      .where(
+        and(
+          or(
+            eq(paymentSchedules.status, "pending"),
+            eq(paymentSchedules.status, "not_paid"),
+            eq(paymentSchedules.status, "late")
+          ),
+          sql`DATE(${paymentSchedules.dueDate}) < ${sql.raw(`'${today}'::date`)}`
+        )
+      );
+    
+    // Filter in memory for day range (since SQL filtering requires complex date arithmetic)
+    return result.filter((r: any) => {
+      const daysOverdue = r.daysOverdue || 0;
+      return daysOverdue >= minDays && daysOverdue <= maxDays;
+    });
+  } catch (error) {
+    console.error("[db.getOverduePayments] Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Get delinquent payments (30+ days overdue)
+ * Used for critical delinquency alerts and loan status updates
+ */
+export async function getDelinquentPayments(minDays: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { paymentSchedules, loanApplications, users } = await import("../drizzle/schema");
+  
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const result = await db.select({
+      paymentId: paymentSchedules.id,
+      loanApplicationId: paymentSchedules.loanApplicationId,
+      installmentNumber: paymentSchedules.installmentNumber,
+      dueDate: paymentSchedules.dueDate,
+      dueAmount: paymentSchedules.dueAmount,
+      principalAmount: paymentSchedules.principalAmount,
+      interestAmount: paymentSchedules.interestAmount,
+      status: paymentSchedules.status,
+      daysOverdue: sql<number>`EXTRACT(DAY FROM (${sql.raw(`'${today}'::date`)} - DATE(${paymentSchedules.dueDate})))`,
+      userId: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      phoneNumber: users.phoneNumber,
+      trackingNumber: loanApplications.trackingNumber,
+      loanId: loanApplications.id,
+      loanStatus: loanApplications.status,
+    })
+      .from(paymentSchedules)
+      .innerJoin(loanApplications, eq(paymentSchedules.loanApplicationId, loanApplications.id))
+      .innerJoin(users, eq(loanApplications.userId, users.id))
+      .where(
+        and(
+          or(
+            eq(paymentSchedules.status, "pending"),
+            eq(paymentSchedules.status, "not_paid"),
+            eq(paymentSchedules.status, "late")
+          ),
+          sql`DATE(${paymentSchedules.dueDate}) < ${sql.raw(`'${today}'::date`)}`
+        )
+      );
+    
+    // Filter in memory for days (since SQL filtering requires complex date arithmetic)
+    return result.filter((r: any) => {
+      const daysOverdue = r.daysOverdue || 0;
+      return daysOverdue >= minDays;
+    });
+  } catch (error) {
+    console.error("[db.getDelinquentPayments] Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Update loan application status to delinquent
+ * Called when a payment becomes 30+ days overdue
+ */
+export async function markLoanAsDelinquent(loanApplicationId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const { loanApplications } = await import("../drizzle/schema");
+  
+  try {
+    await db.update(loanApplications)
+      .set({
+        status: "delinquent" as any,
+        updatedAt: new Date(),
+      })
+      .where(eq(loanApplications.id, loanApplicationId));
+    
+    return true;
+  } catch (error) {
+    console.error("[db.markLoanAsDelinquent] Error:", error);
+    return false;
+  }
+}
