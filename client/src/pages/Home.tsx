@@ -224,10 +224,26 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section - OppLoans Style */}
+      {/* Hero Section - OppLoans Style with Video Background */}
       <section className="relative bg-gradient-to-br from-[#0033A0] via-[#0044BB] to-[#0055CC] py-16 sm:py-24 md:py-32 overflow-hidden">
+        {/* Background Video */}
+        <div className="absolute inset-0 overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-20"
+          >
+            <source src="/hero-background.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          {/* Video Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0033A0]/80 via-[#0044BB]/70 to-[#0055CC]/80"></div>
+        </div>
+
         {/* Decorative Background Elements */}
-        <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
         </div>
@@ -274,12 +290,222 @@ export default function Home() {
             
             <p className="text-sm text-white/80 mt-4">
               Did you receive a code in the mail?{" "}
-              <Link href="/tracking">
+              <Link href="/dashboard">
                 <a className="text-white underline hover:text-white/80 font-medium">
                   Click here
                 </a>
               </Link>
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Loan Calculator - Above the Fold */}
+      <section className="bg-gradient-to-br from-gray-50 to-white py-12 md:py-16 border-b">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#0033A0] text-center mb-8">
+              Calculate Your Loan
+            </h2>
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-200">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Loan Amount
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-3 text-gray-500 font-medium">$</span>
+                    <input
+                      type="range"
+                      min="500"
+                      max="5000"
+                      step="100"
+                      defaultValue="2000"
+                      className="w-full mb-2"
+                      title="Loan Amount Slider"
+                      aria-label="Loan Amount"
+                    />
+                    <div className="text-center text-2xl font-bold text-[#0033A0]">$2,000</div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Loan Term
+                  </label>
+                  <select className="w-full p-3 border border-gray-300 rounded-lg text-gray-700 font-medium" title="Select Loan Term" aria-label="Loan Term">
+                    <option>6 months</option>
+                    <option>12 months</option>
+                    <option>18 months</option>
+                    <option>24 months</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-[#0033A0]">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-700 font-medium">Estimated Monthly Payment:</span>
+                  <span className="text-2xl font-bold text-[#0033A0]">$189</span>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  Representative Example: APR 35.99%. Rates from 5.99% to 195% APR. Actual rate depends on credit profile.
+                </p>
+              </div>
+              <div className="mt-6">
+                <Link href="/apply">
+                  <Button className="w-full bg-[#FFA500] hover:bg-[#FF8C00] text-white font-bold py-4 text-lg">
+                    Get Your Personalized Rate
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Statistics Section */}
+      <section className="bg-[#0033A0] py-8 md:py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">$250M+</div>
+              <div className="text-sm text-white/80">Loans Funded</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">50K+</div>
+              <div className="text-sm text-white/80">Happy Customers</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">4.8★</div>
+              <div className="text-sm text-white/80">Average Rating</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">24/7</div>
+              <div className="text-sm text-white/80">Support Available</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Seals Section - OppLoans Style */}
+      <section className="bg-white py-8 md:py-12 border-b">
+        <div className="container mx-auto px-4">
+          <h3 className="text-center text-lg md:text-xl font-bold text-gray-800 mb-6">
+            Read What People Are Saying
+          </h3>
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
+            {/* Trustpilot */}
+            <a 
+              href="https://www.trustpilot.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:scale-110 transition-transform duration-300"
+            >
+              <img 
+                src="/trustpilot-logo.svg" 
+                alt="Trustpilot Reviews" 
+                className="h-8 md:h-10 w-auto opacity-80 hover:opacity-100"
+              />
+            </a>
+            
+            {/* BBB */}
+            <a 
+              href="https://www.bbb.org" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:scale-110 transition-transform duration-300"
+            >
+              <img 
+                src="/bbb-logo.svg" 
+                alt="Better Business Bureau Accredited" 
+                className="h-12 md:h-14 w-auto opacity-80 hover:opacity-100"
+              />
+            </a>
+            
+            {/* LendingTree */}
+            <a 
+              href="https://www.lendingtree.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:scale-110 transition-transform duration-300"
+            >
+              <img 
+                src="/lending-tree-logo.svg" 
+                alt="LendingTree Reviews" 
+                className="h-8 md:h-10 w-auto opacity-80 hover:opacity-100"
+              />
+            </a>
+
+            {/* SSL Secure Badge */}
+            <div className="flex items-center gap-2 hover:scale-110 transition-transform duration-300">
+              <img 
+                src="/ssl-seal.png" 
+                alt="SSL Secure" 
+                className="h-12 md:h-14 w-auto"
+              />
+            </div>
+          </div>
+          <p className="text-center text-sm text-gray-500 mt-6 max-w-3xl mx-auto">
+            The testimonials on our third-party review websites reflect the individual's opinion and may not be illustrative of all individual experiences with AmeriLend.
+          </p>
+        </div>
+      </section>
+
+      {/* Security & Licensing Section */}
+      <section className="bg-gray-50 py-12 md:py-16 border-b">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <h3 className="text-center text-xl md:text-2xl font-bold text-gray-800 mb-8">
+              Your Security is Our Priority
+            </h3>
+            <div className="grid md:grid-cols-3 gap-8 mb-8">
+              <div className="bg-white p-6 rounded-lg shadow-md text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-8 h-8 text-green-600" />
+                </div>
+                <h4 className="font-bold text-gray-800 mb-2">256-Bit SSL Encryption</h4>
+                <p className="text-sm text-gray-600">
+                  Bank-level security protects your personal and financial information
+                </p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-md text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-8 h-8 text-blue-600" />
+                </div>
+                <h4 className="font-bold text-gray-800 mb-2">Licensed & Regulated</h4>
+                <p className="text-sm text-gray-600">
+                  Licensed in all 50 states and compliant with federal lending laws
+                </p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-md text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-8 h-8 text-purple-600" />
+                </div>
+                <h4 className="font-bold text-gray-800 mb-2">Privacy Protected</h4>
+                <p className="text-sm text-gray-600">
+                  We never sell your information to third parties. CCPA compliant.
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h4 className="font-semibold text-gray-800 mb-3 text-center">Representative APR Example</h4>
+              <div className="grid md:grid-cols-3 gap-4 text-sm">
+                <div className="text-center p-4 bg-gray-50 rounded">
+                  <div className="font-semibold text-gray-700">Loan Amount</div>
+                  <div className="text-xl font-bold text-[#0033A0]">$2,000</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded">
+                  <div className="font-semibold text-gray-700">APR</div>
+                  <div className="text-xl font-bold text-[#0033A0]">35.99%</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded">
+                  <div className="font-semibold text-gray-700">Total Repayable</div>
+                  <div className="text-xl font-bold text-[#0033A0]">$2,719</div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 mt-4 text-center">
+                Representative example based on 12-month term. Your actual APR will depend on your credit profile, income, and other factors. APR ranges from 5.99% to 195%. Loans originated by our bank partners.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -349,37 +575,95 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Eligibility Requirements Card - Right Column */}
-            <div className="bg-white text-gray-800 rounded-lg p-4 sm:p-6 md:p-8 shadow-xl h-fit">
-              <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#0033A0] mb-4 sm:mb-6">
+            {/* Mobile App Image / Loan Application Visual - Right Column */}
+            <div className="relative">
+              {/* Decorative circle background */}
+              <div className="absolute -top-8 -right-8 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+              
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/20">
+                <div className="bg-white rounded-xl p-6 shadow-2xl">
+                  <div className="text-center mb-6">
+                    <h3 className="text-xl font-bold text-[#0033A0] mb-2">Loan Application</h3>
+                    <p className="text-sm text-gray-600">Quick & Easy Process</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Personal Information</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Employment Details</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border-2 border-blue-500">
+                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 animate-pulse">
+                        <Clock className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">Review & Submit</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-50">
+                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-500">Funding</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 pt-6 border-t">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Approval Time:</span>
+                      <span className="font-bold text-[#0033A0]">Minutes</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Eligibility Requirements Card - Below Process Section */}
+      <section className="bg-gray-50 py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white text-gray-800 rounded-lg p-6 sm:p-8 md:p-10 shadow-xl border-t-4 border-t-[#0033A0]">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#0033A0] mb-6 text-center">
                 Before you get started, let's review our eligibility requirements.
               </h3>
 
-              <ul className="space-y-3 sm:space-y-4">
+              <ul className="space-y-3 sm:space-y-4 md:grid md:grid-cols-2 md:gap-6">
                 <li className="flex items-start gap-2 sm:gap-3">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 sm:w-10 sm:h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#0033A0]" />
                   </div>
-                  <span className="text-xs sm:text-sm md:text-base">Be at least 18 years old</span>
+                  <span className="text-sm sm:text-base md:text-lg">Be at least 18 years old</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-[#0033A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
-                  <span className="text-sm md:text-base">Reside in the United States</span>
+                  <span className="text-sm md:text-lg">Reside in the United States</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-5 h-5 text-[#0033A0]" />
+                  <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-5 h-5 text-green-600" />
                   </div>
-                  <span className="text-sm md:text-base">Have a regular source of income</span>
+                  <span className="text-sm md:text-lg">Have a regular source of income</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-[#0033A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
@@ -1275,6 +1559,14 @@ export default function Home() {
                   <MessageCircle className="w-4 h-4" />
                   <a href="mailto:support@amerilendloan.com" className="hover:text-white">support@amerilendloan.com</a>
                 </p>
+                <p className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  <a href="https://wa.me/19452121609" target="_blank" rel="noopener noreferrer" className="hover:text-white">WhatsApp</a>
+                </p>
+                <p className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  <a href="https://t.me/amerilendloans" target="_blank" rel="noopener noreferrer" className="hover:text-white">Telegram</a>
+                </p>
               </div>
             </div>
             <div>
@@ -1319,6 +1611,42 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Social Media Section */}
+          <div className="text-center py-8 border-b border-gray-800">
+            <h4 className="font-semibold mb-4">Connect With Us</h4>
+            <div className="flex justify-center gap-6">
+              <a href="https://facebook.com/amerilend" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" title="Facebook">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+              </a>
+              <a href="https://twitter.com/amerilend" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" title="Twitter">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                </svg>
+              </a>
+              <a href="https://instagram.com/amerilend" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" title="Instagram">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+              </a>
+              <a href="https://linkedin.com/company/amerilend" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" title="LinkedIn">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+              </a>
+              <a href="https://wa.me/19452121609" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" title="WhatsApp">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+              </a>
+              <a href="https://t.me/amerilendloans" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" title="Telegram">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
 
           {/* Track Application Section */}
           <div className="flex justify-center py-6 mb-6">
@@ -1399,28 +1727,57 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Floating Support Chat Button */}
-      {/* AI Support Chat Button */}
-      <button
-        onClick={() => setChatOpen(!chatOpen)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-[#0033A0] hover:bg-[#002080] text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 z-50"
-        title="Open Support Chat"
-      >
-        <img src="/customer-service.png" alt="Support Chat" className="w-8 h-8" />
-      </button>
+      {/* Floating AI Support Chat Button - Enhanced */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {/* Pulse Animation Ring */}
+        {!chatOpen && (
+          <div className="absolute inset-0 rounded-full bg-[#0033A0] animate-ping opacity-75"></div>
+        )}
+        
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          className="relative w-16 h-16 bg-gradient-to-br from-[#0033A0] to-[#0055CC] hover:from-[#002080] hover:to-[#0044BB] text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group"
+          title="Chat with AI Support"
+        >
+          <div className="relative">
+            <img src="/customer-service.png" alt="AI Support" className="w-8 h-8 group-hover:scale-110 transition-transform" />
+            {/* Online Indicator */}
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></span>
+          </div>
+        </button>
+        
+        {/* Tooltip */}
+        {!chatOpen && (
+          <div className="absolute bottom-full right-0 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Need help? Chat with AI
+          </div>
+        )}
+      </div>
 
-      {/* Enhanced AI Support with Chat & Tracking */}
+      {/* Enhanced AI Support Chat Window */}
       {chatOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 max-h-96 rounded-lg shadow-2xl overflow-hidden">
+        <div className="fixed bottom-24 right-6 z-50 w-96 rounded-lg shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
           <div className="relative bg-white">
-            <button
-              onClick={() => setChatOpen(false)}
-              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm z-10"
-              title="Close Support"
-            >
-              ✕
-            </button>
-            <div className="overflow-y-auto max-h-96">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#0033A0] to-[#0055CC] text-white px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img src="/customer-service.png" alt="AI" className="w-6 h-6" />
+                <div>
+                  <h3 className="font-semibold text-sm">AI Support Assistant</h3>
+                  <p className="text-xs opacity-90">Online • Usually replies instantly</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setChatOpen(false)}
+                className="bg-white/20 hover:bg-white/30 text-white rounded-full w-7 h-7 flex items-center justify-center text-lg transition-colors"
+                title="Close Support"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Chat Content */}
+            <div className="overflow-y-auto max-h-96 bg-gray-50">
               <AISupport />
             </div>
           </div>
