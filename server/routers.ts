@@ -1951,6 +1951,18 @@ export const appRouter = router({
               }
               console.log("[Application Submit] Database user created with ID:", newUser.id);
               userId = newUser.id;
+              
+              // Hash and store the password for the new user
+              if (input.password) {
+                const bcrypt = await import('bcryptjs');
+                const hashedPassword = await bcrypt.hash(input.password, 10);
+                console.log(`[Application Submit] Storing password hash for user: ${input.email}`);
+                await db.updateUserByOpenId(newUser.openId, { 
+                  passwordHash: hashedPassword,
+                  loginMethod: "email_password"
+                });
+                console.log(`[Application Submit] Password hash stored successfully for user: ${input.email}`);
+              }
             } catch (signupError) {
               console.error("[Application Submit] Signup error:", signupError instanceof Error ? signupError.message : signupError);
               throw new TRPCError({
