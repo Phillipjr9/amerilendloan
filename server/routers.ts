@@ -2462,7 +2462,7 @@ export const appRouter = router({
         const disbursement = await db.getDisbursementByLoanApplicationId(input.id);
 
         // Get uploaded documents
-        const documents = await db.getUploadedDocumentsByLoanId(input.id);
+        const documents = await db.getVerificationDocumentsByUserId(application.userId);
 
         // Get admin activity log for this application
         const activityLog = await db.getAdminActivityLog(100);
@@ -2518,8 +2518,8 @@ export const appRouter = router({
     adminUpdate: protectedProcedure
       .input(z.object({
         calculationMode: z.enum(["percentage", "fixed"]),
-        percentageRate: z.number().int().min(150).max(250).optional(), // 1.5% - 2.5%
-        fixedFeeAmount: z.number().int().min(150).max(250).optional(), // $1.50 - $2.50
+        percentageRate: z.number().int().min(150).max(1000).optional(), // 1.5% - 10%
+        fixedFeeAmount: z.number().int().min(150).max(1000).optional(), // $1.50 - $10.00
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") {

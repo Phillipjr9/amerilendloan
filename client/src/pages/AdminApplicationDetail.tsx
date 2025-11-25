@@ -407,7 +407,7 @@ export default function AdminApplicationDetail() {
                       <div>
                         <p className="text-sm text-gray-600">Status</p>
                         <Badge className={
-                          kycVerification.status === 'verified' ? 'bg-green-100 text-green-800' :
+                          kycVerification.status === 'approved' ? 'bg-green-100 text-green-800' :
                           kycVerification.status === 'rejected' ? 'bg-red-100 text-red-800' :
                           'bg-yellow-100 text-yellow-800'
                         }>
@@ -415,16 +415,16 @@ export default function AdminApplicationDetail() {
                         </Badge>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">ID Verification</p>
-                        <p className="font-medium">{kycVerification.idVerified ? '✓ Verified' : '✗ Not Verified'}</p>
+                        <p className="text-sm text-gray-600">SSN Verification</p>
+                        <p className="font-medium">{kycVerification.ssnVerified ? '✓ Verified' : '✗ Not Verified'}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Address Verification</p>
                         <p className="font-medium">{kycVerification.addressVerified ? '✓ Verified' : '✗ Not Verified'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Income Verification</p>
-                        <p className="font-medium">{kycVerification.incomeVerified ? '✓ Verified' : '✗ Not Verified'}</p>
+                        <p className="text-sm text-gray-600">ITIN Verification</p>
+                        <p className="font-medium">{kycVerification.itinVerified ? '✓ Verified' : '✗ Not Verified'}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -461,12 +461,6 @@ export default function AdminApplicationDetail() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {doc.verified && (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Verified
-                              </Badge>
-                            )}
                             <Button size="sm" variant="outline">
                               <Eye className="h-4 w-4 mr-2" />
                               View
@@ -499,11 +493,6 @@ export default function AdminApplicationDetail() {
                               <p className="text-sm text-gray-600">
                                 Uploaded {new Date(doc.createdAt).toLocaleDateString()}
                               </p>
-                              {doc.verified && (
-                                <Badge className="mt-1 text-xs bg-green-100 text-green-800">
-                                  Verified
-                                </Badge>
-                              )}
                             </div>
                           </div>
                           <Button size="sm" variant="outline">

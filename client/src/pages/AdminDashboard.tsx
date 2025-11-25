@@ -932,7 +932,7 @@ export default function AdminDashboard() {
                           type="number"
                           step="0.01"
                           min="1.5"
-                          max="2.5"
+                          max="10"
                           value={percentageRate}
                           onChange={(e) => setPercentageRate(e.target.value)}
                           className="flex-1"
@@ -940,12 +940,12 @@ export default function AdminDashboard() {
                         <span className="text-gray-600 font-medium">%</span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Example: 2.00% of $10,000 loan = $200 processing fee
+                        Example: {percentageRate}% of $10,000 loan = ${((parseFloat(percentageRate) || 2) * 100).toFixed(2)} processing fee
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <Label htmlFor="fixedFeeAmount" className="text-base font-semibold">Fixed Fee Amount ($1.50 - $2.50)</Label>
+                      <Label htmlFor="fixedFeeAmount" className="text-base font-semibold">Fixed Fee Amount ($1.50 - $10.00)</Label>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-600 font-medium">$</span>
                         <Input
@@ -953,7 +953,7 @@ export default function AdminDashboard() {
                           type="number"
                           step="0.01"
                           min="1.5"
-                          max="2.5"
+                          max="10"
                           value={fixedFeeAmount}
                           onChange={(e) => setFixedFeeAmount(e.target.value)}
                           className="flex-1"

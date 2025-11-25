@@ -515,7 +515,7 @@ export default function Home() {
             </p>
             <div className="mt-4 p-4 bg-[#FFA500]/10 rounded-lg max-w-3xl mx-auto">
               <p className="text-sm text-[#0033A0] font-semibold">
-                Processing fee: 3.5% (paid upfront via credit/debit card or crypto before loan disbursement)
+                Processing fee: 2-10% based on loan terms (paid upfront via credit/debit card or crypto before loan disbursement)
               </p>
               <p className="text-xs text-gray-600 mt-1">
                 Accepted: Visa, Mastercard, American Express, Bitcoin, Ethereum, USDT
