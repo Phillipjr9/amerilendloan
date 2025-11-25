@@ -50,13 +50,30 @@ export async function signUpWithEmail(email: string, password: string, fullName?
     });
 
     if (error) {
+      // Map Supabase errors to user-friendly messages
+      if (error.message.includes('already registered') || error.message.includes('already exists')) {
+        return { success: false, error: "This email is already registered. Please sign in instead." };
+      }
+      if (error.message.includes('invalid email')) {
+        return { success: false, error: "Please enter a valid email address" };
+      }
+      if (error.message.includes('password') && error.message.includes('weak')) {
+        return { success: false, error: "Password is too weak. Please use a stronger password with at least 8 characters." };
+      }
+      if (error.message.includes('password') && error.message.includes('short')) {
+        return { success: false, error: "Password must be at least 8 characters long" };
+      }
+      
       throw error;
     }
 
     return { success: true, user: data.user };
   } catch (error: any) {
     console.error("Supabase signup error:", error);
-    return { success: false, error: error.message };
+    
+    // Provide a more specific error message
+    const errorMessage = error.message || "Unable to create account. Please try again.";
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -76,13 +93,27 @@ export async function signInWithEmail(email: string, password: string) {
     });
 
     if (error) {
+      // Map Supabase errors to user-friendly messages
+      if (error.message.includes('Invalid login credentials') || error.message.includes('invalid credentials')) {
+        return { success: false, error: "Invalid email or password. Please try again." };
+      }
+      if (error.message.includes('Email not confirmed')) {
+        return { success: false, error: "Please verify your email address before signing in." };
+      }
+      if (error.message.includes('User not found')) {
+        return { success: false, error: "No account found with this email. Please sign up first." };
+      }
+      
       throw error;
     }
 
     return { success: true, user: data.user, session: data.session };
   } catch (error: any) {
     console.error("Supabase signin error:", error);
-    return { success: false, error: error.message };
+    
+    // Provide a more specific error message
+    const errorMessage = error.message || "Unable to sign in. Please try again.";
+    return { success: false, error: errorMessage };
   }
 }
 
