@@ -113,15 +113,28 @@ export const systemRouter = router({
           isAuthenticated: false,
         };
 
+        // Build conversation history with the new message
+        const conversationMessages: Array<{ role: "user" | "assistant"; content: string }> = [
+          ...input.conversationHistory,
+          { role: "user", content: input.message }
+        ];
+
         // Build messages with context
-        const messages = buildMessages(input.message, input.conversationHistory, userContext);
+        const messages = buildMessages(conversationMessages, isAuthenticated, userContext);
 
         // Try to get AI response
         try {
-          const aiResponse = await invokeLLM(messages);
+          const aiResponse = await invokeLLM({ messages });
+          const responseContent = aiResponse.choices[0]?.message?.content;
+          const messageText = typeof responseContent === 'string' 
+            ? responseContent 
+            : Array.isArray(responseContent) 
+              ? responseContent.map(c => c.type === 'text' ? c.text : '').join('')
+              : '';
+              
           return {
             success: true,
-            message: aiResponse,
+            message: messageText,
             isAuthenticated,
             userContext,
           };

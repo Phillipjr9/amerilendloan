@@ -43,7 +43,8 @@ export default function AiSupportWidget({ isAuthenticated = false }: AiSupportWi
 
     try {
       const response = await chatMutation.mutateAsync({
-        messages: newMessages,
+        message: userMessage,
+        conversationHistory: messages,
       });
 
       setMessages([...newMessages, { role: "assistant", content: response.message }]);
