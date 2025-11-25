@@ -545,6 +545,21 @@ export async function updateLoanApplicationStatus(
   }
 }
 
+/**
+ * Update loan application fields (for admin use)
+ */
+export async function updateLoanApplication(
+  id: number,
+  data: Partial<LoanApplication>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(loanApplications)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(loanApplications.id, id));
+}
+
 // ============================================
 // Fee Configuration Queries
 // ============================================

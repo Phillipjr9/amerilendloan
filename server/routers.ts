@@ -2373,6 +2373,129 @@ export const appRouter = router({
 
         return { success: true };
       }),
+
+    // Admin: Verify processing fee payment
+    adminVerifyFeePayment: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        verified: z.boolean(),
+        adminNotes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+
+        // Get application details
+        const application = await db.getLoanApplicationById(input.id);
+        if (!application) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
+        }
+
+        // Check if application is in fee_paid status
+        if (application.status !== "fee_paid") {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: "Can only verify fee payments for applications with 'fee_paid' status" 
+          });
+        }
+
+        // Update verification status
+        await db.updateLoanApplication(input.id, {
+          feePaymentVerified: input.verified,
+          feeVerifiedAt: new Date(),
+          feeVerifiedBy: ctx.user.id,
+          adminNotes: input.adminNotes ? 
+            `${application.adminNotes ? application.adminNotes + '\n\n' : ''}[Fee Verification] ${input.adminNotes}` : 
+            application.adminNotes,
+        });
+
+        // Log activity
+        await db.logAdminActivity({
+          adminId: ctx.user.id,
+          action: input.verified ? "verify_fee_payment" : "reject_fee_payment",
+          targetType: "loan",
+          targetId: input.id,
+          details: JSON.stringify({ 
+            verified: input.verified,
+            notes: input.adminNotes 
+          }),
+        });
+
+        // If rejected, send notification to user and change status back to approved
+        if (!input.verified) {
+          await db.updateLoanApplicationStatus(input.id, "approved");
+          
+          const user = await db.getUserById(application.userId);
+          if (user?.email) {
+            // TODO: Send email notification about rejected payment
+            console.log(`[Admin] Fee payment rejected for application ${application.trackingNumber}`);
+          }
+        }
+
+        return { success: true };
+      }),
+
+    // Admin: Get comprehensive application details
+    adminGetApplicationDetails: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+
+        // Get application
+        const application = await db.getLoanApplicationById(input.id);
+        if (!application) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
+        }
+
+        // Get user details
+        const user = await db.getUserById(application.userId);
+
+        // Get all payments for this application
+        const payments = await db.getPaymentsByLoanApplicationId(input.id);
+
+        // Get disbursement if exists
+        const disbursement = await db.getDisbursementByLoanApplicationId(input.id);
+
+        // Get uploaded documents
+        const documents = await db.getUploadedDocumentsByLoanId(input.id);
+
+        // Get admin activity log for this application
+        const activityLog = await db.getAdminActivityLog(100);
+        const applicationActivity = activityLog.filter(
+          log => log.targetType === "loan" && log.targetId === input.id
+        );
+
+        // Get verification documents if any
+        const verificationDocs = await db.getVerificationDocumentsByUserId(application.userId);
+
+        // Get KYC verification if exists
+        const kycVerification = await db.getKycVerification(application.userId);
+
+        return {
+          application,
+          user: user ? {
+            id: user.id,
+            openId: user.openId,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            loginMethod: user.loginMethod,
+            createdAt: user.createdAt,
+            lastSignedIn: user.lastSignedIn,
+          } : null,
+          payments,
+          disbursement,
+          documents,
+          verificationDocs,
+          kycVerification,
+          activityLog: applicationActivity,
+        };
+      }),
   }),
 
   // Fee configuration router (admin only)

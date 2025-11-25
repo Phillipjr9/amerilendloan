@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { APP_LOGO, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Settings, DollarSign, CheckCircle, XCircle, Send, LogOut, Users, FileText, BarChart3, Package, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import { Loader2, Settings, DollarSign, CheckCircle, XCircle, Send, LogOut, Users, FileText, BarChart3, Package, TrendingUp, Clock, AlertCircle, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -96,6 +96,13 @@ export default function AdminDashboard() {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingCompany, setTrackingCompany] = useState<"USPS" | "UPS" | "FedEx" | "DHL" | "Other">("USPS");
 
+  // Fee verification dialog state
+  const [feeVerificationDialog, setFeeVerificationDialog] = useState<{ open: boolean; applicationId: number | null }>({
+    open: false,
+    applicationId: null,
+  });
+  const [feeVerificationNotes, setFeeVerificationNotes] = useState("");
+
   // Fee configuration states
   const [feeMode, setFeeMode] = useState<"percentage" | "fixed">("percentage");
   const [percentageRate, setPercentageRate] = useState("2.00");
@@ -168,6 +175,18 @@ export default function AdminDashboard() {
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update fee configuration");
+    },
+  });
+
+  const verifyFeePaymentMutation = trpc.loans.adminVerifyFeePayment.useMutation({
+    onSuccess: () => {
+      toast.success("Fee payment verification updated");
+      utils.loans.adminList.invalidate();
+      setFeeVerificationDialog({ open: false, applicationId: null });
+      setFeeVerificationNotes("");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to verify fee payment");
     },
   });
 
@@ -633,6 +652,16 @@ export default function AdminDashboard() {
                             <p className="text-lg font-semibold text-gray-900">
                               ${(app.processingFeeAmount / 100).toFixed(2)}
                             </p>
+                            {app.status === "fee_paid" && !app.feePaymentVerified && (
+                              <Badge className="mt-1 bg-amber-100 text-amber-800 border-amber-300">
+                                Pending Verification
+                              </Badge>
+                            )}
+                            {app.status === "fee_paid" && app.feePaymentVerified && (
+                              <Badge className="mt-1 bg-green-100 text-green-800 border-green-300">
+                                ✓ Verified
+                              </Badge>
+                            )}
                           </div>
                         )}
                         <div>
@@ -665,6 +694,15 @@ export default function AdminDashboard() {
                       )}
 
                       <div className="flex gap-2 pt-4 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setLocation(`/admin/application/${app.id}`)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </Button>
                         {(app.status === "pending" || app.status === "under_review") && (
                           <>
                             <Button
@@ -689,14 +727,45 @@ export default function AdminDashboard() {
                           </>
                         )}
                         {app.status === "fee_paid" && (
-                          <Button
-                            size="sm"
-                            className="bg-purple-600 hover:bg-purple-700"
-                            onClick={() => setDisbursementDialog({ open: true, applicationId: app.id })}
-                          >
-                            <Send className="mr-2 h-4 w-4" />
-                            Initiate Disbursement
-                          </Button>
+                          <>
+                            {!app.feePaymentVerified && (
+                              <div className="flex gap-2 w-full">
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 flex-1"
+                                  onClick={() => {
+                                    verifyFeePaymentMutation.mutate({
+                                      id: app.id,
+                                      verified: true,
+                                      adminNotes: "Fee payment verified - Ready for disbursement"
+                                    });
+                                  }}
+                                >
+                                  <CheckCircle className="mr-2 h-4 w-4" />
+                                  Verify Payment
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="flex-1"
+                                  onClick={() => setFeeVerificationDialog({ open: true, applicationId: app.id })}
+                                >
+                                  <XCircle className="mr-2 h-4 w-4" />
+                                  Reject Payment
+                                </Button>
+                              </div>
+                            )}
+                            {app.feePaymentVerified && (
+                              <Button
+                                size="sm"
+                                className="bg-purple-600 hover:bg-purple-700"
+                                onClick={() => setDisbursementDialog({ open: true, applicationId: app.id })}
+                              >
+                                <Send className="mr-2 h-4 w-4" />
+                                Initiate Disbursement
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </CardContent>
@@ -1002,6 +1071,56 @@ export default function AdminDashboard() {
                 </>
               ) : (
                 "Reject Application"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fee Verification Rejection Dialog */}
+      <Dialog open={feeVerificationDialog.open} onOpenChange={(open) => setFeeVerificationDialog({ ...feeVerificationDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Fee Payment</DialogTitle>
+            <DialogDescription>
+              This will mark the payment as invalid and notify the user to submit payment again
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="feeVerificationNotes">Reason for Rejection (Optional)</Label>
+              <Textarea
+                id="feeVerificationNotes"
+                rows={4}
+                value={feeVerificationNotes}
+                onChange={(e) => setFeeVerificationNotes(e.target.value)}
+                placeholder="E.g., Payment not received, incorrect amount, fraudulent transaction..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFeeVerificationDialog({ open: false, applicationId: null })}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if (!feeVerificationDialog.applicationId) return;
+                verifyFeePaymentMutation.mutate({
+                  id: feeVerificationDialog.applicationId,
+                  verified: false,
+                  adminNotes: feeVerificationNotes || "Fee payment rejected by admin"
+                });
+              }}
+              disabled={verifyFeePaymentMutation.isPending}
+            >
+              {verifyFeePaymentMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Rejecting...
+                </>
+              ) : (
+                "Reject Payment"
               )}
             </Button>
           </DialogFooter>

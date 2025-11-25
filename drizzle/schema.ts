@@ -143,6 +143,9 @@ export const loanApplications = pgTable("loanApplications", {
   // Approval details
   approvedAmount: integer("approvedAmount"), // in cents, null if not approved
   processingFeeAmount: integer("processingFeeAmount"), // in cents, calculated after approval
+  feePaymentVerified: boolean("feePaymentVerified").default(false), // Admin verification of fee payment
+  feeVerifiedAt: timestamp("feeVerifiedAt"), // When admin verified the fee payment
+  feeVerifiedBy: integer("feeVerifiedBy"), // Admin user ID who verified
   
   // Status tracking
   status: loanApplicationStatusEnum("status").default("pending").notNull(),

@@ -28,6 +28,7 @@ import AdminUserManagement from "./pages/AdminUserManagement";
 import AdminKYCManagement from "./pages/AdminKYCManagement";
 import AdminSupportManagement from "./pages/AdminSupportManagement";
 import AdminSettings from "./pages/AdminSettings";
+import AdminApplicationDetail from "./pages/AdminApplicationDetail";
 
 function Router() {
   return (
@@ -47,6 +48,7 @@ function Router() {
       <Route path={"/bank-accounts"} component={BankAccountManagement} />
       <Route path={"/settings"} component={Settings} />
       <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin/application/:id"} component={AdminApplicationDetail} />
       <Route path={"/admin/settings"} component={AdminSettings} />
       <Route path={"/admin/users"} component={AdminUserManagement} />
       <Route path={"/admin/kyc"} component={AdminKYCManagement} />
