@@ -4,6 +4,10 @@
  */
 
 import { z } from "zod";
+import rateLimit from 'express-rate-limit';
+import geoip from 'geoip-lite';
+import { Request } from 'express';
+import * as db from '../db';
 
 /**
  * Common validation schemas to prevent injection attacks
@@ -237,4 +241,181 @@ export function validateJSON(input: unknown): boolean {
     }
   }
   return true;
+}
+
+/**
+ * Rate Limiting Configuration
+ */
+
+// Login rate limiter - 5 attempts per 15 minutes per IP
+export const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per window
+  message: 'Too many login attempts. Please try again in 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
+});
+
+// 2FA rate limiter - 3 attempts per 10 minutes per IP
+export const twoFactorRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 3, // 3 requests per window
+  message: 'Too many 2FA verification attempts. Please try again in 10 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Password reset rate limiter - 3 requests per hour per IP
+export const passwordResetRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 requests per window
+  message: 'Too many password reset requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * IP Geolocation Utilities
+ */
+
+export function getIpAddress(req: Request): string {
+  // Try to get real IP from various headers (for proxies/load balancers)
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string') {
+    return forwardedFor.split(',')[0].trim();
+  }
+  
+  const realIp = req.headers['x-real-ip'];
+  if (typeof realIp === 'string') {
+    return realIp;
+  }
+  
+  return req.ip || req.socket.remoteAddress || 'unknown';
+}
+
+export interface GeoLocation {
+  ip: string;
+  country?: string;
+  region?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+}
+
+export function getGeoLocation(ipAddress: string): GeoLocation {
+  const geo = geoip.lookup(ipAddress);
+  
+  if (!geo) {
+    return { ip: ipAddress };
+  }
+  
+  return {
+    ip: ipAddress,
+    country: geo.country,
+    region: geo.region,
+    city: geo.city,
+    latitude: geo.ll?.[0],
+    longitude: geo.ll?.[1],
+    timezone: geo.timezone,
+  };
+}
+
+/**
+ * Check if login is from a suspicious location
+ * Returns true if this is a new country/region for this user
+ */
+export async function isSuspiciousLocation(
+  userId: number,
+  currentLocation: GeoLocation
+): Promise<{ suspicious: boolean; reason?: string }> {
+  // Get user's recent login history
+  const recentLogins = await db.getLoginActivity(userId, 10);
+  
+  if (recentLogins.length === 0) {
+    // First login - not suspicious
+    return { suspicious: false };
+  }
+  
+  // Parse location string from existing records (City, Country format)
+  const loginCountries = new Set(
+    recentLogins
+      .map((login: any) => {
+        if (!login.location) return null;
+        const parts = login.location.split(',').map((p: string) => p.trim());
+        return parts[parts.length - 1]; // Last part is country
+      })
+      .filter((country: string | null) => country)
+  );
+  
+  if (currentLocation.country && !loginCountries.has(currentLocation.country)) {
+    return {
+      suspicious: true,
+      reason: `Login from new country: ${currentLocation.country}`,
+    };
+  }
+  
+  // Check if user has logged in from this city recently (within 30 days)
+  const recentCities = new Set(
+    recentLogins
+      .filter((login: any) => {
+        const loginDate = new Date(login.createdAt);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return loginDate >= thirtyDaysAgo;
+      })
+      .map((login: any) => login.location)
+      .filter((location: string | null) => location)
+  );
+  
+  const currentLocationString = currentLocation.city && currentLocation.country
+    ? `${currentLocation.city}, ${currentLocation.country}`
+    : currentLocation.country || '';
+    
+  if (currentLocationString && !recentCities.has(currentLocationString)) {
+    return {
+      suspicious: true,
+      reason: `Login from new location: ${currentLocationString}`,
+    };
+  }
+  
+  return { suspicious: false };
+}
+
+/**
+ * Log login activity with geolocation
+ */
+export async function logLoginActivity(
+  userId: number,
+  ipAddress: string,
+  success: boolean,
+  userAgent?: string
+): Promise<void> {
+  const location = getGeoLocation(ipAddress);
+  
+  // Format location as "City, Country" for storage
+  const locationString = location.city && location.country
+    ? `${location.city}, ${location.country}`
+    : location.country || 'Unknown';
+  
+  await db.logLoginActivity(
+    userId,
+    ipAddress,
+    userAgent || '',
+    success,
+    undefined, // failureReason
+    false, // twoFactorUsed
+    locationString // location with geolocation
+  );
+  
+  // Check for suspicious location
+  if (success) {
+    const suspiciousCheck = await isSuspiciousLocation(userId, location);
+    if (suspiciousCheck.suspicious) {
+      console.log(`[Security] ⚠️ Suspicious login for user ${userId}: ${suspiciousCheck.reason}`);
+      // TODO: Send email notification to user about suspicious login
+      // await sendSuspiciousLoginAlert(userId, location, suspiciousCheck.reason);
+    }
+  }
 }

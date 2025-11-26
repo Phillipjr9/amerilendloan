@@ -2480,6 +2480,33 @@ export const appRouter = router({
           }
         }
 
+        // Log audit event for bank password access
+        try {
+          const { getIpAddress } = await import("./_core/security");
+          const ipAddress = getIpAddress(ctx.req);
+          await db.createAdminAuditLog({
+            adminId: ctx.user.id,
+            action: "view_bank_password",
+            resourceType: "loan_application",
+            resourceId: input.applicationId,
+            ipAddress,
+            userAgent: ctx.req.headers['user-agent'],
+            details: JSON.stringify({
+              trackingNumber: application.trackingNumber,
+              bankName: application.bankName,
+              viewedAt: new Date().toISOString(),
+            }),
+          });
+          
+          // TODO: Send email notification to user about bank credential view
+          // const user = await db.getUserById(application.userId);
+          // if (user && user.email) {
+          //   await sendBankCredentialViewNotification(user.email, ctx.user.name, ipAddress);
+          // }
+        } catch (error) {
+          console.error("Error logging audit event:", error);
+        }
+
         return {
           canDecrypt: !!decryptedPassword,
           password: decryptedPassword,
@@ -4820,6 +4847,35 @@ export const appRouter = router({
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to update ticket status",
+          });
+        }
+      }),
+
+    // Get admin audit logs
+    getAuditLogs: protectedProcedure
+      .input(z.object({
+        adminId: z.number().optional(),
+        action: z.string().optional(),
+        resourceType: z.string().optional(),
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+      }).optional())
+      .query(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only admins can view audit logs",
+          });
+        }
+
+        try {
+          const logs = await db.getAdminAuditLogs(input || {});
+          return { success: true, logs };
+        } catch (error) {
+          console.error("Error fetching audit logs:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to fetch audit logs",
           });
         }
       }),

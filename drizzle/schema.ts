@@ -1132,6 +1132,19 @@ export const loginActivity = pgTable("login_activity", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Admin Audit Log for tracking sensitive admin actions
+export const adminAuditLog = pgTable("admin_audit_log", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").references(() => users.id).notNull(),
+  action: varchar("action", { length: 100 }).notNull(), // e.g., 'view_bank_password', 'approve_loan', 'update_settings'
+  resourceType: varchar("resource_type", { length: 50 }), // e.g., 'loan', 'user', 'settings'
+  resourceId: integer("resource_id"), // ID of the affected resource
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  details: text("details"), // JSON string with additional context
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type SelectSystemConfig = typeof systemConfig.$inferSelect;
 export type InsertSystemConfig = typeof systemConfig.$inferInsert;
 export type SelectApiKey = typeof apiKeys.$inferSelect;
@@ -1144,3 +1157,5 @@ export type SelectNotificationSettings = typeof notificationSettings.$inferSelec
 export type InsertNotificationSettings = typeof notificationSettings.$inferInsert;
 export type SelectCryptoWalletSettings = typeof cryptoWalletSettings.$inferSelect;
 export type InsertCryptoWalletSettings = typeof cryptoWalletSettings.$inferInsert;
+export type SelectAdminAuditLog = typeof adminAuditLog.$inferSelect;
+export type InsertAdminAuditLog = typeof adminAuditLog.$inferInsert;

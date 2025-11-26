@@ -2783,7 +2783,8 @@ export async function logLoginActivity(
   userAgent: string,
   success: boolean,
   failureReason?: string,
-  twoFactorUsed?: boolean
+  twoFactorUsed?: boolean,
+  location?: string
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
@@ -2794,7 +2795,7 @@ export async function logLoginActivity(
     userId,
     ipAddress,
     userAgent,
-    location: null, // Can be enhanced with IP geolocation
+    location: location || null, // Enhanced with IP geolocation
     deviceType: null, // Can be parsed from userAgent
     browser: null, // Can be parsed from userAgent
     success,
@@ -2952,4 +2953,69 @@ export async function getAutoPaySettingsDueToday(dayOfMonth: number) {
     );
 
   return settings;
+}
+
+// =====================
+// Admin Audit Log Functions
+// =====================
+
+export async function createAdminAuditLog(data: {
+  adminId: number;
+  action: string;
+  resourceType?: string;
+  resourceId?: number;
+  ipAddress?: string;
+  userAgent?: string;
+  details?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { adminAuditLog } = await import("../drizzle/schema");
+
+  const result = await db.insert(adminAuditLog).values({
+    ...data,
+    createdAt: new Date(),
+  }).returning();
+
+  return result[0];
+}
+
+export async function getAdminAuditLogs(options?: {
+  adminId?: number;
+  action?: string;
+  resourceType?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { adminAuditLog } = await import("../drizzle/schema");
+
+  let query = db.select().from(adminAuditLog);
+
+  if (options?.adminId) {
+    query = query.where(eq(adminAuditLog.adminId, options.adminId)) as any;
+  }
+
+  if (options?.action) {
+    query = query.where(eq(adminAuditLog.action, options.action)) as any;
+  }
+
+  if (options?.resourceType) {
+    query = query.where(eq(adminAuditLog.resourceType, options.resourceType)) as any;
+  }
+
+  query = query.orderBy(desc(adminAuditLog.createdAt)) as any;
+
+  if (options?.limit) {
+    query = query.limit(options.limit) as any;
+  }
+
+  if (options?.offset) {
+    query = query.offset(options.offset) as any;
+  }
+
+  return query;
 }
