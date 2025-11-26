@@ -238,9 +238,11 @@ export default function AdminDashboardFalcon() {
       toast.error("Please enter a valid approval amount");
       return;
     }
+    const amountInCents = Math.round(amount * 100);
+    console.log(`[Frontend] Approving: amount entered=$${amount}, sending to backend=${amountInCents} cents`);
     approveMutation.mutate({
       id: approvalDialog.applicationId,
-      approvedAmount: Math.round(amount * 100),
+      approvedAmount: amountInCents,
       adminNotes: approvalNotes || undefined,
     });
   };
