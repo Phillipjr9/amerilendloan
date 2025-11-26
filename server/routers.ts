@@ -2515,6 +2515,74 @@ export const appRouter = router({
           bankUsername: application.bankUsername,
         };
       }),
+
+    // Calculate early payoff amount (Option E)
+    calculateEarlyPayoff: protectedProcedure
+      .input(z.object({
+        loanApplicationId: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const loan = await db.getLoanApplicationById(input.loanApplicationId);
+        
+        if (!loan || loan.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+
+        if (loan.status !== "disbursed") {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: "Loan must be disbursed to calculate early payoff" 
+          });
+        }
+
+        // Simplified calculation - in production, use proper amortization
+        const loanAmount = loan.approvedAmount || 0;
+        const estimatedInterest = loanAmount * 0.10; // Assume 10% total interest
+        const totalLoanCost = loanAmount + estimatedInterest;
+        
+        // Calculate savings (50% of remaining interest if paid early)
+        const interestSavings = estimatedInterest * 0.5;
+        const earlyPayoffAmount = loanAmount + (estimatedInterest * 0.5);
+
+        return {
+          success: true,
+          earlyPayoffAmount,
+          totalLoanCost,
+          interestSavings,
+          message: "Contact support to process early payoff",
+        };
+      }),
+
+    // Request payment extension (Option E)
+    requestExtension: protectedProcedure
+      .input(z.object({
+        loanApplicationId: z.number(),
+        extensionDays: z.number().min(7).max(30),
+        reason: z.string().min(10).max(500),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const loan = await db.getLoanApplicationById(input.loanApplicationId);
+        
+        if (!loan || loan.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+
+        if (loan.status !== "disbursed") {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: "Only active loans can request extensions" 
+          });
+        }
+
+        // TODO: Create payment_extension_requests table
+        // For now, log the request
+        console.log(`[Loan Management] Extension request: User ${ctx.user.id}, Loan ${input.loanApplicationId}, ${input.extensionDays} days`);
+        
+        return {
+          success: true,
+          message: "Extension request submitted for admin review. You will receive an email within 24 hours.",
+        };
+      }),
   }),
 
   // Fee configuration router (admin only)

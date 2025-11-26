@@ -20,6 +20,8 @@ export const ENV = {
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
   microsoftClientId: process.env.MICROSOFT_CLIENT_ID ?? "",
   microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET ?? "",
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? "",
 };
 
 export function getEnv() {
