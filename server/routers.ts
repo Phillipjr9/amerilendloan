@@ -5802,6 +5802,38 @@ Format as JSON with array of applications including their recommendation.`;
           });
         }
       }),
+
+    // Admin: Manually trigger auto-pay processing
+    adminTriggerProcessing: adminProcedure
+      .mutation(async () => {
+        try {
+          const { triggerManualAutoPayProcessing } = await import('./_core/auto-pay-scheduler');
+          const result = await triggerManualAutoPayProcessing();
+          return successResponse(result);
+        } catch (error) {
+          console.error('[AutoPay] Manual trigger error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to trigger auto-pay processing"
+          });
+        }
+      }),
+
+    // Admin: Get scheduler status
+    adminGetStatus: adminProcedure
+      .query(async () => {
+        try {
+          const { getSchedulerStatus } = await import('./_core/auto-pay-scheduler');
+          const status = getSchedulerStatus();
+          return successResponse(status);
+        } catch (error) {
+          console.error('[AutoPay] Get status error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to get scheduler status"
+          });
+        }
+      }),
   }),
 
   // Admin Analytics Router
@@ -5861,6 +5893,42 @@ Format as JSON with array of applications including their recommendation.`;
               ) / totalApplications)
             : 0;
 
+          // Calculate real conversion rate (disbursed / total applications)
+          const disbursedCount = filteredApps.filter((app: any) => app.status === "disbursed").length;
+          const conversionRate = totalApplications > 0
+            ? ((disbursedCount / totalApplications) * 100)
+            : 0;
+
+          // Calculate real default rate
+          const defaultedLoans = filteredApps.filter((app: any) => 
+            app.status === "defaulted" || app.status === "delinquent"
+          ).length;
+          const defaultRate = disbursedCount > 0
+            ? ((defaultedLoans / disbursedCount) * 100)
+            : 0;
+
+          // Get total users count
+          const allUsers = await db.getAllUsers();
+          const totalUsers = allUsers.length;
+
+          // Get new users this month
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+          const newUsersThisMonth = allUsers.filter((user: any) => 
+            new Date(user.createdAt) >= oneMonthAgo
+          ).length;
+
+          // Calculate average processing time (from submission to approval)
+          const approvedApps = filteredApps.filter((app: any) => app.approvedAt);
+          const totalProcessingTime = approvedApps.reduce((sum: number, app: any) => {
+            const created = new Date(app.createdAt).getTime();
+            const approved = new Date(app.approvedAt).getTime();
+            return sum + (approved - created);
+          }, 0);
+          const averageProcessingTime = approvedApps.length > 0
+            ? (totalProcessingTime / approvedApps.length / (1000 * 60 * 60 * 24)) // Convert to days
+            : 0;
+
           return successResponse({
             totalApplications,
             approvedApplications,
@@ -5868,11 +5936,11 @@ Format as JSON with array of applications including their recommendation.`;
             totalDisbursed,
             activeLoans,
             averageLoanAmount: avgLoanAmount,
-            conversionRate: 68.3, // Mock for now
-            defaultRate: 3.2, // Mock for now
-            totalUsers: 0, // Can be enhanced
-            newUsersThisMonth: 0, // Can be enhanced
-            averageProcessingTime: 2.3, // Mock for now
+            conversionRate: parseFloat(conversionRate.toFixed(1)),
+            defaultRate: parseFloat(defaultRate.toFixed(1)),
+            totalUsers,
+            newUsersThisMonth,
+            averageProcessingTime: parseFloat(averageProcessingTime.toFixed(1)),
           });
         } catch (error) {
           console.error('[Analytics] Get admin metrics error:', error);

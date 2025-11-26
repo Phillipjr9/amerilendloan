@@ -2913,3 +2913,43 @@ export async function recordAutoPayFailure(id: number) {
     })
     .where(eq(autoPaySettings.id, id));
 }
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { users } = await import("../drizzle/schema");
+  return await db.select().from(users);
+}
+
+export async function getAutoPaySettingsDueToday(dayOfMonth: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { autoPaySettings, loanApplications } = await import("../drizzle/schema");
+
+  // Get all enabled auto-pay settings where payment day matches and loan is disbursed
+  const settings = await db.select({
+    id: autoPaySettings.id,
+    userId: autoPaySettings.userId,
+    loanId: autoPaySettings.loanApplicationId,
+    amount: autoPaySettings.amount,
+    paymentMethod: autoPaySettings.paymentMethod,
+    bankAccountId: autoPaySettings.bankAccountId,
+    paymentDay: autoPaySettings.paymentDay,
+    nextPaymentDate: autoPaySettings.nextPaymentDate,
+    failedAttempts: autoPaySettings.failedAttempts,
+    isEnabled: autoPaySettings.isEnabled,
+  })
+    .from(autoPaySettings)
+    .innerJoin(loanApplications, eq(autoPaySettings.loanApplicationId, loanApplications.id))
+    .where(
+      and(
+        eq(autoPaySettings.isEnabled, true),
+        eq(autoPaySettings.paymentDay, dayOfMonth),
+        eq(loanApplications.status, 'disbursed')
+      )
+    );
+
+  return settings;
+}

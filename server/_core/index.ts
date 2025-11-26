@@ -16,6 +16,7 @@ import { errorHandlerMiddleware, malformedJsonHandler, notFoundHandler, healthCh
 import { ensureJsonHeaders } from "./response-formatter";
 import { validatePayload, validateContentLength } from "./payload-validator";
 import { initializePaymentNotificationScheduler, shutdownPaymentNotificationScheduler } from "./paymentScheduler";
+import { startAutoPayScheduler } from "./auto-pay-scheduler";
 
 // Validate critical environment variables at startup
 function validateEnvironment() {
@@ -334,9 +335,10 @@ async function startServer() {
     // Initialize background job schedulers
     try {
       initializePaymentNotificationScheduler();
+      startAutoPayScheduler();
     } catch (error) {
-      console.warn("[Server] Failed to initialize payment notification scheduler:", error);
-      // Don't exit - scheduler is optional
+      console.warn("[Server] Failed to initialize schedulers:", error);
+      // Don't exit - schedulers are optional
     }
   });
 
