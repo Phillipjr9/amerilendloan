@@ -853,8 +853,10 @@ export default function AdminDashboardFalcon() {
                                         variant="default"
                                         className="bg-green-600 hover:bg-green-700"
                                         onClick={() => {
+                                          const requestedInDollars = app.requestedAmount / 100;
+                                          console.log(`[Approve Dialog] Opening for app ${app.id}: requestedAmount=${app.requestedAmount} cents, pre-filling dialog with $${requestedInDollars}`);
                                           setApprovalDialog({ open: true, applicationId: app.id });
-                                          setApprovalAmount((app.requestedAmount / 100).toString());
+                                          setApprovalAmount(requestedInDollars.toString());
                                         }}
                                       >
                                         <CheckCircle className="h-4 w-4 mr-1" />
