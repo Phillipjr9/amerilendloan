@@ -2271,6 +2271,8 @@ export const appRouter = router({
           approvedAt: new Date(),
         });
 
+        console.log(`[Admin Approve] Application ${input.id}: approvedAmount=${input.approvedAmount} (cents), processingFee=${processingFeeAmount} (cents)`);
+
         // Log activity
         await db.logAdminActivity({
           adminId: ctx.user.id,

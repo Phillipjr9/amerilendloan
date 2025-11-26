@@ -192,8 +192,10 @@ export async function sendLoanApplicationApprovedEmail(
   approvedAmount: number,
   processingFee: number
 ): Promise<void> {
+  console.log(`[Email Debug] sendLoanApplicationApprovedEmail: approvedAmount=${approvedAmount} cents, processingFee=${processingFee} cents`);
   const formattedAmount = (approvedAmount / 100).toFixed(2);
   const formattedFee = (processingFee / 100).toFixed(2);
+  console.log(`[Email Debug] Formatted values: approvedAmount=$${formattedAmount}, processingFee=$${formattedFee}`);
   const subject = "Congratulations! Your Loan Application is Approved - AmeriLend";
   const text = `Dear ${fullName},\n\nGreat news! Your loan application has been approved!\n\nApplication Details:\nTracking Number: ${trackingNumber}\nApproved Amount: $${formattedAmount}\nProcessing Fee: $${formattedFee}\n\nNext Steps:\n1. Log in to your dashboard to review the loan agreement\n2. Pay the processing fee to proceed with disbursement\n3. Once the fee is paid, your funds will be disbursed within 1-2 business days\n\nPlease log in to your account to complete the next steps.\n\nBest regards,\nThe AmeriLend Team`;
   
