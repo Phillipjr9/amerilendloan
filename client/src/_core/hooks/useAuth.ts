@@ -25,20 +25,23 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
-      await logoutMutation.mutateAsync();
-    } catch (error: unknown) {
-      if (
-        error instanceof TRPCClientError &&
-        error.data?.code === "UNAUTHORIZED"
-      ) {
-        return;
-      }
-      throw error;
-    } finally {
+      // First, clear the user data from cache
       utils.auth.me.setData(undefined, null);
-      await utils.auth.me.invalidate();
-      // Redirect to home page after logout
-      window.location.href = "/";
+      
+      // Call the logout mutation
+      await logoutMutation.mutateAsync();
+      
+      // Invalidate all queries to clear cache
+      await utils.invalidate();
+      
+      // Force a full page reload to home page (clears all state)
+      window.location.replace("/");
+    } catch (error: unknown) {
+      // Even if logout fails, clear local data and redirect
+      console.error("Logout error:", error);
+      utils.auth.me.setData(undefined, null);
+      await utils.invalidate();
+      window.location.replace("/");
     }
   }, [logoutMutation, utils]);
 
