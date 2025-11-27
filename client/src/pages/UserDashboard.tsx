@@ -40,13 +40,16 @@ export function UserDashboard() {
   const totalPaid = loans?.reduce((sum: number, loan: any) => sum + (loan.paidAmount || 0), 0) || 0;
   const remainingBalance = totalLoansAmount - totalPaid;
   
-  // Find loan with pending processing fee (show for approved/fee_pending status)
+  // Find loan that needs processing fee payment
+  // Show for approved or fee_pending status
   const loanWithPendingFee = loans?.find((loan: any) => {
-    console.log('Checking loan:', loan.id, 'status:', loan.status, 'processingFeeAmount:', loan.processingFeeAmount);
-    return (loan.status === 'approved' || loan.status === 'fee_pending') && 
-           loan.processingFeeAmount && 
-           loan.processingFeeAmount > 0;
+    console.log('Checking loan:', loan.id, 'status:', loan.status, 'processingFeeAmount:', loan.processingFeeAmount, 'approvedAmount:', loan.approvedAmount);
+    return (loan.status === 'approved' || loan.status === 'fee_pending') && loan.approvedAmount && loan.approvedAmount > 0;
   });
+  
+  // Calculate processing fee if not set (default 2%)
+  const processingFee = loanWithPendingFee?.processingFeeAmount || 
+                        (loanWithPendingFee?.approvedAmount ? Math.round(loanWithPendingFee.approvedAmount * 0.02) : 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -62,7 +65,7 @@ export function UserDashboard() {
         </div>
 
         {/* Quick Payment Alert - Processing Fee */}
-        {loanWithPendingFee && (
+        {loanWithPendingFee && processingFee > 0 && (
           <Card className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-500 dark:border-green-700 shadow-lg">
             <CardHeader>
               <div className="flex items-start gap-4">
@@ -91,7 +94,7 @@ export function UserDashboard() {
                   <div>
                     <p className="text-sm text-slate-600 dark:text-slate-400">Processing Fee</p>
                     <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                      {formatCurrency(loanWithPendingFee.processingFeeAmount)}
+                      {formatCurrency(processingFee)}
                     </p>
                   </div>
                   <div>
@@ -107,7 +110,7 @@ export function UserDashboard() {
                 <div className="flex-1">
                   <QuickPaymentButton
                     applicationId={loanWithPendingFee.id}
-                    processingFeeAmount={loanWithPendingFee.processingFeeAmount}
+                    processingFeeAmount={processingFee}
                     onPaymentComplete={() => {
                       // Optionally navigate or show success
                     }}
