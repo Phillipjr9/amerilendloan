@@ -2483,19 +2483,34 @@ export const appRouter = router({
 
         // Determine missing documents by checking verificationDocuments table
         const verificationDocs = await db.getVerificationDocumentsByUserId(application.userId);
-        const hasGovId = verificationDocs.some(d => 
-          (d.documentType === 'drivers_license_front' || 
-           d.documentType === 'passport' || 
-           d.documentType === 'national_id_front') && 
-          d.status === 'approved'
+        
+        // Check for Driver's License Front
+        const hasLicenseFront = verificationDocs.some(d => 
+          d.documentType === 'drivers_license_front' && d.status === 'approved'
         );
+        
+        // Check for Driver's License Back
+        const hasLicenseBack = verificationDocs.some(d => 
+          d.documentType === 'drivers_license_back' && d.status === 'approved'
+        );
+        
+        // Check for SSN Card
+        const hasSsnCard = verificationDocs.some(d => 
+          d.documentType === 'ssn_card' && d.status === 'approved'
+        );
+        
+        // Check for Proof of Income
         const hasIncome = verificationDocs.some(d => 
           (d.documentType === 'pay_stub' || d.documentType === 'tax_return') && 
           d.status === 'approved'
         );
 
         const missingDocs: string[] = [];
-        if (!hasGovId) missingDocs.push("Government-issued ID");
+        // Show license as one item if either front or back is missing
+        if (!hasLicenseFront || !hasLicenseBack) {
+          missingDocs.push("Driver's License (Front and Back)");
+        }
+        if (!hasSsnCard) missingDocs.push("SSN Card");
         if (!hasIncome) missingDocs.push("Proof of Income");
 
         if (missingDocs.length === 0) {
