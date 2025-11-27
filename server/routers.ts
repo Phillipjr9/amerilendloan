@@ -552,7 +552,21 @@ export const appRouter = router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      // Clear cookie with explicit settings
+      ctx.res.clearCookie(COOKIE_NAME, {
+        ...cookieOptions,
+        path: '/',
+        maxAge: 0,
+      });
+      // Also clear without domain to ensure it's removed
+      ctx.res.clearCookie(COOKIE_NAME, {
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 0,
+      });
+      console.log('[Auth] User logged out successfully');
       return {
         success: true,
       } as const;
