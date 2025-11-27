@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CreditCard, DollarSign, Calendar, TrendingUp } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { QuickPaymentButton } from '@/components/QuickPaymentButton';
 
 export function UserDashboard() {
   const [, navigate] = useLocation();
@@ -35,6 +36,13 @@ export function UserDashboard() {
   const totalLoansAmount = loans?.reduce((sum: number, loan: any) => sum + (loan.approvedAmount || 0), 0) || 0;
   const totalPaid = loans?.reduce((sum: number, loan: any) => sum + (loan.paidAmount || 0), 0) || 0;
   const remainingBalance = totalLoansAmount - totalPaid;
+  
+  // Find loan with pending processing fee
+  const loanWithPendingFee = loans?.find((loan: any) => 
+    (loan.status === 'approved' || loan.status === 'fee_pending') && 
+    loan.processingFeeAmount && 
+    loan.processingFeeAmount > 0
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -48,6 +56,76 @@ export function UserDashboard() {
             Here's an overview of your loan accounts and payments
           </p>
         </div>
+
+        {/* Quick Payment Alert - Processing Fee */}
+        {loanWithPendingFee && (
+          <Card className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-500 dark:border-green-700 shadow-lg">
+            <CardHeader>
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-green-500 rounded-full">
+                  <AlertCircle className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-xl text-green-900 dark:text-green-100">
+                    Processing Fee Payment Required
+                  </CardTitle>
+                  <CardDescription className="text-green-700 dark:text-green-300 mt-1">
+                    Your loan has been approved! Complete your processing fee payment to receive your funds.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Loan Amount</p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-white">
+                      {formatCurrency(loanWithPendingFee.approvedAmount || 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Processing Fee</p>
+                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                      {formatCurrency(loanWithPendingFee.processingFeeAmount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Loan Number</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                      #{loanWithPendingFee.trackingNumber}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <QuickPaymentButton
+                    applicationId={loanWithPendingFee.id}
+                    processingFeeAmount={loanWithPendingFee.processingFeeAmount}
+                    onPaymentComplete={() => {
+                      // Optionally navigate or show success
+                    }}
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/payment/${loanWithPendingFee.id}`)}
+                  className="border-green-500 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-950"
+                >
+                  View Payment Details
+                </Button>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-sm text-blue-900 dark:text-blue-100">
+                  <strong>Quick & Easy:</strong> Pay with credit card or cryptocurrency. Your payment will be processed instantly and your loan will be disbursed within 24 hours.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
