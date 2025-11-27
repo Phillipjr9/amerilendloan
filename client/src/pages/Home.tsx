@@ -286,6 +286,11 @@ export default function Home() {
                   Apply Now
                 </Button>
               </Link>
+              <Link href="/pay-fee">
+                <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold px-6 sm:px-10 py-4 sm:py-6 text-base sm:text-lg rounded-lg shadow-lg hover:shadow-xl transition-all w-full sm:w-auto backdrop-blur-sm">
+                  Pay Processing Fee
+                </Button>
+              </Link>
             </div>
 
             <p className="text-sm text-white/90">

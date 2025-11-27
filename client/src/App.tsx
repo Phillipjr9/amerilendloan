@@ -29,6 +29,7 @@ import AdminKYCManagement from "./pages/AdminKYCManagement";
 import AdminSupportManagement from "./pages/AdminSupportManagement";
 import AdminSettings from "./pages/AdminSettings";
 import AdminApplicationDetail from "./pages/AdminApplicationDetail";
+import PayFee from "./pages/PayFee";
 
 function Router() {
   return (
@@ -54,6 +55,7 @@ function Router() {
       <Route path={"/admin/kyc"} component={AdminKYCManagement} />
       <Route path={"/admin/support"} component={AdminSupportManagement} />
       <Route path={"/payment/:id"} component={PaymentPage} />
+      <Route path={"/pay-fee"} component={PayFee} />
       <Route path={"/otp-login"} component={OTPLogin} />
       <Route path={"/login"} component={OTPLogin} />
       <Route path={"/careers"} component={Careers} />
