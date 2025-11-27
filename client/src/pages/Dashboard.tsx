@@ -48,6 +48,7 @@ import QuickApply from "@/components/QuickApply";
 import TwoFactorAuth from "@/components/TwoFactorAuth";
 import PaymentHistoryAnalytics from "@/components/PaymentHistoryAnalytics";
 import AutoPaySettings from "@/components/AutoPaySettings";
+import PaymentMethodManager from "@/components/PaymentMethodManager";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -1425,8 +1426,13 @@ export default function Dashboard() {
             </TabsContent>
 
             <TabsContent value="payments">
+              {/* Payment Method Management */}
+              <PaymentMethodManager />
+              
               {/* Payment History & Analytics - NEW FEATURE #3 */}
-              <PaymentHistoryAnalytics />
+              <div className="mt-6">
+                <PaymentHistoryAnalytics />
+              </div>
             </TabsContent>
 
             {/* Auto-Pay Settings Tab - NEW FEATURE #4 */}
