@@ -2767,7 +2767,7 @@ export async function sendIncompleteApplicationReminderEmail(
   loanAmount: number,
   loanPurpose: string,
   trackingNumber: string
-): Promise<void> {
+): Promise<{ success: boolean; error?: string }> {
   const formattedAmount = loanAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const subject = `Complete Your Loan Application - ${trackingNumber}`;
 
@@ -2858,7 +2858,7 @@ The AmeriLend Team
     </html>
   `;
 
-  await sendEmail({ to: email, subject, text, html });
+  return await sendEmail({ to: email, subject, text, html });
 }
 
 /**
@@ -2870,7 +2870,7 @@ export async function sendUnpaidFeeReminderEmail(
   loanAmount: number,
   processingFee: number,
   trackingNumber: string
-): Promise<void> {
+): Promise<{ success: boolean; error?: string }> {
   const formattedAmount = loanAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const formattedFee = processingFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const subject = `Payment Required: Processing Fee for Loan ${trackingNumber}`;
@@ -2968,7 +2968,7 @@ The AmeriLend Team
     </html>
   `;
 
-  await sendEmail({ to: email, subject, text, html });
+  return await sendEmail({ to: email, subject, text, html });
 }
 
 /**
@@ -2979,7 +2979,7 @@ export async function sendPendingDisbursementReminderEmail(
   fullName: string,
   loanAmount: number,
   trackingNumber: string
-): Promise<void> {
+): Promise<{ success: boolean; error?: string }> {
   const formattedAmount = loanAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const subject = `Action Required: Choose Disbursement Method - ${trackingNumber}`;
 
@@ -3073,7 +3073,7 @@ The AmeriLend Team
     </html>
   `;
 
-  await sendEmail({ to: email, subject, text, html });
+  return await sendEmail({ to: email, subject, text, html });
 }
 
 /**
@@ -3084,7 +3084,7 @@ export async function sendIncompleteDocumentsReminderEmail(
   fullName: string,
   missingDocuments: string[],
   trackingNumber: string
-): Promise<void> {
+): Promise<{ success: boolean; error?: string }> {
   const subject = `Action Required: Upload Missing Documents - ${trackingNumber}`;
   const docList = missingDocuments.join(', ');
 
@@ -3163,7 +3163,7 @@ The AmeriLend Team
     </html>
   `;
 
-  await sendEmail({ to: email, subject, text, html });
+  return await sendEmail({ to: email, subject, text, html });
 }
 
 /**
@@ -3172,7 +3172,7 @@ The AmeriLend Team
 export async function sendInactiveUserReminderEmail(
   email: string,
   fullName: string
-): Promise<void> {
+): Promise<{ success: boolean; error?: string }> {
   const subject = `We Miss You! Quick Loan Approval Waiting - AmeriLend`;
 
   const text = `
@@ -3266,7 +3266,7 @@ The AmeriLend Team
     </html>
   `;
 
-  await sendEmail({ to: email, subject, text, html });
+  return await sendEmail({ to: email, subject, text, html });
 }
 
 /**

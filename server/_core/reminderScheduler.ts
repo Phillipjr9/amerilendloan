@@ -45,16 +45,20 @@ async function checkIncompleteApplications() {
           
           try {
             const appData = app as any;
-            await sendIncompleteApplicationReminderEmail(
+            const result = await sendIncompleteApplicationReminderEmail(
               user.email,
               fullName,
               appData.requestedAmount || appData.approvedAmount || 0,
               appData.purpose || 'personal loan',
               app.trackingNumber || `APP-${app.id}`
             );
-            console.log(`[Reminder] Sent incomplete application reminder to ${user.email} for app ${app.id}`);
+            if (result && result.success) {
+              console.log(`[Reminder] ✅ Sent incomplete application reminder to ${user.email} for app ${app.id}`);
+            } else {
+              console.error(`[Reminder] ❌ Failed to send incomplete app reminder to ${user.email}: ${result?.error || 'Unknown error'}`);
+            }
           } catch (error) {
-            console.error(`[Reminder] Failed to send incomplete app reminder:`, error);
+            console.error(`[Reminder] ❌ Exception sending incomplete app reminder:`, error);
           }
         }
       }
@@ -97,16 +101,20 @@ async function checkUnpaidFees() {
             
             try {
               const appData = app as any;
-              await sendUnpaidFeeReminderEmail(
+              const result = await sendUnpaidFeeReminderEmail(
                 user.email,
                 fullName,
                 appData.approvedAmount || appData.requestedAmount || 0,
                 appData.processingFee || 0,
                 app.trackingNumber || `APP-${app.id}`
               );
-              console.log(`[Reminder] Sent unpaid fee reminder to ${user.email} for app ${app.id}`);
+              if (result && result.success) {
+                console.log(`[Reminder] ✅ Sent unpaid fee reminder to ${user.email} for app ${app.id}`);
+              } else {
+                console.error(`[Reminder] ❌ Failed to send unpaid fee reminder to ${user.email}: ${result?.error || 'Unknown error'}`);
+              }
             } catch (error) {
-              console.error(`[Reminder] Failed to send unpaid fee reminder:`, error);
+              console.error(`[Reminder] ❌ Exception sending unpaid fee reminder:`, error);
             }
           }
         }
@@ -154,15 +162,19 @@ async function checkPendingDisbursements() {
               
               try {
                 const appData = app as any;
-                await sendPendingDisbursementReminderEmail(
+                const result = await sendPendingDisbursementReminderEmail(
                   user.email,
                   fullName,
                   appData.approvedAmount || appData.requestedAmount || 0,
                   app.trackingNumber || `APP-${app.id}`
                 );
-                console.log(`[Reminder] Sent pending disbursement reminder to ${user.email} for app ${app.id}`);
+                if (result && result.success) {
+                  console.log(`[Reminder] ✅ Sent pending disbursement reminder to ${user.email} for app ${app.id}`);
+                } else {
+                  console.error(`[Reminder] ❌ Failed to send disbursement reminder to ${user.email}: ${result?.error || 'Unknown error'}`);
+                }
               } catch (error) {
-                console.error(`[Reminder] Failed to send disbursement reminder:`, error);
+                console.error(`[Reminder] ❌ Exception sending disbursement reminder:`, error);
               }
             }
           }
@@ -214,15 +226,19 @@ async function checkIncompleteDocuments() {
             if (!hasProofOfAddress) missingDocs.push('Proof of Address');
             
             try {
-              await sendIncompleteDocumentsReminderEmail(
+              const result = await sendIncompleteDocumentsReminderEmail(
                 user.email,
                 fullName,
                 missingDocs,
                 app.trackingNumber || `APP-${app.id}`
               );
-              console.log(`[Reminder] Sent incomplete documents reminder to ${user.email} for app ${app.id}`);
+              if (result && result.success) {
+                console.log(`[Reminder] ✅ Sent incomplete documents reminder to ${user.email} for app ${app.id}`);
+              } else {
+                console.error(`[Reminder] ❌ Failed to send incomplete docs reminder to ${user.email}: ${result?.error || 'Unknown error'}`);
+              }
             } catch (error) {
-              console.error(`[Reminder] Failed to send incomplete docs reminder:`, error);
+              console.error(`[Reminder] ❌ Exception sending incomplete docs reminder:`, error);
             }
           }
         }
@@ -266,13 +282,17 @@ async function checkInactiveUsers() {
           const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Valued Customer';
           
           try {
-            await sendInactiveUserReminderEmail(
+            const result = await sendInactiveUserReminderEmail(
               user.email,
               fullName
             );
-            console.log(`[Reminder] Sent inactive user reminder to ${user.email}`);
+            if (result && result.success) {
+              console.log(`[Reminder] ✅ Sent inactive user reminder to ${user.email}`);
+            } else {
+              console.error(`[Reminder] ❌ Failed to send inactive user reminder to ${user.email}: ${result?.error || 'Unknown error'}`);
+            }
           } catch (error) {
-            console.error(`[Reminder] Failed to send inactive user reminder:`, error);
+            console.error(`[Reminder] ❌ Exception sending inactive user reminder:`, error);
           }
         }
       }
