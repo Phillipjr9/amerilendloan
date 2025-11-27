@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { getDb } from "../db";
+import { getDb, createAuditLog } from "../db";
 
 export enum AuditEventType {
   // Authentication events
@@ -68,7 +68,7 @@ interface AuditLogEntry {
 // Log audit event
 export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
   try {
-    await db.createAuditLog({
+    await createAuditLog({
       eventType: entry.eventType,
       userId: entry.userId,
       ipAddress: entry.ipAddress,
