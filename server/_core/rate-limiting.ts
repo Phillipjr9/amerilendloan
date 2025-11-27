@@ -27,7 +27,7 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false,
   ...(redisClient ? {
     store: new RedisStore({
-      client: redisClient,
+      sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
       prefix: 'rl:api:',
     }),
   } : {}),
@@ -43,7 +43,7 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   ...(redisClient ? {
     store: new RedisStore({
-      client: redisClient,
+      sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
       prefix: 'rl:auth:',
     }),
   } : {}),
@@ -58,7 +58,7 @@ export const paymentLimiter = rateLimit({
   legacyHeaders: false,
   ...(redisClient ? {
     store: new RedisStore({
-      client: redisClient,
+      sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
       prefix: 'rl:payment:',
     }),
   } : {}),
@@ -73,7 +73,7 @@ export const uploadLimiter = rateLimit({
   legacyHeaders: false,
   ...(redisClient ? {
     store: new RedisStore({
-      client: redisClient,
+      sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
       prefix: 'rl:upload:',
     }),
   } : {}),
@@ -88,7 +88,7 @@ export const adminLimiter = rateLimit({
   legacyHeaders: false,
   ...(redisClient ? {
     store: new RedisStore({
-      client: redisClient,
+      sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
       prefix: 'rl:admin:',
     }),
   } : {}),
@@ -108,7 +108,7 @@ export function createUserRateLimiter(windowMs: number, max: number, prefix: str
     legacyHeaders: false,
     ...(redisClient ? {
       store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
         prefix: `rl:${prefix}:`,
       }),
     } : {}),

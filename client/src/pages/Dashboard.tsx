@@ -153,6 +153,8 @@ export default function Dashboard() {
     paymentMethod: p.paymentMethod === "card" 
       ? `${p.cardBrand || "Card"} ****${p.cardLast4 || ""}` 
       : `${p.cryptoCurrency || "Crypto"}`,
+    createdAt: p.createdAt,
+    method: p.paymentMethod,
   }));
 
   // Filter loans based on search and filters

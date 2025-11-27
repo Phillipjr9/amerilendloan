@@ -49,8 +49,7 @@ export async function notifyPaymentDueReminder(
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
           loanNumber,
           dueAmount,
-          dueDate,
-          `https://amerilendloan.com/payment-history`
+          dueDate.getTime()
         );
       }
     } catch (error) {

@@ -490,6 +490,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+                aria-label="Toggle mobile menu"
               >
                 <Menu className="h-6 w-6 text-gray-600" />
               </button>
@@ -510,7 +511,7 @@ export default function AdminDashboard() {
 
               {/* Right Side Icons */}
               <div className="flex items-center gap-3">
-                <button className="p-2 rounded-lg hover:bg-gray-100 relative">
+                <button className="p-2 rounded-lg hover:bg-gray-100 relative" aria-label="View notifications">
                   <Bell className="h-5 w-5 text-gray-600" />
                   <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
                 </button>
@@ -781,6 +782,8 @@ export default function AdminDashboard() {
             </div>
           </>
         ) : null}
+        </div>
+      )}
 
         {/* Analytics Dashboard - Real-time Metrics */}
         <div className="mb-8">

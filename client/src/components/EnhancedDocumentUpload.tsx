@@ -342,7 +342,7 @@ export function EnhancedDocumentUpload({ loanApplicationId, onUploadComplete }: 
             {previewFile.type.startsWith('image/') ? (
               <img src={previewFile.url} alt="Preview" className="max-w-full h-auto mx-auto" />
             ) : (
-              <iframe src={previewFile.url} className="w-full h-[600px]" />
+              <iframe src={previewFile.url} className="w-full h-[600px]" title="Document preview" />
             )}
           </div>
         </div>

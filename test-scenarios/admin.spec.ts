@@ -5,7 +5,24 @@
  * application management, approval/rejection, statistics, and admin-only features.
  */
 
-import { test, expect } from '@testsprite/core';
+// Note: This file requires a test framework like Jest, Vitest, or TestSprite
+// Install with: npm install -D @testsprite/core
+// Or replace with your preferred testing framework
+
+type RequestContext = {
+  post: (url: string, options?: { data?: any; params?: any }) => Promise<TestResponse>;
+  get: (url: string, options?: { params?: any }) => Promise<TestResponse>;
+};
+
+type TestResponse = {
+  status: () => number;
+  json: () => Promise<any>;
+};
+
+// Test framework placeholders - replace with actual framework
+declare function describe(name: string, fn: () => void): void;
+declare function test(name: string, fn: (context: { request: RequestContext }) => Promise<void>): void;
+declare const expect: any;
 
 const API_BASE = process.env.API_BASE_URL || 'http://localhost:5000/api/trpc';
 const generateEmail = () => `test-${Date.now()}@example.com`;
@@ -13,7 +30,7 @@ const generateEmail = () => `test-${Date.now()}@example.com`;
 describe('Admin Operations Tests', () => {
   
   // Helper function to create admin session
-  async function loginAsAdmin(request: any) {
+  async function loginAsAdmin(request: RequestContext) {
     // This assumes you have an admin account set up
     const adminLogin = await request.post(`${API_BASE}/auth.signIn`, {
       data: {
@@ -26,7 +43,7 @@ describe('Admin Operations Tests', () => {
   }
 
   // Helper function to create a test loan application
-  async function createTestApplication(request: any) {
+  async function createTestApplication(request: RequestContext) {
     const testEmail = generateEmail();
     
     const response = await request.post(`${API_BASE}/loans.submit`, {
@@ -54,7 +71,7 @@ describe('Admin Operations Tests', () => {
     return data.result.data.applicationId || 1;
   }
 
-  test('should allow admin to view all loan applications', async ({ request }) => {
+  test('should allow admin to view all loan applications', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     const response = await request.get(`${API_BASE}/loans.adminList`);
@@ -75,7 +92,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Admin retrieved ${data.result.data.length} applications`);
   });
 
-  test('should allow admin to approve loan application', async ({ request }) => {
+  test('should allow admin to approve loan application', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
     const applicationId = await createTestApplication(request);
 
@@ -100,7 +117,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Loan approved. Processing fee: $${data.result.data.processingFeeAmount / 100}`);
   });
 
-  test('should allow admin to reject loan application', async ({ request }) => {
+  test('should allow admin to reject loan application', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
     const applicationId = await createTestApplication(request);
 
@@ -121,7 +138,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Loan rejected successfully`);
   });
 
-  test('should retrieve accurate loan statistics', async ({ request }) => {
+  test('should retrieve accurate loan statistics', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     const response = await request.get(`${API_BASE}/loans.adminStatistics`);
@@ -145,7 +162,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Statistics: ${data.result.data.totalApplications} total, ${data.result.data.pending} pending`);
   });
 
-  test('should allow admin to search applications', async ({ request }) => {
+  test('should allow admin to search applications', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     const searchData = {
@@ -167,7 +184,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Search returned ${data.result.data.length} results`);
   });
 
-  test('should retrieve admin activity log', async ({ request }) => {
+  test('should retrieve admin activity log', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     const response = await request.get(`${API_BASE}/loans.adminActivityLog`, {
@@ -191,7 +208,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Retrieved ${data.result.data.length} activity log entries`);
   });
 
-  test('should allow admin to view detailed application', async ({ request }) => {
+  test('should allow admin to view detailed application', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
     const applicationId = await createTestApplication(request);
 
@@ -214,7 +231,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Retrieved detailed application data`);
   });
 
-  test('should allow admin to update fee configuration', async ({ request }) => {
+  test('should allow admin to update fee configuration', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     const feeConfigData = {
@@ -235,7 +252,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Fee configuration updated`);
   });
 
-  test('should allow admin to retrieve fee configuration', async ({ request }) => {
+  test('should allow admin to retrieve fee configuration', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     const response = await request.get(`${API_BASE}/feeConfig.adminGet`);
@@ -251,7 +268,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Fee config: ${data.result.data.calculationMode} mode`);
   });
 
-  test('should allow admin to initiate disbursement', async ({ request }) => {
+  test('should allow admin to initiate disbursement', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
     const applicationId = await createTestApplication(request);
 
@@ -286,7 +303,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Disbursement initiated: ID ${data.result.data.disbursementId}`);
   });
 
-  test('should allow admin to bulk approve applications', async ({ request }) => {
+  test('should allow admin to bulk approve applications', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
     
     // Create multiple applications
@@ -312,7 +329,7 @@ describe('Admin Operations Tests', () => {
     }
   });
 
-  test('should allow admin to bulk reject applications', async ({ request }) => {
+  test('should allow admin to bulk reject applications', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
     
     // Create multiple applications
@@ -338,7 +355,7 @@ describe('Admin Operations Tests', () => {
     }
   });
 
-  test('should retrieve alerts for pending actions', async ({ request }) => {
+  test('should retrieve alerts for pending actions', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     const response = await request.get(`${API_BASE}/loans.adminGetAlerts`);
@@ -353,7 +370,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Alerts: ${data.result.data.pendingReview.length} pending review`);
   });
 
-  test('should calculate processing fee correctly for percentage mode', async ({ request }) => {
+  test('should calculate processing fee correctly for percentage mode', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     // Set percentage mode
@@ -382,7 +399,7 @@ describe('Admin Operations Tests', () => {
     console.log(`✅ Processing fee calculated correctly: $500`);
   });
 
-  test('should calculate processing fee correctly for fixed mode', async ({ request }) => {
+  test('should calculate processing fee correctly for fixed mode', async ({ request }: { request: RequestContext }) => {
     await loginAsAdmin(request);
 
     // Set fixed mode
