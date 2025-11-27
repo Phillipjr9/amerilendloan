@@ -19,6 +19,10 @@ import { initializePaymentNotificationScheduler, shutdownPaymentNotificationSche
 import { startAutoPayScheduler } from "./auto-pay-scheduler";
 import { initializeReminderScheduler, shutdownReminderScheduler } from "./reminderScheduler";
 import { initializeCronJobs, stopAllCronJobs } from "./cron-jobs";
+import { initSentry, sentryErrorHandler } from "./monitoring";
+import { healthCheck, readinessCheck, livenessCheck, metricsEndpoint } from "./health-checks";
+import { apiLimiter, authLimiter, paymentLimiter, uploadLimiter } from "./rate-limiting";
+import { handleFileUpload, handleFileDownload, upload } from "./upload-handler";
 
 // Validate critical environment variables at startup
 function validateEnvironment() {
@@ -92,6 +96,9 @@ async function startServer() {
   
   const app = express();
   const server = createServer(app);
+  
+  // Initialize Sentry for error monitoring (Priority 5)
+  initSentry(app);
   
   // Server error handler
   server.on('error', (error) => {
@@ -183,10 +190,19 @@ async function startServer() {
   });
 
   // Apply general rate limit to all API routes
-  app.use("/api/trpc", generalLimiter);
+  app.use("/api/trpc", apiLimiter);
 
   // Apply strict auth limiter to OAuth routes
   app.use("/api/oauth", authLimiter);
+  
+  // Apply upload limiter to upload endpoints
+  app.use("/api/upload", uploadLimiter);
+  
+  // Health check endpoints (Priority 5)
+  app.get("/health", healthCheck);
+  app.get("/health/readiness", readinessCheck);
+  app.get("/health/liveness", livenessCheck);
+  app.get("/metrics", metricsEndpoint);
 
   // Configure multer for file uploads
   const upload = multer({
@@ -286,11 +302,12 @@ async function startServer() {
     }
   });
   
+  // Document upload endpoint (Priority 3)
+  app.post("/api/upload", upload.single('file'), handleFileUpload);
+  app.get("/api/download/:id", handleFileDownload);
+  
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  
-  // Health check endpoint
-  app.get("/health", healthCheckHandler);
   
   // tRPC API
   app.use(
@@ -317,6 +334,9 @@ async function startServer() {
   
   // 404 handler - must be after all other routes
   app.use(notFoundHandler);
+  
+  // Sentry error handler - must be before global error handler (Priority 5)
+  app.use(sentryErrorHandler());
   
   // Global error handler - must be last
   app.use(errorHandlerMiddleware);

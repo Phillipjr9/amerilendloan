@@ -3328,3 +3328,175 @@ export async function createPayment(paymentData: {
   }
 }
 
+// ============================================
+// AUDIT LOGGING FUNCTIONS (Priority 4)
+// ============================================
+
+export async function createAuditLog(data: {
+  eventType: string;
+  userId?: number;
+  ipAddress?: string;
+  userAgent?: string;
+  severity: string;
+  description: string;
+  metadata?: string | null;
+  resourceType?: string;
+  resourceId?: number;
+  timestamp: Date;
+}) {
+  const db = await getDb();
+  const { auditLog } = await import("../drizzle/schema");
+
+  try {
+    const result = await db.insert(auditLog).values(data).returning();
+    return result[0];
+  } catch (error) {
+    console.error("Error creating audit log:", error);
+    throw error;
+  }
+}
+
+export async function getAuditLogs(filters?: {
+  userId?: number;
+  eventType?: string;
+  severity?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  const { auditLog } = await import("../drizzle/schema");
+
+  try {
+    let query = db.select().from(auditLog);
+    
+    const conditions: any[] = [];
+    if (filters?.userId) {
+      conditions.push(eq(auditLog.userId, filters.userId));
+    }
+    if (filters?.eventType) {
+      conditions.push(eq(auditLog.eventType, filters.eventType));
+    }
+    if (filters?.severity) {
+      conditions.push(eq(auditLog.severity, filters.severity));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    query = query.orderBy(desc(auditLog.timestamp)) as any;
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit) as any;
+    }
+    if (filters?.offset) {
+      query = query.offset(filters.offset) as any;
+    }
+
+    return await query;
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    throw error;
+  }
+}
+
+export async function query(sql: string) {
+  if (_client) {
+    return await _client.unsafe(sql);
+  }
+  throw new Error("Database client not initialized");
+}
+
+// ============================================
+// DOCUMENT MANAGEMENT FUNCTIONS (Priority 3)
+// ============================================
+
+export async function addLoanDocument(data: {
+  loanApplicationId: number;
+  documentType: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedBy: number;
+}) {
+  const db = await getDb();
+  const { loanDocuments } = await import("../drizzle/schema");
+
+  try {
+    const result = await db.insert(loanDocuments).values({
+      ...data,
+      uploadedAt: new Date(),
+      status: 'pending',
+    }).returning();
+
+    return result[0];
+  } catch (error) {
+    console.error("Error adding loan document:", error);
+    throw error;
+  }
+}
+
+export async function getLoanDocuments(loanApplicationId: number) {
+  const db = await getDb();
+  const { loanDocuments } = await import("../drizzle/schema");
+
+  try {
+    return await db
+      .select()
+      .from(loanDocuments)
+      .where(eq(loanDocuments.loanApplicationId, loanApplicationId))
+      .orderBy(desc(loanDocuments.uploadedAt));
+  } catch (error) {
+    console.error("Error fetching loan documents:", error);
+    throw error;
+  }
+}
+
+export async function getLoanDocument(documentId: number) {
+  const db = await getDb();
+  const { loanDocuments } = await import("../drizzle/schema");
+
+  try {
+    const results = await db
+      .select()
+      .from(loanDocuments)
+      .where(eq(loanDocuments.id, documentId))
+      .limit(1);
+
+    return results[0] || null;
+  } catch (error) {
+    console.error("Error fetching loan document:", error);
+    throw error;
+  }
+}
+
+export async function updateDocumentStatus(
+  documentId: number,
+  status: string,
+  reviewedBy: number,
+  reviewNotes?: string
+) {
+  const db = await getDb();
+  const { loanDocuments } = await import("../drizzle/schema");
+
+  try {
+    const result = await db
+      .update(loanDocuments)
+      .set({
+        status,
+        reviewedBy,
+        reviewedAt: new Date(),
+        reviewNotes,
+      })
+      .where(eq(loanDocuments.id, documentId))
+      .returning();
+
+    return result[0];
+  } catch (error) {
+    console.error("Error updating document status:", error);
+    throw error;
+  }
+}
+
+

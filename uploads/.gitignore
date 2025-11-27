@@ -1,0 +1,4 @@
+# Uploaded files directory
+# Files are stored temporarily before being processed
+*
+!.gitignore

@@ -1210,6 +1210,38 @@ export const adminAuditLog = pgTable("admin_audit_log", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Comprehensive Audit Log for all system events (Priority 4)
+export const auditLog = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
+  eventType: varchar("event_type", { length: 100 }).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  severity: varchar("severity", { length: 20 }).notNull(), // info, warning, error, critical
+  description: text("description").notNull(),
+  metadata: text("metadata"), // JSON string with additional context
+  resourceType: varchar("resource_type", { length: 50 }),
+  resourceId: integer("resource_id"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// Document metadata table for enhanced document management (Priority 3)
+export const loanDocuments = pgTable("loan_documents", {
+  id: serial("id").primaryKey(),
+  loanApplicationId: integer("loan_application_id").references(() => loanApplications.id).notNull(),
+  documentType: varchar("document_type", { length: 50 }).notNull(), // id, income, bank_statement, other
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size").notNull(), // bytes
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, approved, rejected
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+});
+
 export type SelectSystemConfig = typeof systemConfig.$inferSelect;
 export type InsertSystemConfig = typeof systemConfig.$inferInsert;
 export type SelectApiKey = typeof apiKeys.$inferSelect;
@@ -1224,3 +1256,7 @@ export type SelectCryptoWalletSettings = typeof cryptoWalletSettings.$inferSelec
 export type InsertCryptoWalletSettings = typeof cryptoWalletSettings.$inferInsert;
 export type SelectAdminAuditLog = typeof adminAuditLog.$inferSelect;
 export type InsertAdminAuditLog = typeof adminAuditLog.$inferInsert;
+export type SelectAuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = typeof auditLog.$inferInsert;
+export type SelectLoanDocument = typeof loanDocuments.$inferSelect;
+export type InsertLoanDocument = typeof loanDocuments.$inferInsert;
