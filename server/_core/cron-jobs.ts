@@ -5,6 +5,7 @@
 
 import { CronJob } from "cron";
 import { checkAndSendPaymentReminders } from "./paymentReminders";
+import { processAutoPay } from "./auto-pay-executor";
 
 /**
  * Initialize all cron jobs
@@ -31,13 +32,28 @@ export function initializeCronJobs() {
 
   console.log("[Cron Jobs] ✅ Payment Reminder Job scheduled (Daily at 9:00 AM EST)");
 
-  // Add more cron jobs here as needed
-  // Example: Auto-pay processing
-  // const autoPayJob = new CronJob("0 10 * * *", async () => { ... });
+  // Auto-Pay Execution - Run daily at 3:00 AM
+  const autoPayJob = new CronJob(
+    "0 3 * * *", // At 3:00 AM every day
+    async () => {
+      console.log("[Cron Jobs] Running daily auto-pay execution...");
+      try {
+        const result = await processAutoPay();
+        console.log(`[Cron Jobs] Auto-pay execution completed:`, result);
+      } catch (error) {
+        console.error("[Cron Jobs] Auto-pay execution failed:", error);
+      }
+    },
+    null,
+    true,
+    "America/New_York"
+  );
+
+  console.log("[Cron Jobs] ✅ Auto-Pay Job scheduled (Daily at 3:00 AM EST)");
 
   return {
     paymentReminderJob,
-    // Add other jobs here
+    autoPayJob,
   };
 }
 
@@ -51,7 +67,9 @@ export function stopAllCronJobs(jobs: any) {
     jobs.paymentReminderJob.stop();
   }
   
-  // Stop other jobs here
+  if (jobs.autoPayJob) {
+    jobs.autoPayJob.stop();
+  }
   
   console.log("[Cron Jobs] All tasks stopped");
 }

@@ -6494,6 +6494,9 @@ Format as JSON with array of applications including their recommendation.`;
         }
       }),
   }),
+
+  // Auto-Pay Router
+  autoPay: autoPayRouter,
 });
 
 // Helper function to determine next steps based on application status
@@ -6533,5 +6536,61 @@ function getNextSteps(status: string): string[] {
 
   return steps[status] || ["Please contact support for more information"];
 }
+
+// Auto-Pay Execution Router
+const autoPayRouter = router({
+  /**
+   * Manually trigger auto-pay execution (Admin only)
+   */
+  runAutoPayExecution: adminProcedure
+    .mutation(async () => {
+      try {
+        const { processAutoPay } = await import("./_core/auto-pay-executor");
+        const result = await processAutoPay();
+        return result;
+      } catch (error) {
+        console.error('[Auto-Pay] Manual trigger error:', error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to run auto-pay execution"
+        });
+      }
+    }),
+
+  /**
+   * Get auto-pay execution logs
+   */
+  getAutoPayLogs: adminProcedure
+    .input(z.object({
+      loanId: z.number().optional(),
+      limit: z.number().optional().default(50),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const db = await import("./db");
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+
+        const { autoPayLog } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+
+        let query = dbConn.select().from(autoPayLog);
+
+        if (input.loanId) {
+          query = query.where(eq(autoPayLog.loanApplicationId, input.loanId)) as any;
+        }
+
+        const logs = await query.orderBy(desc(autoPayLog.attemptedAt)).limit(input.limit);
+
+        return logs;
+      } catch (error) {
+        console.error('[Auto-Pay] Get logs error:', error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to get auto-pay logs"
+        });
+      }
+    }),
+});
 
 export type AppRouter = typeof appRouter;

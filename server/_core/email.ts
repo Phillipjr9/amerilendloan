@@ -3734,82 +3734,6 @@ The AmeriLend Disbursement Team
 }
 
 /**
- * Send payment due reminder email (7 days before due date)
- */
-export async function sendPaymentDueReminderEmail(
-  email: string,
-  fullName: string,
-  loanNumber: string,
-  dueAmount: number,
-  dueDate: Date,
-  paymentLink?: string
-): Promise<void> {
-  const dueDateFormatted = dueDate.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const dueAmountFormatted = formatCurrency(dueAmount);
-
-  const subject = `Payment Due Reminder - ${loanNumber} on ${dueDateFormatted}`;
-  const text = `Dear ${fullName},\n\nThis is a friendly reminder that your loan payment is due on ${dueDateFormatted}.\n\nPayment Details:\nLoan Number: ${loanNumber}\nAmount Due: $${dueAmountFormatted}\nDue Date: ${dueDateFormatted}\n\nPlease make your payment on time to avoid late fees.\n\n${
-    paymentLink ? `Make Payment: ${paymentLink}\n\n` : ""
-  }Best regards,\nThe AmeriLend Team`;
-
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${subject}</title>
-      </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
-        ${getEmailHeader()}
-        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
-          <h2 style="color: #0033A0; margin-top: 0;">Payment Due Reminder</h2>
-          <p>Dear ${fullName},</p>
-          <p>This is a friendly reminder that your loan payment is due soon.</p>
-
-          <div style="background-color: #e3f2fd; padding: 20px; border-left: 4px solid #0033A0; margin: 20px 0; border-radius: 4px;">
-            <p style="margin: 5px 0;"><strong>Loan Number:</strong> ${loanNumber}</p>
-            <p style="margin: 5px 0;"><strong>Amount Due:</strong> $${dueAmountFormatted}</p>
-            <p style="margin: 5px 0;"><strong>Due Date:</strong> ${dueDateFormatted}</p>
-          </div>
-
-          <p><strong>Why This Matters:</strong></p>
-          <ul>
-            <li>On-time payments help maintain your credit score</li>
-            <li>Late payments may result in additional fees</li>
-            <li>30+ days late can result in delinquency status</li>
-          </ul>
-
-          ${
-            paymentLink
-              ? `<p style="text-align: center; margin: 30px 0;">
-            <a href="${paymentLink}" style="background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">Make Payment Now</a>
-          </p>`
-              : ""
-          }
-
-          <p>You can also log in to your dashboard to make a payment or set up autopay.</p>
-          <p style="margin-top: 30px; color: #999; font-size: 12px; text-align: center;">
-            This is an automated notification from AmeriLend. Please do not reply to this email. For inquiries, contact our support team.
-          </p>
-        </div>
-        ${getEmailFooter()}
-      </body>
-    </html>
-  `;
-
-  const result = await sendEmail({ to: email, subject, text, html });
-  if (!result.success) {
-    console.error(`[Email] Failed to send payment due reminder to ${email}:`, result.error);
-    throw new Error(`Failed to send payment due reminder: ${result.error}`);
-  }
-}
-
-/**
  * Send payment overdue alert email (when payment is past due)
  */
 export async function sendPaymentOverdueAlertEmail(
@@ -4393,6 +4317,220 @@ The AmeriLend Team
           </div>
 
           <p style="margin-top: 30px; font-size: 14px; color: #666;">If you've already made this payment, please disregard this notice and allow 2-3 business days for processing.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
+
+/**
+ * Payment Confirmation Email (Auto-Pay Success)
+ */
+export async function sendPaymentConfirmationEmail(
+  email: string,
+  userName: string,
+  trackingNumber: string,
+  paymentAmount: number,
+  paymentMethod: string
+) {
+  const formattedAmount = formatCurrency(paymentAmount);
+  
+  const subject = `✅ Payment Processed Successfully - Loan #${trackingNumber}`;
+  
+  const text = `
+Hello ${userName},
+
+Your automatic payment has been processed successfully!
+
+Payment Details:
+- Tracking Number: ${trackingNumber}
+- Amount Paid: $${formattedAmount}
+- Payment Method: ${paymentMethod}
+- Status: Completed
+
+This payment was automatically charged to your saved payment method.
+
+You can view your payment history and manage auto-pay settings in your AmeriLend dashboard.
+
+Thank you for your payment!
+
+Best regards,
+The AmeriLend Team
+  `.trim();
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+        ${getEmailHeader()}
+        <div style="padding: 20px;">
+          <div style="background-color: #10b981; color: white; padding: 20px; margin: 0 -20px 20px -20px; text-align: center; border-radius: 5px;">
+            <h2 style="margin: 0;">✅ Payment Processed Successfully</h2>
+          </div>
+
+          <p>Hello <strong>${userName}</strong>,</p>
+
+          <p style="font-size: 16px;">Your automatic payment has been processed successfully!</p>
+
+          <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #10b981;">Payment Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0;"><strong>Tracking Number:</strong></td>
+                <td style="padding: 8px 0;">${trackingNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Amount Paid:</strong></td>
+                <td style="padding: 8px 0; font-size: 20px; color: #10b981; font-weight: bold;">$${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Payment Method:</strong></td>
+                <td style="padding: 8px 0;">${paymentMethod}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Status:</strong></td>
+                <td style="padding: 8px 0;"><span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Completed</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Processed:</strong></td>
+                <td style="padding: 8px 0;">${new Date().toLocaleDateString()}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #e0f2fe; border-left: 4px solid #0ea5e9; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #0c4a6e;"><strong>ℹ️ Auto-Pay Information:</strong> This payment was automatically charged to your saved payment method. You can manage your auto-pay settings anytime in your dashboard.</p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://amerilendloan.com/dashboard" style="display: inline-block; background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Dashboard</a>
+          </div>
+
+          <p style="margin-top: 30px;">If you have any questions about this payment, please contact us at <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0;">${COMPANY_INFO.contact.email}</a>.</p>
+
+          <p>Thank you for being a valued AmeriLend customer!</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
+
+/**
+ * Payment Failed Email (Auto-Pay Failure)
+ */
+export async function sendPaymentFailedEmail(
+  email: string,
+  userName: string,
+  trackingNumber: string,
+  paymentAmount: number,
+  failureReason: string
+) {
+  const formattedAmount = formatCurrency(paymentAmount);
+  
+  const subject = `⚠️ Auto-Pay Failed - Action Required - Loan #${trackingNumber}`;
+  
+  const text = `
+ATTENTION REQUIRED: Auto-Pay Failed
+
+Hello ${userName},
+
+We were unable to process your automatic payment.
+
+Payment Details:
+- Tracking Number: ${trackingNumber}
+- Amount: $${formattedAmount}
+- Status: Failed
+- Reason: ${failureReason}
+
+ACTION REQUIRED:
+
+Please log in to your AmeriLend dashboard and:
+1. Verify your payment method is valid and has sufficient funds
+2. Update your payment method if needed
+3. Make a manual payment to avoid late fees
+
+If you continue to experience issues, please contact our support team.
+
+Contact: ${COMPANY_INFO.contact.email} or ${COMPANY_INFO.contact.phone}
+
+The AmeriLend Team
+  `.trim();
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+        ${getEmailHeader()}
+        <div style="padding: 20px;">
+          <div style="background-color: #dc3545; color: white; padding: 20px; margin: 0 -20px 20px -20px; text-align: center;">
+            <h2 style="margin: 0;">⚠️ Auto-Pay Failed - Action Required</h2>
+          </div>
+
+          <p>Hello <strong>${userName}</strong>,</p>
+
+          <p style="font-size: 16px; color: #dc3545;"><strong>We were unable to process your automatic payment.</strong></p>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #dc3545;">Payment Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0;"><strong>Tracking Number:</strong></td>
+                <td style="padding: 8px 0;">${trackingNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Amount:</strong></td>
+                <td style="padding: 8px 0; font-size: 20px; color: #dc3545; font-weight: bold;">$${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Status:</strong></td>
+                <td style="padding: 8px 0;"><span style="background-color: #dc3545; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Failed</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Reason:</strong></td>
+                <td style="padding: 8px 0; color: #dc3545;">${failureReason}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #dc3545; color: white; padding: 20px; margin: 20px 0; border-radius: 5px; text-align: center;">
+            <h3 style="margin-top: 0;">⚠️ ACTION REQUIRED</h3>
+            <p style="margin-bottom: 0; font-size: 16px;">Please take the following steps to avoid late fees:</p>
+          </div>
+
+          <ol style="line-height: 1.8; font-size: 16px;">
+            <li><strong>Verify your payment method</strong> is valid and has sufficient funds</li>
+            <li><strong>Update your payment method</strong> if the current one has expired or been declined</li>
+            <li><strong>Make a manual payment</strong> to ensure your account stays current</li>
+          </ol>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://amerilendloan.com/dashboard" style="display: inline-block; background-color: #dc3545; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">UPDATE PAYMENT METHOD</a>
+          </div>
+
+          <div style="background-color: #f8f9fa; border-left: 4px solid #0033A0; padding: 15px; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #0033A0;">Need Help?</h4>
+            <p style="margin-bottom: 0;">If you're experiencing issues with your payment method, our support team is here to help.</p>
+            <p style="margin-top: 10px; margin-bottom: 0;">
+              📧 <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0;">${COMPANY_INFO.contact.email}</a><br>
+              📞 ${COMPANY_INFO.contact.phone}
+            </p>
+          </div>
+
+          <p style="margin-top: 30px; font-size: 14px; color: #666;">This is an automated notification regarding your auto-pay failure. Please address this issue as soon as possible to maintain your account in good standing.</p>
         </div>
         ${getEmailFooter()}
       </body>

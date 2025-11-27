@@ -298,6 +298,20 @@ export const paymentReminders = pgTable("payment_reminders", {
 export type PaymentReminder = typeof paymentReminders.$inferSelect;
 export type InsertPaymentReminder = typeof paymentReminders.$inferInsert;
 
+/**
+ * Auto-pay execution log
+ */
+export const autoPayLog = pgTable("auto_pay_log", {
+  id: serial("id").primaryKey(),
+  loanApplicationId: integer("loanApplicationId").notNull(),
+  status: varchar("status", { length: 50 }).notNull(), // "success" or "failed"
+  reason: text("reason"), // Failure reason if failed
+  attemptedAt: timestamp("attemptedAt").defaultNow().notNull(),
+});
+
+export type AutoPayLog = typeof autoPayLog.$inferSelect;
+export type InsertAutoPayLog = typeof autoPayLog.$inferInsert;
+
 export const disbursementStatusEnum = pgEnum("disbursement_status", [
   "pending",      // Awaiting processing
   "processing",   // Being processed

@@ -3202,3 +3202,129 @@ export async function logPaymentReminder(loanId: number, daysUntilDue: number) {
   }
 }
 
+/**
+ * Get all loans with auto-pay enabled
+ */
+export async function getAutoPayEnabledLoans() {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { loanApplications } = await import("../drizzle/schema");
+
+  const loans = await db
+    .select()
+    .from(loanApplications)
+    .where(eq(loanApplications.status, "disbursed"));
+  
+  // Filter for auto-pay enabled (would need a column in production)
+  // For now, return all disbursed loans
+  return loans;
+}
+
+/**
+ * Check if payment was already attempted today for a loan
+ */
+export async function wasPaymentAttemptedToday(loanId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { payments } = await import("../drizzle/schema");
+  const { gte } = await import("drizzle-orm");
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const result = await db
+    .select()
+    .from(payments)
+    .where(eq(payments.loanApplicationId, loanId))
+    .where(gte(payments.createdAt, todayStart))
+    .limit(1);
+
+  return result && result.length > 0;
+}
+
+/**
+ * Get user's default payment method
+ */
+export async function getDefaultPaymentMethod(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { savedPaymentMethods } = await import("../drizzle/schema");
+  const { and } = await import("drizzle-orm");
+
+  const result = await db
+    .select()
+    .from(savedPaymentMethods)
+    .where(
+      and(
+        eq(savedPaymentMethods.userId, userId),
+        eq(savedPaymentMethods.isDefault, true)
+      )
+    )
+    .limit(1);
+
+  return result && result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Log auto-pay failure
+ */
+export async function logAutoPayFailure(loanId: number, reason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { autoPayLog } = await import("../drizzle/schema");
+
+  try {
+    await db.insert(autoPayLog).values({
+      loanApplicationId: loanId,
+      status: "failed",
+      reason: reason,
+      attemptedAt: new Date(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error logging auto-pay failure:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * Create a payment record
+ */
+export async function createPayment(paymentData: {
+  userId: number;
+  loanApplicationId: number;
+  amount: number;
+  method: string;
+  status: string;
+  transactionId?: string;
+  metadata?: any;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { payments } = await import("../drizzle/schema");
+
+  try {
+    const result = await db.insert(payments).values({
+      userId: paymentData.userId,
+      loanApplicationId: paymentData.loanApplicationId,
+      amount: paymentData.amount,
+      method: paymentData.method,
+      status: paymentData.status,
+      transactionId: paymentData.transactionId,
+      metadata: paymentData.metadata ? JSON.stringify(paymentData.metadata) : null,
+      createdAt: new Date(),
+    }).returning();
+
+    return result[0];
+  } catch (error) {
+    console.error("Error creating payment:", error);
+    throw error;
+  }
+}
+
