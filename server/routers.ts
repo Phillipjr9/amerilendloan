@@ -2096,8 +2096,8 @@ export const appRouter = router({
         totalDisbursed: applications.filter(a => a.status === "disbursed").reduce((sum, a) => sum + (a.approvedAmount || 0), 0),
         totalFeesCollected: applications.filter(a => a.status === "fee_paid").reduce((sum, a) => sum + (a.processingFeeAmount || 0), 0),
         averageLoanAmount: applications.length > 0 ? Math.round(applications.reduce((sum, a) => sum + a.requestedAmount, 0) / applications.length) : 0,
-        averageApprovedAmount: applications.filter(a => a.approvedAmount).length > 0 
-          ? Math.round(applications.filter(a => a.approvedAmount).reduce((sum, a) => sum + (a.approvedAmount || 0), 0) / applications.filter(a => a.approvedAmount).length)
+        averageApprovedAmount: applications.filter(a => a.status === "approved" || a.status === "fee_pending" || a.status === "fee_paid" || a.status === "disbursed").length > 0 
+          ? Math.round(applications.filter(a => a.status === "approved" || a.status === "fee_pending" || a.status === "fee_paid" || a.status === "disbursed").reduce((sum, a) => sum + (a.approvedAmount || 0), 0) / applications.filter(a => a.status === "approved" || a.status === "fee_pending" || a.status === "fee_paid" || a.status === "disbursed").length)
           : 0,
 
         // Approval rate
