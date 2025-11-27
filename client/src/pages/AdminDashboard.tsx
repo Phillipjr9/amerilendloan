@@ -2,6 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 import VerificationDocumentsAdmin from "@/components/VerificationDocumentsAdmin";
 import CryptoWalletSettings from "@/components/CryptoWalletSettings";
 import AdminAnalyticsDashboard from "@/components/AdminAnalyticsDashboard";
+import { PaymentReminderAdmin } from "@/components/PaymentReminderAdmin";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
@@ -787,11 +789,12 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="applications">Applications</TabsTrigger>
             <TabsTrigger value="tracking">Tracking</TabsTrigger>
             <TabsTrigger value="verification">Verification</TabsTrigger>
             <TabsTrigger value="support">Support</TabsTrigger>
+            <TabsTrigger value="reminders">Reminders</TabsTrigger>
             <TabsTrigger value="audit">Audit Log</TabsTrigger>
             <TabsTrigger value="settings">Fees</TabsTrigger>
             <TabsTrigger value="crypto">Crypto</TabsTrigger>
@@ -1675,6 +1678,11 @@ export default function AdminDashboard() {
           {/* Crypto Wallet Settings Tab */}
           <TabsContent value="crypto">
             <CryptoWalletSettings />
+          </TabsContent>
+
+          {/* Payment Reminders Tab */}
+          <TabsContent value="reminders">
+            <PaymentReminderAdmin />
           </TabsContent>
         </Tabs>
       </main>
