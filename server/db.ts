@@ -3136,3 +3136,69 @@ export async function getDocumentByLoanId(
 
   return docs;
 }
+
+/**
+ * Get all disbursed loans (active loans)
+ */
+export async function getAllDisbursedLoans() {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { loanApplications } = await import("../drizzle/schema");
+
+  const loans = await db
+    .select()
+    .from(loanApplications)
+    .where(eq(loanApplications.status, "disbursed"));
+
+  return loans;
+}
+
+/**
+ * Get user notification preferences
+ */
+export async function getUserNotificationPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { users } = await import("../drizzle/schema");
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!result || result.length === 0) return null;
+
+  // For now, return a default object. Later we can add a preferences table
+  return {
+    disablePaymentReminders: false,
+    disableEmailNotifications: false,
+  };
+}
+
+/**
+ * Log a payment reminder
+ */
+export async function logPaymentReminder(loanId: number, daysUntilDue: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  const { paymentReminders } = await import("../drizzle/schema");
+
+  try {
+    await db.insert(paymentReminders).values({
+      loanApplicationId: loanId,
+      reminderType: daysUntilDue < 0 ? "overdue" : "upcoming",
+      daysUntilDue: daysUntilDue,
+      sentAt: new Date(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error logging payment reminder:", error);
+    return { success: false };
+  }
+}
+

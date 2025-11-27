@@ -6417,6 +6417,83 @@ Format as JSON with array of applications including their recommendation.`;
         }
       }),
   }),
+
+  // Payment Reminders Router
+  paymentReminders: router({
+    /**
+     * Manually trigger payment reminder check (Admin only)
+     */
+    runReminderCheck: adminProcedure
+      .mutation(async () => {
+        try {
+          const { checkAndSendPaymentReminders } = await import("./_core/paymentReminders");
+          const result = await checkAndSendPaymentReminders();
+          return result;
+        } catch (error) {
+          console.error('[Payment Reminders] Manual trigger error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to run payment reminder check"
+          });
+        }
+      }),
+
+    /**
+     * Send test reminder for a specific loan (Admin only)
+     */
+    sendTestReminder: adminProcedure
+      .input(z.object({
+        loanId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const { sendTestPaymentReminder } = await import("./_core/paymentReminders");
+          const result = await sendTestPaymentReminder(input.loanId);
+          return result;
+        } catch (error) {
+          console.error('[Payment Reminders] Test reminder error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to send test reminder"
+          });
+        }
+      }),
+
+    /**
+     * Get payment reminder logs
+     */
+    getReminderLogs: adminProcedure
+      .input(z.object({
+        loanId: z.number().optional(),
+        limit: z.number().optional().default(50),
+      }))
+      .query(async ({ input }) => {
+        try {
+          const db = await import("./db");
+          const dbConn = await db.getDb();
+          if (!dbConn) throw new Error("Database connection failed");
+
+          const { paymentReminders } = await import("../drizzle/schema");
+          const { eq, desc } = await import("drizzle-orm");
+
+          let query = dbConn.select().from(paymentReminders);
+
+          if (input.loanId) {
+            query = query.where(eq(paymentReminders.loanApplicationId, input.loanId)) as any;
+          }
+
+          const logs = await query.orderBy(desc(paymentReminders.sentAt)).limit(input.limit);
+
+          return logs;
+        } catch (error) {
+          console.error('[Payment Reminders] Get logs error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to get reminder logs"
+          });
+        }
+      }),
+  }),
 });
 
 // Helper function to determine next steps based on application status

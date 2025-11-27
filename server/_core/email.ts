@@ -4161,4 +4161,245 @@ export async function sendDocumentUploadReminderEmail(
   await sendEmail({ to: email, subject, text, html });
 }
 
+/**
+ * Payment Due Reminder Email (7, 3, or 1 day before due date)
+ */
+export async function sendPaymentDueReminderEmail(
+  email: string,
+  userName: string,
+  trackingNumber: string,
+  paymentAmount: number,
+  daysUntilDue: number
+) {
+  const formattedAmount = formatCurrency(paymentAmount);
+  const urgencyClass = daysUntilDue === 1 ? 'urgent' : 'warning';
+  
+  const subject = `⏰ Payment Reminder: ${daysUntilDue} Day${daysUntilDue > 1 ? 's' : ''} Until Due - Loan #${trackingNumber}`;
+  
+  const text = `
+Hello ${userName},
+
+This is a friendly reminder that your loan payment is due in ${daysUntilDue} day${daysUntilDue > 1 ? 's' : ''}.
+
+Loan Details:
+- Tracking Number: ${trackingNumber}
+- Payment Amount: $${formattedAmount}
+- Due Date: ${daysUntilDue} day${daysUntilDue > 1 ? 's' : ''} from today
+
+To avoid late fees, please make your payment before the due date.
+
+You can make a payment by:
+1. Logging into your AmeriLend dashboard
+2. Navigating to the Payments section
+3. Selecting your saved payment method or entering new payment details
+4. Completing the transaction
+
+Thank you for being a valued AmeriLend customer!
+
+Best regards,
+The AmeriLend Team
+  `.trim();
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+        ${getEmailHeader()}
+        <div style="padding: 20px;">
+          <h2 style="color: #0033A0; margin-bottom: 20px;">⏰ Payment Reminder</h2>
+
+          <p>Hello <strong>${userName}</strong>,</p>
+
+          <p>This is a friendly reminder that your loan payment is due in <strong>${daysUntilDue} day${daysUntilDue > 1 ? 's' : ''}</strong>.</p>
+
+          <div style="background-color: ${daysUntilDue === 1 ? '#fff3cd' : '#f8f9fa'}; border-left: 4px solid ${daysUntilDue === 1 ? '#ffc107' : '#0033A0'}; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #0033A0;">Payment Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0;"><strong>Tracking Number:</strong></td>
+                <td style="padding: 8px 0;">${trackingNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Payment Amount:</strong></td>
+                <td style="padding: 8px 0; font-size: 20px; color: #0033A0; font-weight: bold;">$${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Due Date:</strong></td>
+                <td style="padding: 8px 0;">${daysUntilDue} day${daysUntilDue > 1 ? 's' : ''} from today</td>
+              </tr>
+            </table>
+          </div>
+
+          ${daysUntilDue === 1 ? `
+            <div style="background-color: #dc3545; color: white; padding: 15px; margin: 20px 0; border-radius: 5px; text-align: center;">
+              <strong>⚠️ URGENT: Payment due tomorrow!</strong><br>
+              Please make your payment today to avoid late fees.
+            </div>
+          ` : ''}
+
+          <h3 style="color: #0033A0; margin-top: 30px;">How to Make a Payment</h3>
+          <ol style="line-height: 1.8;">
+            <li>Log in to your AmeriLend dashboard</li>
+            <li>Navigate to the <strong>Payments</strong> section</li>
+            <li>Select your saved payment method or enter new payment details</li>
+            <li>Review and complete the transaction</li>
+          </ol>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://amerilendloan.com/dashboard" style="display: inline-block; background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Make Payment Now</a>
+          </div>
+
+          <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #0c5460;"><strong>💡 Pro Tip:</strong> Set up auto-pay in your dashboard to never miss a payment again!</p>
+          </div>
+
+          <p style="margin-top: 30px;">If you've already made this payment, please disregard this reminder. If you have any questions, contact us at <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0;">${COMPANY_INFO.contact.email}</a>.</p>
+
+          <p>Thank you for being a valued AmeriLend customer!</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
+
+/**
+ * Overdue Payment Email
+ */
+export async function sendPaymentOverdueEmail(
+  email: string,
+  userName: string,
+  trackingNumber: string,
+  paymentAmount: number,
+  daysOverdue: number
+) {
+  const formattedAmount = formatCurrency(paymentAmount);
+  const lateFee = Math.round(paymentAmount * 0.05); // 5% late fee
+  const formattedLateFee = formatCurrency(lateFee);
+  const totalDue = paymentAmount + lateFee;
+  const formattedTotal = formatCurrency(totalDue);
+  
+  const subject = `🚨 URGENT: Payment Overdue - Loan #${trackingNumber}`;
+  
+  const text = `
+URGENT: Payment Overdue
+
+Hello ${userName},
+
+Your loan payment is now ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue.
+
+Loan Details:
+- Tracking Number: ${trackingNumber}
+- Original Payment Amount: $${formattedAmount}
+- Late Fee (5%): $${formattedLateFee}
+- Total Amount Due: $${formattedTotal}
+- Days Overdue: ${daysOverdue}
+
+IMMEDIATE ACTION REQUIRED
+
+Please make your payment immediately to avoid additional fees and potential impact to your credit score.
+
+To make a payment:
+1. Log in to your AmeriLend dashboard
+2. Navigate to Payments
+3. Complete the overdue payment
+
+If you're experiencing financial difficulties, please contact us immediately to discuss payment options.
+
+Contact: ${COMPANY_INFO.contact.email} or ${COMPANY_INFO.contact.phone}
+
+The AmeriLend Team
+  `.trim();
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+        ${getEmailHeader()}
+        <div style="padding: 20px;">
+          <div style="background-color: #dc3545; color: white; padding: 20px; margin: 0 -20px 20px -20px; text-align: center;">
+            <h2 style="margin: 0;">🚨 URGENT: Payment Overdue</h2>
+          </div>
+
+          <p>Hello <strong>${userName}</strong>,</p>
+
+          <p style="font-size: 16px; color: #dc3545;"><strong>Your loan payment is now ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue.</strong></p>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #dc3545;">Payment Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0;"><strong>Tracking Number:</strong></td>
+                <td style="padding: 8px 0;">${trackingNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Original Payment:</strong></td>
+                <td style="padding: 8px 0;">$${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Late Fee (5%):</strong></td>
+                <td style="padding: 8px 0; color: #dc3545;">$${formattedLateFee}</td>
+              </tr>
+              <tr style="border-top: 2px solid #dc3545;">
+                <td style="padding: 8px 0;"><strong>Total Amount Due:</strong></td>
+                <td style="padding: 8px 0; font-size: 24px; color: #dc3545; font-weight: bold;">$${formattedTotal}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Days Overdue:</strong></td>
+                <td style="padding: 8px 0; color: #dc3545; font-weight: bold;">${daysOverdue} day${daysOverdue > 1 ? 's' : ''}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #dc3545; color: white; padding: 20px; margin: 20px 0; border-radius: 5px; text-align: center;">
+            <h3 style="margin-top: 0;">⚠️ IMMEDIATE ACTION REQUIRED</h3>
+            <p style="margin-bottom: 0; font-size: 16px;">Please make your payment immediately to avoid:</p>
+            <ul style="text-align: left; margin: 10px auto; max-width: 400px;">
+              <li>Additional late fees</li>
+              <li>Potential credit score impact</li>
+              <li>Collection proceedings</li>
+              <li>Legal action</li>
+            </ul>
+          </div>
+
+          <h3 style="color: #0033A0; margin-top: 30px;">Make Payment Now</h3>
+          <ol style="line-height: 1.8;">
+            <li>Log in to your AmeriLend dashboard</li>
+            <li>Navigate to the <strong>Payments</strong> section</li>
+            <li>Complete the overdue payment of <strong>$${formattedTotal}</strong></li>
+          </ol>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://amerilendloan.com/dashboard" style="display: inline-block; background-color: #dc3545; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">PAY NOW</a>
+          </div>
+
+          <div style="background-color: #f8f9fa; border-left: 4px solid #0033A0; padding: 15px; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #0033A0;">Need Help?</h4>
+            <p style="margin-bottom: 0;">If you're experiencing financial difficulties, please contact us immediately to discuss payment options or hardship programs.</p>
+            <p style="margin-top: 10px; margin-bottom: 0;">
+              📧 <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0;">${COMPANY_INFO.contact.email}</a><br>
+              📞 ${COMPANY_INFO.contact.phone}
+            </p>
+          </div>
+
+          <p style="margin-top: 30px; font-size: 14px; color: #666;">If you've already made this payment, please disregard this notice and allow 2-3 business days for processing.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
+
 

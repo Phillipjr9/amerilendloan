@@ -18,6 +18,7 @@ import { validatePayload, validateContentLength } from "./payload-validator";
 import { initializePaymentNotificationScheduler, shutdownPaymentNotificationScheduler } from "./paymentScheduler";
 import { startAutoPayScheduler } from "./auto-pay-scheduler";
 import { initializeReminderScheduler, shutdownReminderScheduler } from "./reminderScheduler";
+import { initializeCronJobs, stopAllCronJobs } from "./cron-jobs";
 
 // Validate critical environment variables at startup
 function validateEnvironment() {
@@ -329,6 +330,9 @@ async function startServer() {
 
   console.log("[Server] About to start listening...");
   
+  // Store cron jobs reference for cleanup
+  let cronJobs: any = null;
+  
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
     console.log("[Server] ✅ Server is ready to accept connections");
@@ -338,6 +342,7 @@ async function startServer() {
       initializePaymentNotificationScheduler();
       startAutoPayScheduler();
       initializeReminderScheduler();
+      cronJobs = initializeCronJobs(); // NEW: Initialize cron jobs for payment reminders
       console.log("[Server] ✅ All schedulers initialized successfully");
     } catch (error) {
       console.warn("[Server] Failed to initialize schedulers:", error);
@@ -352,6 +357,9 @@ async function startServer() {
     try {
       shutdownPaymentNotificationScheduler();
       shutdownReminderScheduler();
+      if (cronJobs) {
+        stopAllCronJobs(cronJobs); // NEW: Stop cron jobs
+      }
       console.log("[Server] ✅ All schedulers shut down successfully");
     } catch (error) {
       console.warn("[Server] Error shutting down schedulers:", error);

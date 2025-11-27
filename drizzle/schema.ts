@@ -284,6 +284,20 @@ export const savedPaymentMethods = pgTable("savedPaymentMethods", {
 export type SavedPaymentMethod = typeof savedPaymentMethods.$inferSelect;
 export type InsertSavedPaymentMethod = typeof savedPaymentMethods.$inferInsert;
 
+/**
+ * Payment reminders log
+ */
+export const paymentReminders = pgTable("payment_reminders", {
+  id: serial("id").primaryKey(),
+  loanApplicationId: integer("loanApplicationId").notNull(),
+  reminderType: varchar("reminderType", { length: 50 }).notNull(), // "upcoming" or "overdue"
+  daysUntilDue: integer("daysUntilDue").notNull(), // Positive for upcoming, negative for overdue
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+});
+
+export type PaymentReminder = typeof paymentReminders.$inferSelect;
+export type InsertPaymentReminder = typeof paymentReminders.$inferInsert;
+
 export const disbursementStatusEnum = pgEnum("disbursement_status", [
   "pending",      // Awaiting processing
   "processing",   // Being processed
