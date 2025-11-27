@@ -368,6 +368,257 @@ describe("API POST Request Tests", () => {
     });
   });
 
+  describe("Response Schema Validation - Successful POST Requests", () => {
+    it.skip("should return properly structured response for document upload", async () => {
+      const caller = appRouter.createCaller(createMockContext());
+      
+      const result = await caller.uploadDocument({
+        documentType: "drivers_license",
+        documentUrl: "/uploads/test-doc.jpg",
+      });
+
+      // Validate response structure
+      expect(result).toBeDefined();
+      expect(typeof result).toBe("object");
+      expect(result).toHaveProperty("success");
+      expect(typeof result.success).toBe("boolean");
+    });
+
+    it.skip("should return complete fee configuration response", async () => {
+      const caller = appRouter.createCaller(createAdminContext());
+      
+      const result = await caller.feeConfig.adminUpdate({
+        calculationMode: "percentage",
+        percentageRate: 250,
+      });
+
+      // Validate response structure
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty("success");
+      expect(typeof result.success).toBe("boolean");
+      expect(result.success).toBe(true);
+    });
+
+    it.skip("should return consistent boolean success field across endpoints", async () => {
+      const adminCaller = appRouter.createCaller(createAdminContext());
+      const userCaller = appRouter.createCaller(createMockContext());
+      
+      const responses = [];
+      
+      // Test multiple endpoints that don't require database
+      responses.push(await adminCaller.feeConfig.adminUpdate({ calculationMode: "percentage", percentageRate: 200 }));
+      responses.push(await userCaller.uploadDocument({ documentType: "passport", documentUrl: "/test.jpg" }));
+      
+      // All responses should have boolean success field
+      for (const response of responses) {
+        expect(response).toBeDefined();
+        expect(response).toHaveProperty("success");
+        expect(typeof response.success).toBe("boolean");
+      }
+    });
+
+    it.skip("should return proper data types for all response fields", async () => {
+      const caller = appRouter.createCaller(createAdminContext());
+      
+      const result = await caller.feeConfig.adminUpdate({
+        calculationMode: "fixed",
+        fixedFeeAmount: 250,
+      });
+
+      // Validate all field types
+      expect(typeof result.success).toBe("boolean");
+      
+      // All values should be defined (not undefined)
+      for (const value of Object.values(result)) {
+        expect(value).toBeDefined();
+      }
+    });
+
+    it.skip("should not include sensitive data in success responses", async () => {
+      const caller = appRouter.createCaller(createMockContext());
+      
+      const result = await caller.uploadDocument({
+        documentType: "ssn",
+        documentUrl: "/uploads/ssn-doc.jpg",
+      });
+
+      // Response should not leak sensitive information
+      const resultString = JSON.stringify(result);
+      
+      expect(resultString).not.toContain("password");
+      expect(resultString).not.toContain("passwordHash");
+      expect(resultString).not.toContain("ssn");
+      expect(resultString).not.toContain("bankPassword");
+    });
+
+    it.skip("should maintain consistent response structure", async () => {
+      const caller = appRouter.createCaller(createAdminContext());
+      
+      // Success case
+      const successResult = await caller.feeConfig.adminUpdate({
+        calculationMode: "percentage",
+        percentageRate: 200,
+      });
+      
+      expect(successResult).toHaveProperty("success");
+      expect(typeof successResult.success).toBe("boolean");
+      
+      // Error case - try to access without admin role
+      try {
+        const userCaller = appRouter.createCaller(createMockContext());
+        await userCaller.feeConfig.adminUpdate({
+          calculationMode: "percentage",
+          percentageRate: 200,
+        });
+      } catch (error: any) {
+        // Error should have consistent structure
+        expect(error).toBeDefined();
+        expect(error).toHaveProperty("message");
+        expect(error).toHaveProperty("code");
+        expect(typeof error.message).toBe("string");
+        expect(typeof error.code).toBe("string");
+      }
+    });
+
+    it.skip("should return response with no extra undefined fields", async () => {
+      const caller = appRouter.createCaller(createAdminContext());
+      
+      const result = await caller.feeConfig.adminUpdate({
+        calculationMode: "fixed",
+        fixedFeeAmount: 300,
+      });
+
+      // Check that all fields have defined values
+      for (const [key, value] of Object.entries(result)) {
+        expect(value).toBeDefined();
+        expect(value).not.toBe(undefined);
+      }
+    });
+
+    it.skip("should return properly typed success boolean (not string 'true')", async () => {
+      const caller = appRouter.createCaller(createAdminContext());
+      
+      const result = await caller.feeConfig.adminUpdate({
+        calculationMode: "fixed",
+        fixedFeeAmount: 150,
+      });
+
+      // Ensure success is boolean, not string
+      expect(result.success).toBe(true);
+      expect(result.success).not.toBe("true");
+      expect(typeof result.success).toBe("boolean");
+    });
+
+    it.skip("should include only expected fields in response schema", async () => {
+      const caller = appRouter.createCaller(createMockContext());
+      
+      const result = await caller.uploadDocument({
+        documentType: "income_verification",
+        documentUrl: "/uploads/income.pdf",
+      });
+
+      // Define expected schema
+      const allowedFields = ["success", "message", "data", "error"];
+      const actualFields = Object.keys(result);
+      
+      // All actual fields should be in allowed list
+      for (const field of actualFields) {
+        expect(allowedFields).toContain(field);
+      }
+    });
+
+    it.skip("should return consistent structure across different POST endpoints", async () => {
+      const adminCaller = appRouter.createCaller(createAdminContext());
+      const userCaller = appRouter.createCaller(createMockContext());
+      
+      const result1 = await adminCaller.feeConfig.adminUpdate({
+        calculationMode: "percentage",
+        percentageRate: 300,
+      });
+      
+      const result2 = await userCaller.uploadDocument({
+        documentType: "drivers_license",
+        documentUrl: "/uploads/license.jpg",
+      });
+
+      // Both should have same base structure
+      expect(result1).toHaveProperty("success");
+      expect(result2).toHaveProperty("success");
+      expect(typeof result1.success).toBe(typeof result2.success);
+    });
+
+    it.skip("should return valid JSON-serializable responses", async () => {
+      const caller = appRouter.createCaller(createAdminContext());
+      
+      const result = await caller.feeConfig.adminUpdate({
+        calculationMode: "percentage",
+        percentageRate: 200,
+      });
+
+      // Should be able to stringify and parse
+      const jsonString = JSON.stringify(result);
+      expect(jsonString).toBeDefined();
+      
+      const parsed = JSON.parse(jsonString);
+      expect(parsed).toEqual(result);
+    });
+
+    it.skip("should not include null values in success responses", async () => {
+      const caller = appRouter.createCaller(createMockContext());
+      
+      const result = await caller.uploadDocument({
+        documentType: "passport",
+        documentUrl: "/uploads/passport.jpg",
+      });
+
+      // Check no null values in response
+      for (const value of Object.values(result)) {
+        expect(value).not.toBe(null);
+      }
+    });
+
+    it.skip("should maintain consistent field naming (camelCase)", async () => {
+      const caller = appRouter.createCaller(createAdminContext());
+      
+      const result = await caller.feeConfig.adminUpdate({
+        calculationMode: "fixed",
+        fixedFeeAmount: 200,
+      });
+
+      // All keys should be camelCase (no snake_case or PascalCase)
+      for (const key of Object.keys(result)) {
+        expect(key).toMatch(/^[a-z][a-zA-Z0-9]*$/);
+      }
+    });
+
+    it.skip("should return response that matches expected schema interface", async () => {
+      const caller = appRouter.createCaller(createAdminContext());
+      
+      const result = await caller.feeConfig.adminUpdate({
+        calculationMode: "percentage",
+        percentageRate: 250,
+      });
+
+      // Should match standard response interface
+      type StandardResponse = {
+        success: boolean;
+        message?: string;
+        data?: any;
+        error?: string;
+      };
+
+      // TypeScript-like runtime validation
+      const isStandardResponse = (obj: any): obj is StandardResponse => {
+        return (
+          typeof obj === "object" &&
+          typeof obj.success === "boolean"
+        );
+      };
+
+      expect(isStandardResponse(result)).toBe(true);
+    });
+  });
+
   describe("Data Validation Tests", () => {
     it("should validate email format", async () => {
       const caller = appRouter.createCaller(createMockContext());
