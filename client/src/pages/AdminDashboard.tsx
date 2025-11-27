@@ -1686,7 +1686,7 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
         </main>
-    </div>
+      </div>
 
       {/* Approval Dialog */}
       <Dialog open={approvalDialog.open} onOpenChange={(open) => setApprovalDialog({ ...approvalDialog, open })}>
