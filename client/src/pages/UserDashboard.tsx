@@ -36,9 +36,23 @@ export function UserDashboard() {
   }
 
   const activeLoan = loans?.[0];
-  const totalLoansAmount = loans?.reduce((sum: number, loan: any) => sum + (loan.approvedAmount || 0), 0) || 0;
-  const totalPaid = loans?.reduce((sum: number, loan: any) => sum + (loan.paidAmount || 0), 0) || 0;
+  
+  // Calculate totals based on actual database fields
+  const totalLoansAmount = loans?.reduce((sum: number, loan: any) => {
+    // Use approvedAmount if approved/fee_paid/disbursed, otherwise requestedAmount
+    const amount = (loan.status === 'approved' || loan.status === 'fee_pending' || loan.status === 'fee_paid' || loan.status === 'disbursed') 
+      ? (loan.approvedAmount || 0) 
+      : 0;
+    return sum + amount;
+  }, 0) || 0;
+  
+  // Note: paidAmount is in paymentSchedules table, not in loanApplications
+  // For now, we'll show $0 until we add a proper query to aggregate payments
+  const totalPaid = 0; // TODO: Query paymentSchedules table
   const remainingBalance = totalLoansAmount - totalPaid;
+  
+  // Count actually disbursed loans (not 'active' which doesn't exist)
+  const disbursedLoansCount = loans?.filter((l: any) => l.status === 'disbursed').length || 0;
   
   // Find loan that needs processing fee payment
   // Show for approved or fee_pending status
@@ -146,7 +160,7 @@ export function UserDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">{loans?.length || 0}</div>
               <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                {loans?.filter((l: any) => l.status === 'active').length || 0} active
+                {disbursedLoansCount} disbursed
               </p>
             </CardContent>
           </Card>
@@ -265,36 +279,36 @@ export function UserDashboard() {
               </Card>
             )}
 
-            {/* Next Payment */}
-            {activeLoan && (
+            {/* Next Payment - Only show for disbursed loans */}
+            {activeLoan && activeLoan.status === 'disbursed' && (
               <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
-                    Next Payment Due
+                    Loan Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-blue-600 dark:text-blue-400">Due Date</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">Disbursed Date</p>
                       <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                        {formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
+                        {activeLoan.disbursedAt ? formatDate(new Date(activeLoan.disbursedAt)) : 'N/A'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600 dark:text-blue-400">Requested Amount</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">Loan Amount</p>
                       <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                        {formatCurrency(activeLoan.requestedAmount)}
+                        {formatCurrency(activeLoan.approvedAmount || activeLoan.requestedAmount)}
                       </p>
                     </div>
                   </div>
                   <Button 
-                    onClick={() => navigate('/payment')}
+                    onClick={() => navigate(`/loans/${activeLoan.id}`)}
                     className="w-full"
                     variant="default"
                   >
-                    Make a Payment Now
+                    View Loan Details
                   </Button>
                 </CardContent>
               </Card>
@@ -319,10 +333,10 @@ export function UserDashboard() {
                             Loan #{loan.trackingNumber}
                           </p>
                           <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {formatCurrency(loan.requestedAmount)} • {loan.status}
+                            {formatCurrency(loan.approvedAmount || loan.requestedAmount)} • {loan.status.replace('_', ' ')}
                           </p>
                         </div>
-                        <Badge variant="outline">{loan.loanTerm}m</Badge>
+                        <Badge variant="outline">{loan.loanType}</Badge>
                       </button>
                     ))}
                   </div>
