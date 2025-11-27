@@ -21,6 +21,9 @@ export function UserDashboard() {
     enabled: !!user,
   });
 
+  // Debug: Log loans data
+  console.log('UserDashboard - All loans:', loans);
+
   if (userLoading || loansLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -37,12 +40,13 @@ export function UserDashboard() {
   const totalPaid = loans?.reduce((sum: number, loan: any) => sum + (loan.paidAmount || 0), 0) || 0;
   const remainingBalance = totalLoansAmount - totalPaid;
   
-  // Find loan with pending processing fee
-  const loanWithPendingFee = loans?.find((loan: any) => 
-    (loan.status === 'approved' || loan.status === 'fee_pending') && 
-    loan.processingFeeAmount && 
-    loan.processingFeeAmount > 0
-  );
+  // Find loan with pending processing fee (show for approved/fee_pending status)
+  const loanWithPendingFee = loans?.find((loan: any) => {
+    console.log('Checking loan:', loan.id, 'status:', loan.status, 'processingFeeAmount:', loan.processingFeeAmount);
+    return (loan.status === 'approved' || loan.status === 'fee_pending') && 
+           loan.processingFeeAmount && 
+           loan.processingFeeAmount > 0;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
