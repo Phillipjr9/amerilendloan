@@ -93,8 +93,9 @@ export default function PaymentMethodManager() {
         nameOnCard: cardData.nameOnCard,
       });
     } else {
-      // Crypto wallet - simplified for now
-      toast.info("Crypto wallet integration coming soon!");
+      // Crypto wallet - users can make crypto payments directly on payment page
+      toast.success("Crypto payments are available on the payment page!");
+      setShowAddDialog(false);
     }
   };
 
@@ -321,7 +322,9 @@ export default function PaymentMethodManager() {
           {selectedMethod === "crypto" && (
             <div className="text-center py-8">
               <Bitcoin className="w-16 h-16 mx-auto text-[#FFA500] mb-4" />
-              <p className="text-gray-600">Crypto wallet integration coming soon!</p>
+              <p className="text-gray-700 font-medium mb-2">Crypto Payments Available!</p>
+              <p className="text-gray-600 text-sm">You can pay with Bitcoin, Ethereum, USDT, or USDC directly on any payment page.</p>
+              <p className="text-gray-500 text-xs mt-2">No need to save crypto wallets - just select crypto when making a payment.</p>
             </div>
           )}
 
@@ -331,7 +334,7 @@ export default function PaymentMethodManager() {
             </Button>
             <Button
               onClick={handleAddMethod}
-              disabled={addMethodMutation.isPending || selectedMethod === "crypto"}
+              disabled={addMethodMutation.isPending}
               className="bg-[#0033A0] hover:bg-[#002680]"
             >
               {addMethodMutation.isPending ? "Adding..." : "Add Method"}
