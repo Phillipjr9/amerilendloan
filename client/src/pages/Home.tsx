@@ -39,9 +39,11 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
-  // Check if user has any loans that need fee payment
+  // Check if user has any loans that need fee payment (exclude fee_paid and disbursed)
   const hasLoansNeedingPayment = loans?.some(
-    loan => loan.status === "approved" || loan.status === "fee_pending"
+    loan => (loan.status === "approved" || loan.status === "fee_pending") && 
+            loan.status !== "fee_paid" && 
+            loan.status !== "disbursed"
   );
 
   const toggleFaq = (index: number) => {

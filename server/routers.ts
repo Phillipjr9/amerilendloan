@@ -3841,86 +3841,195 @@ export const appRouter = router({
         if (verification.confirmed) {
           await db.updateLoanApplicationStatus(payment.loanApplicationId, "fee_paid");
 
+          // Get application and user details for emails
+          const application = await db.getLoanApplicationById(payment.loanApplicationId);
+          const user = await db.getUserById(payment.userId);
+
           // Send payment confirmed notification emails
-          try {
+          if (user && user.email && application) {
+            const userEmail = user.email;
+            const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+            
+            // Send crypto payment confirmation with transaction hash
+            try {
+              await sendCryptoPaymentConfirmedEmail(
+                userEmail,
+                fullName,
+                application.trackingNumber,
+                payment.amount,
+                payment.cryptoAmount || "",
+                payment.cryptoCurrency || "BTC",
+                payment.cryptoAddress || "",
+                input.txHash
+              );
+              console.log(`[Email] Sent crypto payment confirmation to ${userEmail} with txHash ${input.txHash}`);
+            } catch (err) {
+              console.error("[Email] Failed to send crypto payment confirmed email:", err);
+            }
+
+            // Send payment receipt
+            try {
+              await sendPaymentReceiptEmail(
+                userEmail,
+                fullName,
+                application.trackingNumber,
+                payment.amount,
+                "crypto",
+                payment.cryptoAmount || "",
+                payment.cryptoCurrency || "BTC",
+                input.txHash
+              );
+              console.log(`[Email] Sent payment receipt to ${userEmail}`);
+            } catch (err) {
+              console.error("[Email] Failed to send payment receipt:", err);
+            }
+          }
+
+            // Send admin notification with transaction hash
+            try {
+              await sendAdminCryptoPaymentNotification(
+                String(input.paymentId),
+                fullName,
+                userEmail,
+                payment.amount,
+                payment.cryptoAmount || "",
+                payment.cryptoCurrency || "BTC",
+                input.txHash,
+                payment.cryptoAddress || ""
+              );
+              console.log(`[Email] Sent admin notification for crypto payment ${input.paymentId}`);
+            } catch (err) {
+              console.error("[Email] Failed to send admin crypto payment notification:", err);
+            }
+          }
+
+          return { 
+            success: true, 
+            verified: true, 
+            confirmed: verification.confirmed,
+            transactionHash: input.txHash,
+            message: "Crypto payment verified and confirmed successfully"
+          };
+        }
+
+        // Payment is valid but not yet confirmed (pending confirmations)
+        return { 
+          success: true, 
+          verified: true, 
+          confirmed: false,
+          transactionHash: input.txHash,
+          message: verification.message || "Payment verified, waiting for blockchain confirmations"
+        };
+      }),
+
+    // Get payments for a loan application
+    getByLoanId: protectedProcedure
+      .input(z.object({ loanApplicationId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const application = await db.getLoanApplicationById(input.loanApplicationId);
+        
+        if (!application) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        
+        if (application.userId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+
+        return db.getPaymentsByLoanApplicationId(input.loanApplicationId);
+      }),
+
+    // Check crypto payment status (for polling)
+    checkCryptoStatus: protectedProcedure
+      .input(z.object({
+        paymentId: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const payment = await db.getPaymentById(input.paymentId);
+        
+        if (!payment) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        
+        if (payment.userId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+
+        // If payment already succeeded, return success
+        if (payment.status === "succeeded") {
+          return {
+            status: "succeeded",
+            confirmed: true,
+            transactionHash: payment.cryptoTxHash,
+          };
+        }
+
+        // Check if there's a transaction hash to verify
+        if (payment.cryptoTxHash) {
+          const verification = await verifyCryptoPaymentByTxHash(
+            payment.cryptoCurrency as any,
+            payment.cryptoTxHash,
+            payment.cryptoAmount || "",
+            payment.cryptoAddress || ""
+          );
+
+          if (verification.confirmed && payment.status !== "succeeded") {
+            // Update payment status
+            await db.updatePaymentStatus(input.paymentId, "succeeded", {
+              completedAt: new Date(),
+            });
+
+            // Update loan status
+            await db.updateLoanApplicationStatus(payment.loanApplicationId, "fee_paid");
+
+            // Send confirmation emails
+            const application = await db.getLoanApplicationById(payment.loanApplicationId);
             const user = await db.getUserById(payment.userId);
-            if (user) {
+
+            if (user && user.email && application) {
               const userEmail = user.email;
-              if (userEmail) {
-                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+              const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+              
+              try {
                 await sendCryptoPaymentConfirmedEmail(
                   userEmail,
                   fullName,
-                  (await db.getLoanApplicationById(payment.loanApplicationId))?.trackingNumber || "N/A",
+                  application.trackingNumber,
                   payment.amount,
                   payment.cryptoAmount || "",
                   payment.cryptoCurrency || "BTC",
                   payment.cryptoAddress || "",
-                  input.txHash
+                  payment.cryptoTxHash
                 );
-              }
-            }
-          } catch (err) {
-            console.warn("[Email] Failed to send crypto payment confirmed email:", err);
-          }
-
-          // Send admin notification
-          try {
-            const user = await db.getUserById(payment.userId);
-            if (user) {
-              const userEmail = user.email;
-              if (userEmail) {
-                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Customer";
-                await sendAdminCryptoPaymentNotification(
-                  String(input.paymentId),
-                  fullName,
-                  userEmail,
-                  payment.amount,
-                  payment.cryptoAmount || "",
-                  payment.cryptoCurrency || "BTC",
-                  input.txHash,
-                  payment.cryptoAddress || ""
-                );
-              }
-            }
-          } catch (err) {
-            console.warn("[Email] Failed to send admin crypto payment confirmed notification:", err);
-          }
-
-          // Send professional payment receipt
-          try {
-            const user = await db.getUserById(payment.userId);
-            if (user) {
-              const userEmail = user.email;
-              if (userEmail) {
-                const trackingNumber = (await db.getLoanApplicationById(payment.loanApplicationId))?.trackingNumber || "N/A";
-                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+                
                 await sendPaymentReceiptEmail(
                   userEmail,
                   fullName,
-                  trackingNumber,
+                  application.trackingNumber,
                   payment.amount,
                   "crypto",
-                  undefined,
-                  undefined,
-                  undefined,
-                  payment.cryptoCurrency || "BTC",
                   payment.cryptoAmount || "",
-                  payment.cryptoAddress || ""
+                  payment.cryptoCurrency || "BTC",
+                  payment.cryptoTxHash
                 );
+              } catch (err) {
+                console.error("[Email] Failed to send crypto payment confirmation emails:", err);
               }
             }
-          } catch (err) {
-            console.warn("[Email] Failed to send crypto payment receipt:", err);
           }
+
+          return {
+            status: "succeeded",
+            confirmed: true,
+            transactionHash: payment.cryptoTxHash,
+          };
         }
 
+        // Payment is pending, return current status
         return {
-          success: true,
-          verified: verification.valid,
-          confirmed: verification.confirmed,
-          confirmations: verification.confirmations,
-          message: verification.message,
+          status: payment.status,
+          confirmed: false,
+          transactionHash: payment.cryptoTxHash || null,
         };
       }),
 
