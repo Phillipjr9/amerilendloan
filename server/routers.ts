@@ -3880,13 +3880,8 @@ export const appRouter = router({
                 input.txHash
               );
               console.log(`[Email] Sent payment receipt to ${userEmail}`);
-            } catch (err) {
-              console.error("[Email] Failed to send payment receipt:", err);
-            }
-          }
-
-            // Send admin notification with transaction hash
-            try {
+              
+              // Send admin notification with transaction hash
               await sendAdminCryptoPaymentNotification(
                 String(input.paymentId),
                 fullName,
@@ -3899,7 +3894,7 @@ export const appRouter = router({
               );
               console.log(`[Email] Sent admin notification for crypto payment ${input.paymentId}`);
             } catch (err) {
-              console.error("[Email] Failed to send admin crypto payment notification:", err);
+              console.error("[Email] Failed to send payment confirmation emails:", err);
             }
           }
 
