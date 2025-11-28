@@ -43,8 +43,14 @@ export async function sendEmail(payload: EmailPayload): Promise<{ success: boole
 
   if (!ENV.sendGridApiKey) {
     console.error("SendGrid API key not configured");
+    console.error("ENV.emailTestMode:", ENV.emailTestMode);
+    console.error("ENV.sendGridApiKey:", ENV.sendGridApiKey ? "SET (hidden)" : "NOT SET");
     return { success: false, error: "Email service not configured" };
   }
+
+  console.log("📧 Attempting to send email via SendGrid...");
+  console.log("   To:", payload.to);
+  console.log("   From:", process.env.SENDGRID_VERIFIED_EMAIL || "noreply@amerilendloan.com");
 
   try {
     const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
