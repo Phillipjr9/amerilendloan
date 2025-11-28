@@ -182,8 +182,18 @@ export async function sendOTPEmail(email: string, code: string, purpose: "signup
 
   const result = await sendEmail({ to: email, subject, text, html });
   if (!result.success) {
+    // In test mode, this should never happen, but if it does, log it
+    if (ENV.emailTestMode) {
+      console.log(`[Email Test Mode] OTP code for ${email}: ${code}`);
+      return; // Don't throw error in test mode
+    }
     console.error(`[Email] Failed to send OTP verification email to ${email}:`, result.error);
     throw new Error(`Failed to send OTP verification email: ${result.error}`);
+  }
+  
+  // Log OTP in test mode for debugging
+  if (ENV.emailTestMode) {
+    console.log(`\n🔐 [OTP CODE] For ${email}: ${code}\n`);
   }
 }
 
