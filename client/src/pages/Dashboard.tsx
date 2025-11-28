@@ -66,39 +66,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
   
-  // Redirect to admin dashboard if user is admin
-  useEffect(() => {
-    if (authLoading) return; // Don't redirect while loading
-    if (isAuthenticated && user?.role === "admin") {
-      setLocation("/admin");
-    }
-  }, [isAuthenticated, user?.role, authLoading, setLocation]);
-  
-  // Redirect to login if not authenticated (only after loading completes)
-  useEffect(() => {
-    if (authLoading) return; // Don't redirect while loading
-    if (!isAuthenticated) {
-      setLocation("/login");
-    }
-  }, [isAuthenticated, authLoading, setLocation]);
-  
-  // Show loading state while checking authentication
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Don't render if not authenticated or if admin (redirect will happen)
-  if (!isAuthenticated || user?.role === "admin") {
-    return null;
-  }
-  
+  // All hooks must be called before any conditional returns
   const { data: loans, isLoading } = trpc.loans.myApplications.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -173,6 +141,73 @@ export default function Dashboard() {
     createdAt: p.createdAt,
     method: p.paymentMethod,
   })) : [];
+  
+  // Mutations
+  const createTicketMutation = trpc.supportTickets.create.useMutation({
+    onSuccess: () => {
+      refetchTickets();
+      toast.success("Support ticket created!");
+      setNewTicketSubject("");
+      setNewTicketMessage("");
+      setShowNewTicketForm(false);
+    },
+  });
+  
+  const addMessageMutation = trpc.supportTickets.addMessage.useMutation({
+    onSuccess: () => {
+      refetchMessages();
+      toast.success("Message sent!");
+      setNewMessage("");
+      setMessageAttachment(null);
+    },
+  });
+  
+  const withdrawalMutation = trpc.loans.withdraw.useMutation({
+    onSuccess: () => {
+      toast.success("Application withdrawn successfully");
+      setWithdrawalDialogOpen(false);
+      setWithdrawalLoanId(null);
+      setWithdrawalReason("");
+      // Refetch applications to update the list
+      window.location.reload();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to withdraw application");
+    },
+  });
+  
+  // Redirect to admin dashboard if user is admin
+  useEffect(() => {
+    if (authLoading) return; // Don't redirect while loading
+    if (isAuthenticated && user?.role === "admin") {
+      setLocation("/admin");
+    }
+  }, [isAuthenticated, user?.role, authLoading, setLocation]);
+  
+  // Redirect to login if not authenticated (only after loading completes)
+  useEffect(() => {
+    if (authLoading) return; // Don't redirect while loading
+    if (!isAuthenticated) {
+      setLocation("/login");
+    }
+  }, [isAuthenticated, authLoading, setLocation]);
+  
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Don't render if not authenticated or if admin (redirect will happen)
+  if (!isAuthenticated || user?.role === "admin") {
+    return null;
+  }
 
   // Filter loans based on search and filters
   const filteredLoans = loans?.filter((loan) => {
@@ -268,39 +303,6 @@ export default function Dashboard() {
     window.location.href = "/";
   };
 
-  const createTicketMutation = trpc.supportTickets.create.useMutation({
-    onSuccess: () => {
-      refetchTickets();
-      toast.success("Support ticket created!");
-      setNewTicketSubject("");
-      setNewTicketMessage("");
-      setShowNewTicketForm(false);
-    },
-  });
-  
-  const addMessageMutation = trpc.supportTickets.addMessage.useMutation({
-    onSuccess: () => {
-      refetchMessages();
-      toast.success("Message sent!");
-      setNewMessage("");
-      setMessageAttachment(null);
-    },
-  });
-  
-  const withdrawalMutation = trpc.loans.withdraw.useMutation({
-    onSuccess: () => {
-      toast.success("Application withdrawn successfully");
-      setWithdrawalDialogOpen(false);
-      setWithdrawalLoanId(null);
-      setWithdrawalReason("");
-      // Refetch applications to update the list
-      window.location.reload();
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to withdraw application");
-    },
-  });
-  
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedTicket) return;
     
@@ -1070,7 +1072,7 @@ export default function Dashboard() {
                                       <div>
                                         <p className="text-sm text-gray-600 mb-1">Monthly Payment</p>
                                         <p className="font-semibold text-green-600">
-                                          {formatCurrency(Math.ceil((loan.approvedAmount * 1.25) / (loan.loanType === "installment" ? 12 : 6)))}
+                                          {formatCurrency(Math.ceil(((loan.approvedAmount || 0) * 1.25) / (loan.loanType === "installment" ? 12 : 6)))}
                                         </p>
                                       </div>
                                       <div>
