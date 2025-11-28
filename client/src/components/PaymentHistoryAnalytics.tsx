@@ -21,17 +21,22 @@ export default function PaymentHistoryAnalytics() {
 
   const { data: paymentsData = [], isLoading } = trpc.payments.getHistory.useQuery();
 
-  const payments = paymentsData.map((p: any) => ({
-    id: p.id,
-    date: new Date(p.createdAt),
-    amount: p.amount / 100,
-    status: p.status === "succeeded" ? "completed" : p.status,
-    method: p.paymentMethod === "card" 
-      ? `${p.cardBrand || "Card"} ****${p.cardLast4 || ""}` 
-      : `${p.cryptoCurrency || "Crypto"}`,
-    loanId: p.loanApplicationId,
-    type: "Processing Fee", // Could be different types
-  }));
+  const payments = Array.isArray(paymentsData) ? paymentsData
+    .filter((p: any) => p.createdAt) // Filter out items without createdAt
+    .map((p: any) => {
+      const date = p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt);
+      return {
+        id: p.id,
+        date: isNaN(date.getTime()) ? new Date() : date,
+        amount: (p.amount || 0) / 100,
+        status: p.status === "succeeded" ? "completed" : p.status,
+        method: p.paymentMethod === "card" 
+          ? `${p.cardBrand || "Card"} ****${p.cardLast4 || ""}` 
+          : `${p.cryptoCurrency || "Crypto"}`,
+        loanId: p.loanApplicationId,
+        type: "Processing Fee", // Could be different types
+      };
+    }) : [];
 
   // Calculate analytics
   const totalPaid = payments
@@ -44,6 +49,7 @@ export default function PaymentHistoryAnalytics() {
     : 0;
 
   const monthlyData = payments.reduce((acc: any, payment) => {
+    if (!payment.date || isNaN(payment.date.getTime())) return acc;
     const month = payment.date.toLocaleString('default', { month: 'short', year: 'numeric' });
     if (!acc[month]) acc[month] = 0;
     if (payment.status === "completed") {
