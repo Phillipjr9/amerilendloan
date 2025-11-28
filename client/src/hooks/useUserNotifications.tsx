@@ -38,9 +38,11 @@ export function useUserNotifications() {
     const newNotifications: Notification[] = [];
 
     // Check for loan status changes
-    if (loans) {
+    if (Array.isArray(loans)) {
       loans.forEach((loan) => {
+        if (!loan.updatedAt) return; // Skip if no updatedAt
         const loanDate = new Date(loan.updatedAt);
+        if (isNaN(loanDate.getTime())) return; // Skip invalid dates
         
         // Loan approved
         if (loan.status === "approved" && loanDate > lastCheck) {
@@ -100,10 +102,12 @@ export function useUserNotifications() {
     }
 
     // Check for new support ticket messages
-    if (supportTicketsData?.data) {
+    if (Array.isArray(supportTicketsData?.data)) {
       supportTicketsData.data.forEach((ticket: any) => {
+        if (!ticket.updatedAt) return; // Skip if no updatedAt
         // Check if ticket was recently updated by admin
         const updatedDate = new Date(ticket.updatedAt);
+        if (isNaN(updatedDate.getTime())) return; // Skip invalid dates
         if (updatedDate > lastCheck && ticket.lastMessageFromAdmin) {
           newNotifications.push({
             id: `ticket-reply-${ticket.id}`,
@@ -132,9 +136,11 @@ export function useUserNotifications() {
     }
 
     // Check for payment confirmations
-    if (paymentsData) {
+    if (Array.isArray(paymentsData)) {
       paymentsData.forEach((payment: any) => {
+        if (!payment.createdAt) return; // Skip if no createdAt
         const paymentDate = new Date(payment.createdAt);
+        if (isNaN(paymentDate.getTime())) return; // Skip invalid dates
         
         if (payment.status === "succeeded" && paymentDate > lastCheck) {
           newNotifications.push({
