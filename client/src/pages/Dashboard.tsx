@@ -2115,7 +2115,7 @@ export default function Dashboard() {
               onClick={() => {
                 if (withdrawalLoanId) {
                   withdrawalMutation.mutate({
-                    applicationId: withdrawalLoanId,
+                    id: withdrawalLoanId,
                     reason: withdrawalReason || undefined,
                   });
                 }
