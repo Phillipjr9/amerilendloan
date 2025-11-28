@@ -655,6 +655,19 @@ export async function getUserPayments(userId: number) {
   }));
 }
 
+export async function getAllPayments() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { payments } = await import("../drizzle/schema");
+  
+  const result = await db.select()
+    .from(payments)
+    .orderBy(desc(payments.createdAt));
+  
+  return result;
+}
+
 export async function updatePaymentStatus(
   id: number,
   status: Payment["status"],

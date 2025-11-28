@@ -4138,6 +4138,173 @@ export const appRouter = router({
         }
         return db.setDefaultPaymentMethod(ctx.user.id, input.id);
       }),
+
+    // Admin: Get all payments with details
+    adminGetAllPayments: adminProcedure
+      .input(z.object({
+        status: z.enum(["pending", "processing", "succeeded", "failed", "cancelled", "all"]).optional(),
+        paymentMethod: z.enum(["card", "crypto", "all"]).optional(),
+      }))
+      .query(async ({ input }) => {
+        const allPayments = await db.getAllPayments();
+        
+        // Filter by status
+        let filtered = input.status && input.status !== "all" 
+          ? allPayments.filter(p => p.status === input.status)
+          : allPayments;
+
+        // Filter by payment method
+        if (input.paymentMethod && input.paymentMethod !== "all") {
+          filtered = filtered.filter(p => p.paymentMethod === input.paymentMethod);
+        }
+
+        // Enrich with user and loan details
+        const enriched = await Promise.all(
+          filtered.map(async (payment) => {
+            const user = await db.getUserById(payment.userId);
+            const loan = await db.getLoanApplicationById(payment.loanApplicationId);
+            
+            return {
+              ...payment,
+              userName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
+              userEmail: user?.email || "",
+              loanTrackingNumber: loan?.trackingNumber || `LN-${payment.loanApplicationId}`,
+              loanStatus: loan?.status || "unknown",
+              feePaymentVerified: loan?.feePaymentVerified || false,
+            };
+          })
+        );
+
+        return enriched.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      }),
+
+    // Admin: Get payment details by ID
+    adminGetPaymentDetails: adminProcedure
+      .input(z.object({ paymentId: z.number() }))
+      .query(async ({ input }) => {
+        const payment = await db.getPaymentById(input.paymentId);
+        
+        if (!payment) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Payment not found" });
+        }
+
+        const user = await db.getUserById(payment.userId);
+        const loan = await db.getLoanApplicationById(payment.loanApplicationId);
+
+        return {
+          ...payment,
+          userName: user ? `${user.firstName} ${user.lastName}` : "Unknown",
+          userEmail: user?.email || "",
+          loanTrackingNumber: loan?.trackingNumber || `LN-${payment.loanApplicationId}`,
+          loanStatus: loan?.status || "unknown",
+          feePaymentVerified: loan?.feePaymentVerified || false,
+        };
+      }),
+
+    // Admin: Manually verify crypto payment
+    adminVerifyCryptoPayment: adminProcedure
+      .input(z.object({
+        paymentId: z.number(),
+        verified: z.boolean(),
+        adminNotes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const payment = await db.getPaymentById(input.paymentId);
+        
+        if (!payment) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Payment not found" });
+        }
+
+        if (payment.paymentMethod !== "crypto") {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: "This payment is not a crypto payment" 
+          });
+        }
+
+        if (input.verified) {
+          // Mark payment as succeeded
+          await db.updatePaymentStatus(input.paymentId, "succeeded", {
+            completedAt: new Date(),
+            adminNotes: input.adminNotes,
+          });
+
+          // Update loan status to fee_paid
+          await db.updateLoanApplicationStatus(payment.loanApplicationId, "fee_paid");
+
+          // Send confirmation emails
+          const application = await db.getLoanApplicationById(payment.loanApplicationId);
+          const user = await db.getUserById(payment.userId);
+
+          if (user?.email && application) {
+            const userEmail = user.email;
+            const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+            
+            try {
+              await sendCryptoPaymentConfirmedEmail(
+                userEmail,
+                fullName,
+                application.trackingNumber,
+                payment.amount,
+                payment.cryptoAmount || "",
+                payment.cryptoCurrency || "BTC",
+                payment.cryptoAddress || "",
+                payment.cryptoTxHash || ""
+              );
+              
+              await sendPaymentReceiptEmail(
+                userEmail,
+                fullName,
+                application.trackingNumber,
+                payment.amount,
+                "crypto",
+                payment.cryptoAmount || "",
+                payment.cryptoCurrency || "BTC",
+                payment.cryptoTxHash || ""
+              );
+            } catch (err) {
+              console.error("[Email] Failed to send crypto payment confirmation emails:", err);
+            }
+          }
+
+          // Log admin activity
+          await db.logAdminActivity({
+            adminId: ctx.user.id,
+            action: "verify_crypto_payment",
+            targetType: "payment",
+            targetId: input.paymentId,
+            details: JSON.stringify({ 
+              verified: true,
+              notes: input.adminNotes,
+              txHash: payment.cryptoTxHash,
+            }),
+          });
+        } else {
+          // Mark payment as failed
+          await db.updatePaymentStatus(input.paymentId, "failed", {
+            adminNotes: input.adminNotes,
+          });
+
+          // Update loan status back to approved
+          await db.updateLoanApplicationStatus(payment.loanApplicationId, "approved");
+
+          // Log admin activity
+          await db.logAdminActivity({
+            adminId: ctx.user.id,
+            action: "reject_crypto_payment",
+            targetType: "payment",
+            targetId: input.paymentId,
+            details: JSON.stringify({ 
+              verified: false,
+              notes: input.adminNotes,
+            }),
+          });
+        }
+
+        return { success: true };
+      }),
   }),
 
   // Disbursement router (admin only)

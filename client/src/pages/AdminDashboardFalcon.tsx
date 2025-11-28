@@ -25,6 +25,7 @@ import AdminAnalyticsDashboard from "@/components/AdminAnalyticsDashboard";
 import { NotificationBell } from "@/components/NotificationBell";
 import AdvancedAnalytics from "@/components/AdvancedAnalytics";
 import AutomatedWorkflows from "@/components/AutomatedWorkflows";
+import AdminPaymentVerification from "@/components/AdminPaymentVerification";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
@@ -37,7 +38,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-gray-100 text-gray-800 border-gray-300",
 };
 
-type ViewType = "dashboard" | "applications" | "tracking" | "verification" | "support" | "audit" | "fees" | "crypto" | "workflows";
+type ViewType = "dashboard" | "applications" | "tracking" | "verification" | "support" | "audit" | "fees" | "crypto" | "workflows" | "payments";
 
 export default function AdminDashboardFalcon() {
   const [, setLocation] = useLocation();
@@ -389,6 +390,7 @@ export default function AdminDashboardFalcon() {
     { id: "support" as ViewType, icon: MessageSquare, label: "Support" },
     { id: "audit" as ViewType, icon: BarChart3, label: "Analytics" },
     { id: "workflows" as ViewType, icon: Zap, label: "Workflows" },
+    { id: "payments" as ViewType, icon: CreditCard, label: "Payments" },
     { id: "fees" as ViewType, icon: Settings, label: "Fee Settings" },
     { id: "crypto" as ViewType, icon: Wallet, label: "Crypto Wallet" },
   ];
@@ -1230,6 +1232,13 @@ export default function AdminDashboardFalcon() {
           {currentView === "workflows" && (
             <div className="space-y-6">
               <AutomatedWorkflows />
+            </div>
+          )}
+
+          {/* Payments Verification View */}
+          {currentView === "payments" && (
+            <div className="space-y-6">
+              <AdminPaymentVerification />
             </div>
           )}
 
