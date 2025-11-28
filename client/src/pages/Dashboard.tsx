@@ -481,6 +481,7 @@ export default function Dashboard() {
   };
 
   return (
+    <>
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
       {/* Left Sidebar Navigation */}
       <aside className={`${
@@ -2079,36 +2080,12 @@ export default function Dashboard() {
           </div>
         </footer>
       </div>
+    </div>
 
       {/* AI Support Widget - Only for authenticated users */}
       <AiSupportWidget isAuthenticated={true} />
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="/" className="hover:text-[#FFA500] transition-colors">Home</a></li>
-                <li><a href="/#faq" className="hover:text-[#FFA500] transition-colors">FAQ</a></li>
-                <li><Link href="/settings"><span className="hover:text-[#FFA500] transition-colors">Settings</span></Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-3">Legal</h4>
-              <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="/public/legal/privacy-policy" className="hover:text-[#FFA500] transition-colors">Privacy Policy</a></li>
-                <li><a href="/public/legal/terms-of-service" className="hover:text-[#FFA500] transition-colors">Terms of Service</a></li>
-                <li><a href="/public/legal/loan-agreement" className="hover:text-[#FFA500] transition-colors">Loan Agreement</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-white/20 pt-6 text-center text-xs text-white/70">
-            <p>© 2025 AmeriLend, LLC. All Rights Reserved.</p>
-            <p className="mt-2">Your trusted partner for consumer loans.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
 
-    {/* Withdrawal Confirmation Dialog */}
+      {/* Withdrawal Confirmation Dialog */}
       <Dialog open={withdrawalDialogOpen} onOpenChange={setWithdrawalDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -2162,9 +2139,6 @@ export default function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* AI Support Widget - Only for authenticated users */}
-      <AiSupportWidget isAuthenticated={true} />
-    </div>
+    </>
   );
 }
