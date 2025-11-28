@@ -29,10 +29,10 @@ const NETWORKS: Record<string, BlockchainNetwork> = {
   },
   BTC: {
     name: "Bitcoin",
-    rpcUrl: process.env.BITCOIN_RPC_URL || "https://blockbook.horizontalsystems.io/api",
+    rpcUrl: process.env.BITCOIN_RPC_URL || "https://blockchain.info",
     explorerUrl: "https://blockchair.com/bitcoin",
     currency: "BTC",
-    confirmationsRequired: 3,
+    confirmationsRequired: 6, // Industry standard for Bitcoin
   },
   POLYGON: {
     name: "Polygon",
@@ -191,63 +191,105 @@ export async function verifyBitcoinTransaction(
       };
     }
 
-    // In production, use a Bitcoin API like:
-    // - blockchair.com API
-    // - blockchain.com API
-    // - blockbook API
-    // - mempool.space API
+    // Use Blockchain.com API (free, no API key required)
+    try {
+      const response = await fetch(`https://blockchain.info/rawtx/${txHash}`);
+      
+      if (!response.ok) {
+        // Try backup API: Mempool.space
+        const mempoolResponse = await fetch(`https://mempool.space/api/tx/${txHash}`);
+        
+        if (!mempoolResponse.ok) {
+          return {
+            valid: false,
+            confirmed: false,
+            confirmations: 0,
+            message: "Bitcoin transaction not found on blockchain",
+          };
+        }
 
-    /*
-    const response = await fetch(`https://blockchair.com/bitcoin/transaction/${txHash}`);
-    const data = await response.json();
-    
-    if (!data.data || !data.data[txHash]) {
+        const mempoolData = await mempoolResponse.json();
+        
+        // Get current block height for confirmations
+        const blockResponse = await fetch('https://mempool.space/api/blocks/tip/height');
+        const currentHeight = await blockResponse.json();
+        
+        const confirmations = mempoolData.status?.confirmed 
+          ? currentHeight - mempoolData.status.block_height + 1 
+          : 0;
+        const isConfirmed = confirmations >= NETWORKS.BTC.confirmationsRequired;
+
+        // Verify output address
+        const hasTargetAddress = mempoolData.vout?.some((output: any) =>
+          output.scriptpubkey_address === expectedToAddress
+        );
+
+        if (!hasTargetAddress) {
+          return {
+            valid: false,
+            confirmed: false,
+            confirmations,
+            message: "Transaction does not send to expected Bitcoin address",
+          };
+        }
+
+        return {
+          valid: true,
+          confirmed: isConfirmed,
+          confirmations,
+          blockNumber: mempoolData.status?.block_height,
+          status: mempoolData.status?.confirmed ? "success" : "pending",
+          message: isConfirmed
+            ? `Bitcoin transaction confirmed with ${confirmations} confirmations`
+            : `Bitcoin transaction has ${confirmations}/${NETWORKS.BTC.confirmationsRequired} confirmations. Please wait.`,
+        };
+      }
+
+      const data = await response.json();
+      
+      // Get latest block height for confirmations calculation
+      const latestBlockResponse = await fetch('https://blockchain.info/latestblock');
+      const latestBlock = await latestBlockResponse.json();
+      const currentHeight = latestBlock.height;
+      
+      // Calculate confirmations
+      const blockHeight = data.block_height || 0;
+      const confirmations = blockHeight > 0 ? currentHeight - blockHeight + 1 : 0;
+      const isConfirmed = confirmations >= NETWORKS.BTC.confirmationsRequired;
+
+      // Verify output address
+      const hasTargetAddress = data.out?.some((output: any) =>
+        output.addr === expectedToAddress
+      );
+
+      if (!hasTargetAddress) {
+        return {
+          valid: false,
+          confirmed: false,
+          confirmations,
+          message: "Transaction does not send to expected Bitcoin address",
+        };
+      }
+
+      return {
+        valid: true,
+        confirmed: isConfirmed,
+        confirmations,
+        blockNumber: blockHeight,
+        status: blockHeight > 0 ? "success" : "pending",
+        message: isConfirmed
+          ? `Bitcoin transaction confirmed with ${confirmations} confirmations`
+          : `Bitcoin transaction has ${confirmations}/${NETWORKS.BTC.confirmationsRequired} confirmations. Please wait.`,
+      };
+    } catch (apiError) {
+      console.error("Bitcoin API error:", apiError);
       return {
         valid: false,
         confirmed: false,
         confirmations: 0,
-        message: "Bitcoin transaction not found",
+        message: "Unable to verify Bitcoin transaction. Please try again later.",
       };
     }
-
-    const tx = data.data[txHash];
-    const confirmations = tx.confirmations || 0;
-    const isConfirmed = confirmations >= NETWORKS.BTC.confirmationsRequired;
-
-    // Verify output address
-    const hasTargetAddress = tx.outputs?.some((output: any) =>
-      output.addresses?.includes(expectedToAddress)
-    );
-
-    if (!hasTargetAddress) {
-      return {
-        valid: false,
-        confirmed: false,
-        confirmations,
-        message: "Transaction does not send to expected address",
-      };
-    }
-
-    return {
-      valid: true,
-      confirmed: isConfirmed,
-      confirmations,
-      blockNumber: tx.block_id,
-      timestamp: tx.time,
-      status: "success",
-      message: isConfirmed
-        ? `Bitcoin transaction confirmed with ${confirmations} confirmations`
-        : `Bitcoin transaction has ${confirmations}/${NETWORKS.BTC.confirmationsRequired} confirmations`,
-    };
-    */
-
-    // Mock response for demo
-    return {
-      valid: true,
-      confirmed: false,
-      confirmations: 1,
-      message: "Bitcoin transaction found. Awaiting 2 more confirmations.",
-    };
   } catch (error) {
     console.error("Bitcoin verification error:", error);
     return {

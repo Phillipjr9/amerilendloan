@@ -31,31 +31,59 @@ export function getCryptoPaymentConfig(): CryptoPaymentConfig {
 }
 
 /**
- * Cryptocurrency exchange rates (mock data for demo)
- * In production, fetch from real-time API like CoinGecko or CoinMarketCap
- */
-const MOCK_EXCHANGE_RATES: Record<CryptoCurrency, number> = {
-  BTC: 65000, // 1 BTC = $65,000
-  ETH: 3200,  // 1 ETH = $3,200
-  USDT: 1,    // 1 USDT = $1
-  USDC: 1,    // 1 USDC = $1
-};
-
-/**
- * Get current exchange rate for a cryptocurrency
+ * Get current exchange rate for a cryptocurrency using CoinGecko API (free, no API key required)
  */
 export async function getCryptoExchangeRate(currency: CryptoCurrency): Promise<number> {
-  // In production, fetch from API:
-  /*
-  const response = await fetch(
-    `https://api.coingecko.com/api/v3/simple/price?ids=${currency.toLowerCase()}&vs_currencies=usd`
-  );
-  const data = await response.json();
-  return data[currency.toLowerCase()].usd;
-  */
+  try {
+    // Map currency to CoinGecko IDs
+    const coinGeckoIds: Record<CryptoCurrency, string> = {
+      BTC: "bitcoin",
+      ETH: "ethereum",
+      USDT: "tether",
+      USDC: "usd-coin",
+    };
 
-  // For demo, return mock rates
-  return MOCK_EXCHANGE_RATES[currency];
+    const coinId = coinGeckoIds[currency];
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`CoinGecko API error: ${response.status}`);
+      // Fallback to reasonable default rates if API fails
+      const fallbackRates: Record<CryptoCurrency, number> = {
+        BTC: 65000,
+        ETH: 3200,
+        USDT: 1,
+        USDC: 1,
+      };
+      return fallbackRates[currency];
+    }
+
+    const data = await response.json();
+    const rate = data[coinId]?.usd;
+
+    if (!rate) {
+      throw new Error(`No rate found for ${currency}`);
+    }
+
+    return rate;
+  } catch (error) {
+    console.error(`Error fetching ${currency} exchange rate:`, error);
+    // Fallback to reasonable default rates
+    const fallbackRates: Record<CryptoCurrency, number> = {
+      BTC: 65000,
+      ETH: 3200,
+      USDT: 1,
+      USDC: 1,
+    };
+    return fallbackRates[currency];
+  }
 }
 
 /**
