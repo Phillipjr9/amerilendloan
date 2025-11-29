@@ -4454,6 +4454,19 @@ export const appRouter = router({
             console.error("Failed to send disbursement notification email:", error);
             // Don't throw - email failure shouldn't fail the disbursement
           });
+          
+          // Send SMS notification for disbursement
+          if (application.phone) {
+            const { sendLoanDisbursedSMS } = await import("./_core/sms");
+            await sendLoanDisbursedSMS(
+              application.phone,
+              application.trackingNumber || `APP-${input.loanApplicationId}`,
+              application.approvedAmount || 0,
+              application.disbursementMethod || "bank_transfer"
+            ).catch((error) => {
+              console.error("Failed to send disbursement SMS:", error);
+            });
+          }
         }
 
         return { success: true };

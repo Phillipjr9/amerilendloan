@@ -142,3 +142,50 @@ export async function sendPaymentFailedSMS(
   
   return sendSMS(phone, message);
 }
+
+/**
+ * Send loan application approved SMS
+ */
+export async function sendLoanApprovedSMS(
+  phone: string,
+  loanNumber: string,
+  approvedAmount: number
+): Promise<{ success: boolean; error?: string }> {
+  const amountFormatted = (approvedAmount / 100).toFixed(2);
+  const message = `Good news! Your AmeriLend loan #${loanNumber} for $${amountFormatted} has been approved! Log in to complete next steps: https://amerilendloan.com/dashboard`;
+  
+  return sendSMS(phone, message);
+}
+
+/**
+ * Send loan disbursement notification SMS
+ */
+export async function sendLoanDisbursedSMS(
+  phone: string,
+  loanNumber: string,
+  disbursedAmount: number,
+  disbursementMethod: string
+): Promise<{ success: boolean; error?: string }> {
+  const amountFormatted = (disbursedAmount / 100).toFixed(2);
+  const methodText = disbursementMethod === "bank_transfer" ? "bank transfer" : 
+                      disbursementMethod === "check" ? "check" :
+                      disbursementMethod;
+  const message = `Your AmeriLend loan #${loanNumber} of $${amountFormatted} has been disbursed via ${methodText}. Funds should arrive soon!`;
+  
+  return sendSMS(phone, message);
+}
+
+/**
+ * Send payment reminder SMS (3 days before due)
+ */
+export async function sendPaymentReminderSMS(
+  phone: string,
+  loanNumber: string,
+  amount: number,
+  dueDate: string
+): Promise<{ success: boolean; error?: string }> {
+  const amountFormatted = (amount / 100).toFixed(2);
+  const message = `Reminder: AmeriLend loan #${loanNumber} payment of $${amountFormatted} is due on ${dueDate}. Pay now: https://amerilendloan.com/payment-history`;
+  
+  return sendSMS(phone, message);
+}

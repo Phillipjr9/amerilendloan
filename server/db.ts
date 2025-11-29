@@ -506,6 +506,7 @@ export async function updateLoanApplicationStatus(
     switch (status) {
       case "approved":
         if (additionalData?.approvedAmount && additionalData?.processingFeeAmount) {
+          const { sendLoanApplicationApprovedEmail } = await import("./_core/email");
           await sendLoanApplicationApprovedEmail(
             application.email,
             application.fullName,
@@ -513,10 +514,23 @@ export async function updateLoanApplicationStatus(
             additionalData.approvedAmount,
             additionalData.processingFeeAmount
           );
+          
+          // Send SMS notification for loan approval
+          try {
+            const { sendLoanApprovedSMS } = await import("./_core/sms");
+            await sendLoanApprovedSMS(
+              application.phone,
+              application.trackingNumber,
+              additionalData.approvedAmount
+            );
+          } catch (smsError) {
+            console.error('Failed to send approval SMS:', smsError);
+          }
         }
         break;
       
       case "rejected":
+        const { sendLoanApplicationRejectedEmail } = await import("./_core/email");
         await sendLoanApplicationRejectedEmail(
           application.email,
           application.fullName,
@@ -526,6 +540,7 @@ export async function updateLoanApplicationStatus(
       
       case "fee_pending":
         if (additionalData?.processingFeeAmount) {
+          const { sendLoanApplicationProcessingEmail } = await import("./_core/email");
           await sendLoanApplicationProcessingEmail(
             application.email,
             application.fullName,
@@ -537,6 +552,7 @@ export async function updateLoanApplicationStatus(
       
       case "under_review":
         if (additionalData?.infoNeeded) {
+          const { sendLoanApplicationMoreInfoEmail } = await import("./_core/email");
           await sendLoanApplicationMoreInfoEmail(
             application.email,
             application.fullName,
