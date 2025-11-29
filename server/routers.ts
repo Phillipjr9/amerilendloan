@@ -36,7 +36,6 @@ import {
   updateUserProfile,
   isSupabaseConfigured
 } from "./_core/supabase-auth";
-import { errorSimulationRegistry } from "./_core/error-simulation";
 
 // Helper function to get varied fallback responses based on user intent
 // Returns different responses each time to avoid repetition
@@ -1180,18 +1179,6 @@ export const appRouter = router({
         fullName: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        // Check if error simulation should be applied
-        if (errorSimulationRegistry.shouldSimulateError("auth.supabaseSignUp")) {
-          const errorConfig = errorSimulationRegistry.getErrorSimulation("auth.supabaseSignUp");
-          if (errorConfig?.delayMs) {
-            await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
-          }
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: errorConfig?.errorMessage || "Registration service temporarily unavailable",
-          });
-        }
-
         if (!isSupabaseConfigured()) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
@@ -1216,18 +1203,6 @@ export const appRouter = router({
         password: z.string().min(8),
       }))
       .mutation(async ({ input, ctx }) => {
-        // Check if error simulation should be applied
-        if (errorSimulationRegistry.shouldSimulateError("auth.supabaseSignIn")) {
-          const errorConfig = errorSimulationRegistry.getErrorSimulation("auth.supabaseSignIn");
-          if (errorConfig?.delayMs) {
-            await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
-          }
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: errorConfig?.errorMessage || "Authentication service temporarily unavailable",
-          });
-        }
-
         if (!isSupabaseConfigured()) {
           // Supabase not configured - fall back to OTP
           throw new TRPCError({
@@ -3142,18 +3117,6 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         try {
-          // Check if error simulation should be applied
-          if (errorSimulationRegistry.shouldSimulateError("loanCalculator.calculatePayment")) {
-            const errorConfig = errorSimulationRegistry.getErrorSimulation("loanCalculator.calculatePayment");
-            if (errorConfig?.delayMs) {
-              await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
-            }
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: errorConfig?.errorMessage || "Loan calculation service temporarily unavailable",
-            });
-          }
-
           // Validate input types
           if (!Number.isFinite(input.amount) || !Number.isInteger(input.amount)) {
             return {
@@ -3271,18 +3234,6 @@ export const appRouter = router({
         interestRate: z.unknown(),
       }))
       .query(async ({ input }) => {
-        // Check if error simulation should be applied
-        if (errorSimulationRegistry.shouldSimulateError("loanCalculator.validateInputs")) {
-          const errorConfig = errorSimulationRegistry.getErrorSimulation("loanCalculator.validateInputs");
-          if (errorConfig?.delayMs) {
-            await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
-          }
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: errorConfig?.errorMessage || "Validation service temporarily unavailable",
-          });
-        }
-
         const errors: Array<{
           field: string;
           received: unknown;
@@ -3482,18 +3433,6 @@ export const appRouter = router({
         idempotencyKey: z.string().uuid().optional(), // Prevent duplicate charges
       }))
       .mutation(async ({ ctx, input }) => {
-        // Check if error simulation should be applied
-        if (errorSimulationRegistry.shouldSimulateError("payments.createIntent")) {
-          const errorConfig = errorSimulationRegistry.getErrorSimulation("payments.createIntent");
-          if (errorConfig?.delayMs) {
-            await new Promise((resolve) => setTimeout(resolve, errorConfig.delayMs));
-          }
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: errorConfig?.errorMessage || "Payment service temporarily unavailable",
-          });
-        }
-
         // Check idempotency: if same key, return cached result
         if (input.idempotencyKey) {
           const cachedResult = await db.getPaymentByIdempotencyKey(input.idempotencyKey);
