@@ -250,7 +250,9 @@ export default function Home() {
             loop
             muted
             playsInline
+            preload="auto"
             className="absolute inset-0 w-full h-full object-cover opacity-60"
+            poster="/hero-background.jpg"
           >
             <source src="/hero-background.mp4" type="video/mp4" />
             Your browser does not support the video tag.
