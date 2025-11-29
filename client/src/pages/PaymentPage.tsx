@@ -40,6 +40,9 @@ export default function PaymentPage() {
   const [cryptoAddress, setCryptoAddress] = useState("");
   const [cryptoAmount, setCryptoAmount] = useState("");
   const [addressCopied, setAddressCopied] = useState(false);
+  
+  // Accept.js loading state
+  const [acceptJsLoaded, setAcceptJsLoaded] = useState(false);
 
   const { data: application, isLoading } = trpc.loans.getById.useQuery(
     { id: applicationId! },
@@ -79,11 +82,21 @@ export default function PaymentPage() {
         ? "https://js.authorize.net/v1/Accept.js"
         : "https://jstest.authorize.net/v1/Accept.js";
       script.async = true;
+      script.onload = () => {
+        setAcceptJsLoaded(true);
+      };
+      script.onerror = () => {
+        toast.error("Failed to load payment processor. Please refresh the page.");
+        setAcceptJsLoaded(false);
+      };
       document.body.appendChild(script);
       
       return () => {
         document.body.removeChild(script);
+        setAcceptJsLoaded(false);
       };
+    } else if (window.Accept) {
+      setAcceptJsLoaded(true);
     }
   }, [paymentMethod, authorizeNetConfig]);
 
@@ -107,6 +120,14 @@ export default function PaymentPage() {
     setProcessing(true);
     
     try {
+      // Check if Accept.js is loaded
+      // @ts-ignore - Accept.js is loaded dynamically
+      if (!window.Accept) {
+        toast.error("Payment system is still loading. Please wait a moment and try again.");
+        setProcessing(false);
+        return;
+      }
+
       // Tokenize card data with Accept.js
       const secureData = {
         cardData: {
