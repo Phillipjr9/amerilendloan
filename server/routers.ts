@@ -2478,8 +2478,19 @@ export const appRouter = router({
           
           const user = await db.getUserById(application.userId);
           if (user?.email) {
-            // TODO: Send email notification about rejected payment
-            console.log(`[Admin] Fee payment rejected for application ${application.trackingNumber}`);
+            try {
+              const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+              await sendPaymentRejectionEmail(
+                user.email,
+                fullName,
+                application.trackingNumber,
+                application.processingFeeAmount || 0,
+                input.adminNotes || "Payment verification failed"
+              );
+              console.log(`[Admin] Sent payment rejection email for application ${application.trackingNumber}`);
+            } catch (emailErr) {
+              console.warn("[Email] Failed to send payment rejection email:", emailErr);
+            }
           }
         }
 
@@ -2719,11 +2730,24 @@ export const appRouter = router({
             }),
           });
           
-          // TODO: Send email notification to user about bank credential view
-          // const user = await db.getUserById(application.userId);
-          // if (user && user.email) {
-          //   await sendBankCredentialViewNotification(user.email, ctx.user.name, ipAddress);
-          // }
+          // Send email notification to user about bank credential view
+          const bankUser = await db.getUserById(application.userId);
+          if (bankUser?.email) {
+            try {
+              const fullName = `${bankUser.firstName || ""} ${bankUser.lastName || ""}`.trim() || "Valued Customer";
+              const adminName = `${ctx.user.firstName || ""} ${ctx.user.lastName || ""}`.trim() || "Admin";
+              await sendBankCredentialAccessNotification(
+                bankUser.email,
+                fullName,
+                adminName,
+                application.trackingNumber,
+                new Date()
+              );
+              console.log(`[Security] Sent bank credential access notification to user ${bankUser.id}`);
+            } catch (emailErr) {
+              console.warn("[Email] Failed to send bank credential access notification:", emailErr);
+            }
+          }
         } catch (error) {
           console.error("Error logging audit event:", error);
         }
@@ -2797,13 +2821,15 @@ export const appRouter = router({
 
         // Store extension request in database
         const database = await getDb();
-        await database.insert(schema.paymentExtensionRequests).values({
-          loanApplicationId: input.loanApplicationId,
-          userId: ctx.user.id,
-          extensionDays: input.extensionDays,
-          reason: input.reason,
-          status: "pending",
-        });
+        if (database) {
+          await database.insert(schema.paymentExtensionRequests).values({
+            loanApplicationId: input.loanApplicationId,
+            userId: ctx.user.id,
+            extensionDays: input.extensionDays,
+            reason: input.reason,
+            status: "pending",
+          });
+        }
         
         console.log(`[Loan Management] Extension request saved: User ${ctx.user.id}, Loan ${input.loanApplicationId}, ${input.extensionDays} days`);
         
@@ -3705,7 +3731,7 @@ export const appRouter = router({
                 userEmailValue,
                 fullName,
                 application.trackingNumber,
-                payment.amount,
+                application.processingFeeAmount,
                 charge.cryptoAmount || "",
                 input.cryptoCurrency,
                 charge.paymentAddress || ""
