@@ -356,7 +356,7 @@ export default function Settings() {
         <div className="container mx-auto px-4 max-w-4xl">
           {/* Tabs */}
           <div className="flex gap-2 mb-6 border-b flex-wrap">
-            {["password", "email", "bank", "profile", "2fa", "devices", "notifications", "danger"].map((tab) => (
+            {["password", "email", "bank", "profile", "2fa", "devices", "activity", "notifications", "danger"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -372,6 +372,7 @@ export default function Settings() {
                 {tab === "profile" && <User className="w-4 h-4 inline mr-2" />}
                 {tab === "2fa" && <Smartphone className="w-4 h-4 inline mr-2" />}
                 {tab === "devices" && <Shield className="w-4 h-4 inline mr-2" />}
+                {tab === "activity" && <Shield className="w-4 h-4 inline mr-2" />}
                 {tab === "notifications" && <Bell className="w-4 h-4 inline mr-2" />}
                 {tab === "danger" && <AlertTriangle className="w-4 h-4 inline mr-2" />}
                 {tab === "2fa" ? "2FA" : tab}
