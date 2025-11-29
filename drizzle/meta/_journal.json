@@ -64,6 +64,13 @@
       "when": 1764375497960,
       "tag": "0008_mysterious_stingray",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1764446751649,
+      "tag": "0009_crazy_vampiro",
+      "breakpoints": true
     }
   ]
 }

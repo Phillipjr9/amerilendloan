@@ -2917,8 +2917,11 @@ export async function createAutoPaySetting(data: {
   loanApplicationId: number | null;
   isEnabled: boolean;
   paymentMethod: string;
-  bankAccountId: string | null;
-  cardLast4: string | null;
+  customerProfileId?: string | null;
+  paymentProfileId?: string | null;
+  bankAccountId?: string | null;
+  cardLast4?: string | null;
+  cardBrand?: string | null;
   paymentDay: number;
   amount: number;
   nextPaymentDate: Date | null;
@@ -2929,7 +2932,18 @@ export async function createAutoPaySetting(data: {
   const { autoPaySettings } = await import("../drizzle/schema");
 
   const result = await db.insert(autoPaySettings).values({
-    ...data,
+    userId: data.userId,
+    loanApplicationId: data.loanApplicationId,
+    isEnabled: data.isEnabled,
+    paymentMethod: data.paymentMethod,
+    customerProfileId: data.customerProfileId || null,
+    paymentProfileId: data.paymentProfileId || null,
+    bankAccountId: data.bankAccountId || null,
+    cardLast4: data.cardLast4 || null,
+    cardBrand: data.cardBrand || null,
+    paymentDay: data.paymentDay,
+    amount: data.amount,
+    nextPaymentDate: data.nextPaymentDate,
     status: "active",
     failedAttempts: 0,
     createdAt: new Date(),
@@ -2961,6 +2975,8 @@ export async function updateAutoPaySetting(
     amount: number;
     nextPaymentDate: Date;
     status: string;
+    failedAttempts: number;
+    lastPaymentDate: Date;
   }>
 ) {
   const db = await getDb();

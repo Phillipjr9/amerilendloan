@@ -1158,8 +1158,14 @@ export const autoPaySettings = pgTable("auto_pay_settings", {
   loanApplicationId: integer("loan_application_id").references(() => loanApplications.id),
   isEnabled: boolean("is_enabled").default(false).notNull(),
   paymentMethod: varchar("payment_method", { length: 50 }).notNull(), // 'bank_account', 'card'
+  
+  // Authorize.net Customer Profile IDs for stored payment methods
+  customerProfileId: varchar("customer_profile_id", { length: 255 }), // Authorize.net Customer Profile ID
+  paymentProfileId: varchar("payment_profile_id", { length: 255 }), // Authorize.net Payment Profile ID
+  
   bankAccountId: varchar("bank_account_id", { length: 255 }), // Plaid account ID or similar
   cardLast4: varchar("card_last4", { length: 4 }),
+  cardBrand: varchar("card_brand", { length: 50 }), // Visa, Mastercard, etc.
   paymentDay: integer("payment_day").notNull(), // Day of month (1-31)
   amount: integer("amount"), // Amount in cents, null = full payment
   nextPaymentDate: timestamp("next_payment_date"),

@@ -4,6 +4,10 @@ import {
   sendPaymentReceiptEmail, 
   sendPaymentFailureEmail 
 } from './email';
+import { 
+  chargeCustomerProfile, 
+  getCustomerPaymentProfile 
+} from './authorizenet';
 
 /**
  * Auto-Pay Scheduler
@@ -111,12 +115,14 @@ export async function processAutoPayments() {
 async function processIndividualAutoPay(setting: any) {
   console.log(`[Auto-Pay Scheduler] Processing auto-pay ${setting.id} for user ${setting.userId}`);
   
-    // Get user and loan details
-    const user = await db.getUserById(setting.userId);
-    if (!setting.loanId) {
-      throw new Error('Loan ID is missing from auto-pay setting');
-    }
-    const loan = await db.getLoanApplicationById(setting.loanId);  if (!user || !loan) {
+  // Get user and loan details
+  const user = await db.getUserById(setting.userId);
+  if (!setting.loanId) {
+    throw new Error('Loan ID is missing from auto-pay setting');
+  }
+  const loan = await db.getLoanApplicationById(setting.loanId);
+  
+  if (!user || !loan) {
     throw new Error('User or loan not found');
   }
 
@@ -124,27 +130,44 @@ async function processIndividualAutoPay(setting: any) {
     throw new Error('Loan is not in disbursed status');
   }
 
-  // TODO: Production Implementation Required
-  // The auto-pay system requires integration with saved payment methods:
-  // 1. Store tokenized payment methods when user enables auto-pay
-  // 2. Use Authorize.net Customer Profile IDs or Stripe Payment Method IDs
-  // 3. Charge using stored tokens instead of processing new card transactions
-  // 
-  // Current implementation uses mock payment processing for development/testing
-  
-  const mockTransactionId = `AUTO_${Date.now()}_${setting.id}`;
-  
-  // Record payment in database (using mock transaction ID)
+  // Validate saved payment method exists
+  if (!setting.paymentProfileId || !setting.customerProfileId) {
+    throw new Error('No saved payment method found for auto-pay');
+  }
+
+  // Get payment method details for receipt
+  const paymentDetails = await getCustomerPaymentProfile(
+    setting.customerProfileId,
+    setting.paymentProfileId
+  );
+
+  if (!paymentDetails.success) {
+    throw new Error(`Failed to retrieve payment method: ${paymentDetails.error}`);
+  }
+
+  // Charge the saved payment method
+  const chargeResult = await chargeCustomerProfile(
+    setting.customerProfileId,
+    setting.paymentProfileId,
+    setting.amount || 0,
+    `Auto-pay for loan ${loan.trackingNumber}`
+  );
+
+  if (!chargeResult.success) {
+    throw new Error(`Payment failed: ${chargeResult.error}`);
+  }
+
+  // Record payment in database
   const payment = await db.createPayment({
     loanApplicationId: loan.id,
     userId: user.id,
     amount: setting.amount,
     currency: 'USD',
-    paymentProvider: 'authorizenet', // Mock auto-pay using authorizenet provider
+    paymentProvider: 'authorizenet',
     paymentMethod: 'card',
-    paymentIntentId: mockTransactionId,
-    cardLast4: '0000', // TODO: Get from saved payment method
-    cardBrand: 'Mock', // TODO: Get from saved payment method
+    paymentIntentId: chargeResult.transactionId!,
+    cardLast4: paymentDetails.cardLast4,
+    cardBrand: paymentDetails.cardBrand,
     status: 'succeeded',
   });
 
@@ -154,6 +177,7 @@ async function processIndividualAutoPay(setting: any) {
   
   await db.updateAutoPaySetting(setting.id, {
     nextPaymentDate,
+    failedAttempts: 0, // Reset failure count on success
   });
 
   // Send success email
@@ -163,13 +187,12 @@ async function processIndividualAutoPay(setting: any) {
     loan.trackingNumber,
     setting.amount || 0,
     'card',
-    mockTransactionId
+    chargeResult.transactionId!
   );
 
   if (payment) {
-    console.log(`[Auto-Pay Scheduler] ✅ Successfully processed auto-pay ${setting.id}, payment ID: ${payment.id}`);
+    console.log(`[Auto-Pay Scheduler] ✅ Successfully processed auto-pay ${setting.id}, payment ID: ${payment.id}, transaction: ${chargeResult.transactionId}`);
   }
-  console.log('[Auto-Pay Scheduler] ⚠️  Using mock payment - integrate saved payment methods for production');
 }
 
 export function getSchedulerStatus() {

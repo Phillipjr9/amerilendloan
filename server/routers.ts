@@ -6573,6 +6573,76 @@ Format as JSON with array of applications including their recommendation.`;
         }
       }),
 
+    // Create auto-pay with payment method (via Customer Profile)
+    createWithPaymentMethod: protectedProcedure
+      .input(z.object({
+        loanApplicationId: z.number(),
+        paymentMethod: z.enum(["card"]),
+        opaqueDataDescriptor: z.string(),
+        opaqueDataValue: z.string(),
+        paymentDay: z.number().min(1).max(28),
+        amount: z.number().min(0),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const userId = ctx.user.id;
+          const userEmail = ctx.user.email || '';
+
+          // Create Authorize.net Customer Profile with payment method
+          const { createCustomerProfile } = await import('./_core/authorizenet');
+          const profileResult = await createCustomerProfile(
+            userId,
+            {
+              dataDescriptor: input.opaqueDataDescriptor,
+              dataValue: input.opaqueDataValue,
+            },
+            userEmail
+          );
+
+          if (!profileResult.success) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: profileResult.error || "Failed to create payment profile"
+            });
+          }
+
+          // Calculate next payment date
+          const today = new Date();
+          const nextPaymentDate = new Date(today.getFullYear(), today.getMonth(), input.paymentDay);
+          if (nextPaymentDate <= today) {
+            nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+          }
+
+          // Create auto-pay setting with Customer Profile IDs
+          await db.createAutoPaySetting({
+            userId,
+            loanApplicationId: input.loanApplicationId,
+            isEnabled: true,
+            paymentMethod: "card",
+            customerProfileId: profileResult.customerProfileId || null,
+            paymentProfileId: profileResult.paymentProfileId || null,
+            cardLast4: profileResult.cardLast4 || null,
+            cardBrand: profileResult.cardBrand || null,
+            paymentDay: input.paymentDay,
+            amount: input.amount,
+            nextPaymentDate,
+          });
+
+          return successResponse({ 
+            message: "Auto-pay enabled with saved payment method",
+            cardLast4: profileResult.cardLast4,
+            cardBrand: profileResult.cardBrand,
+          });
+        } catch (error) {
+          console.error('[AutoPay] Create with payment method error:', error);
+          if (error instanceof TRPCError) throw error;
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to enable auto-pay"
+          });
+        }
+      }),
+
     // Delete auto-pay setting
     deleteSetting: protectedProcedure
       .input(z.object({
