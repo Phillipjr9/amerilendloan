@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Lock, Bell, Shield, Eye, EyeOff, AlertTriangle, User, Smartphone, Trash2, LogOut } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ArrowLeft, Lock, Bell, Shield, Eye, EyeOff, AlertTriangle, User, Smartphone, Trash2, LogOut, Download } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -89,7 +89,7 @@ export default function Settings() {
   });
   // 2FA state removed - now managed in Dashboard > Security tab
   const [deleteReason, setDeleteReason] = useState("");
-  const [activeTab, setActiveTab] = useState<"password" | "email" | "bank" | "notifications" | "profile" | "2fa" | "devices" | "activity" | "danger">("password");
+  const [activeTab, setActiveTab] = useState<"password" | "email" | "bank" | "notifications" | "profile" | "2fa" | "devices" | "activity" | "privacy">("password");
   const [activityLog, setActivityLog] = useState<any[]>([]);
   const [trustedDevices, setTrustedDevices] = useState<any[]>([]);
 
@@ -356,7 +356,7 @@ export default function Settings() {
         <div className="container mx-auto px-4 max-w-4xl">
           {/* Tabs */}
           <div className="flex gap-2 mb-6 border-b flex-wrap">
-            {["password", "email", "bank", "profile", "2fa", "devices", "activity", "notifications", "danger"].map((tab) => (
+            {["password", "email", "bank", "profile", "2fa", "devices", "activity", "notifications", "privacy"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -374,8 +374,8 @@ export default function Settings() {
                 {tab === "devices" && <Shield className="w-4 h-4 inline mr-2" />}
                 {tab === "activity" && <Shield className="w-4 h-4 inline mr-2" />}
                 {tab === "notifications" && <Bell className="w-4 h-4 inline mr-2" />}
-                {tab === "danger" && <AlertTriangle className="w-4 h-4 inline mr-2" />}
-                {tab === "2fa" ? "2FA" : tab}
+                {tab === "privacy" && <Download className="w-4 h-4 inline mr-2" />}
+                {tab === "2fa" ? "2FA" : tab === "privacy" ? "Privacy & Data" : tab}
               </button>
             ))}
           </div>
@@ -909,63 +909,6 @@ export default function Settings() {
             </Card>
           )}
 
-          {/* Danger Zone Tab */}
-          {activeTab === "danger" && (
-            <Card className="border-red-300 bg-red-50">
-              <CardHeader>
-                <CardTitle className="text-2xl text-red-800">Danger Zone</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="bg-red-100 border border-red-300 p-4 rounded-lg">
-                  <p className="text-sm text-red-800">
-                    <strong>Warning:</strong> Actions in this section are permanent and cannot be undone. Please proceed with caution.
-                  </p>
-                </div>
-
-                <div className="space-y-4 border border-red-300 p-4 rounded-lg">
-                  <h3 className="font-semibold text-red-800">Request Account Deletion</h3>
-                  <p className="text-sm text-gray-700">
-                    Permanently delete your account and all associated data. You will receive a confirmation email.
-                  </p>
-
-                  <div className="space-y-3">
-                    <label className="text-sm font-semibold text-gray-800">Why are you leaving? (optional)</label>
-                    <textarea
-                      value={deleteReason}
-                      onChange={(e) => setDeleteReason(e.target.value)}
-                      placeholder="Your feedback helps us improve..."
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                  </div>
-
-                  <Button
-                    onClick={() => requestDeleteMutation.mutate({ reason: deleteReason })}
-                    disabled={requestDeleteMutation.isPending}
-                    className="bg-red-600 hover:bg-red-700 text-white w-full"
-                  >
-                    {requestDeleteMutation.isPending ? "Processing..." : "Request Account Deletion"}
-                  </Button>
-                </div>
-
-                <div className="space-y-3 border border-gray-300 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-800">Log Out All Sessions</h3>
-                  <p className="text-sm text-gray-700">
-                    Immediately log out from all devices and sessions.
-                  </p>
-                  <Button
-                    onClick={handleLogoutClick}
-                    variant="outline"
-                    className="border-gray-400 w-full"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Log Out From All Sessions
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Activity Log Tab */}
           {activeTab === "activity" && (
             <Card>
@@ -1014,6 +957,97 @@ export default function Settings() {
                 ) : (
                   <p className="text-gray-600 text-center py-8">No activity recorded yet</p>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Privacy & Data Tab */}
+          {activeTab === "privacy" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl text-[#0033A0] flex items-center gap-2">
+                  <Download className="h-6 w-6" />
+                  Privacy & Data Export
+                </CardTitle>
+                <CardDescription>
+                  Download all your personal data in compliance with GDPR regulations
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-semibold text-[#0033A0] mb-2">What's included in your data export?</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>Personal information (name, email, phone, profile)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>Loan applications and disbursement history</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>Payment records and transaction history</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>Rewards balance and referral activity</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">•</span>
+                      <span>All timestamps and activity logs</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Shield className="h-5 w-5 text-green-600 mt-1 shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">Your Privacy Rights</h4>
+                    <p className="text-sm text-gray-600">
+                      Under GDPR and other privacy regulations, you have the right to access, download, and request deletion of your personal data. The export will be provided in machine-readable JSON format.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={async () => {
+                    try {
+                      // Fetch data via direct HTTP call since we're in an onClick handler
+                      const response = await fetch('/api/trpc/dataExport.exportMyData');
+                      const data = await response.json();
+                      const exportData = data.result?.data;
+                      
+                      if (!exportData) {
+                        throw new Error('No data received');
+                      }
+                      
+                      // Create downloadable JSON file
+                      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `amerilend-data-export-${new Date().toISOString().split('T')[0]}.json`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                      
+                      toast.success("Your data has been exported successfully!");
+                    } catch (error) {
+                      toast.error("Failed to export data. Please try again.");
+                    }
+                  }}
+                  className="w-full bg-[#0033A0] hover:bg-[#003366]"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download My Data (JSON)
+                </Button>
+
+                <p className="text-xs text-gray-500 text-center">
+                  The export process is secure and only includes data associated with your account.
+                  No sensitive payment information (like full card numbers) is included.
+                </p>
               </CardContent>
             </Card>
           )}

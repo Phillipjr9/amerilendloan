@@ -6964,6 +6964,92 @@ Format as JSON with array of applications including their recommendation.`;
         };
       }),
   }),
+
+  // Data Export (GDPR Compliance)
+  dataExport: router({
+    /**
+     * Export all user data in JSON format for GDPR compliance
+     */
+    exportMyData: protectedProcedure
+      .query(async ({ ctx }) => {
+        try {
+          // Gather all user data
+          const userData = await db.getUserById(ctx.user.id);
+          const loanApplications = await db.getLoanApplicationsByUserId(ctx.user.id);
+          const payments = await db.getUserPayments(ctx.user.id);
+          const rewardsBalance = await db.getUserRewardsBalance(ctx.user.id);
+          const referrals = await db.getReferralsByReferrer(ctx.user.id);
+          
+          // Get profile data
+          let profileData = null;
+          try {
+            profileData = await db.getUserProfile(ctx.user.id);
+          } catch (err) {
+            console.warn('[Data Export] No profile data found:', err);
+          }
+          
+          // Compile comprehensive export
+          const exportData = {
+            exportDate: new Date().toISOString(),
+            user: {
+              id: userData?.id,
+              email: userData?.email,
+              name: userData?.name,
+              firstName: userData?.firstName,
+              lastName: userData?.lastName,
+              createdAt: userData?.createdAt,
+              loginMethod: userData?.loginMethod,
+            },
+            profile: profileData,
+            loanApplications: loanApplications?.map(loan => ({
+              id: loan.id,
+              trackingNumber: loan.trackingNumber,
+              status: loan.status,
+              loanType: loan.loanType,
+              requestedAmount: loan.requestedAmount,
+              approvedAmount: loan.approvedAmount,
+              processingFeeAmount: loan.processingFeeAmount,
+              disbursementMethod: loan.disbursementMethod,
+              createdAt: loan.createdAt,
+              approvedAt: loan.approvedAt,
+              disbursedAt: loan.disbursedAt,
+            })) || [],
+            payments: payments?.map(payment => ({
+              id: payment.id,
+              amount: payment.amount,
+              currency: payment.currency,
+              paymentProvider: payment.paymentProvider,
+              paymentMethod: payment.paymentMethod,
+              status: payment.status,
+              createdAt: payment.createdAt,
+              completedAt: payment.completedAt,
+            })) || [],
+            rewards: {
+              creditBalance: rewardsBalance?.creditBalance || 0,
+              cashbackBalance: rewardsBalance?.cashbackBalance || 0,
+              totalEarned: rewardsBalance?.totalEarned || 0,
+              totalRedeemed: rewardsBalance?.totalRedeemed || 0,
+            },
+            referrals: referrals?.map(ref => ({
+              id: ref.id,
+              referralCode: ref.referralCode,
+              status: ref.status,
+              referrerBonus: ref.referrerBonus,
+              createdAt: ref.createdAt,
+              completedAt: ref.completedAt,
+            })) || [],
+          };
+          
+          return exportData;
+        } catch (error) {
+          console.error('[Data Export] Error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to export user data"
+          });
+        }
+      }),
+  }),
 });
 
 // Helper function to determine next steps based on application status
