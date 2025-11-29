@@ -1924,6 +1924,168 @@ export async function getUserReferrals(userId: number) {
     .orderBy(desc(referralProgram.createdAt));
 }
 
+// ============================================
+// REFERRAL PROGRAM FUNCTIONS
+// ============================================
+
+/**
+ * Create or get referral code for user
+ */
+export async function getOrCreateReferralCode(userId: number, baseUrl?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { referralProgram } = await import("../drizzle/schema");
+  const { generateReferralCode, createReferralLink, calculateExpirationDate } = await import("./_core/referrals");
+  
+  // Check if user already has active referral code
+  const existing = await db.select().from(referralProgram)
+    .where(eq(referralProgram.referrerId, userId))
+    .limit(1);
+  
+  if (existing.length > 0 && existing[0].status === "pending") {
+    return existing[0];
+  }
+  
+  // Generate new referral code
+  const referralCode = generateReferralCode();
+  const referralLink = createReferralLink(referralCode, baseUrl);
+  const expiresAt = calculateExpirationDate();
+  
+  const [newReferral] = await db.insert(referralProgram).values({
+    referrerId: userId,
+    referralCode,
+    referralLink,
+    status: "pending",
+    expiresAt,
+  }).returning();
+  
+  return newReferral;
+}
+
+/**
+ * Find referral by code
+ */
+export async function getReferralByCode(referralCode: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { referralProgram } = await import("../drizzle/schema");
+  const result = await db.select().from(referralProgram)
+    .where(eq(referralProgram.referralCode, referralCode))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Link referred user to referral
+ */
+export async function linkReferredUser(referralId: number, referredUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { referralProgram } = await import("../drizzle/schema");
+  
+  await db.update(referralProgram).set({
+    referredUserId,
+  }).where(eq(referralProgram.id, referralId));
+}
+
+/**
+ * Complete referral and distribute rewards
+ */
+export async function completeReferral(referralId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { referralProgram } = await import("../drizzle/schema");
+  const { REFERRAL_CONFIG } = await import("./_core/referrals");
+  
+  // Get referral details
+  const [referral] = await db.select().from(referralProgram)
+    .where(eq(referralProgram.id, referralId))
+    .limit(1);
+  
+  if (!referral || referral.status !== "pending") {
+    return;
+  }
+  
+  // Update referral status
+  await db.update(referralProgram).set({
+    status: "completed",
+    completedAt: new Date(),
+    referrerBonus: REFERRAL_CONFIG.REFERRER_BONUS,
+    referredBonus: REFERRAL_CONFIG.REFERRED_BONUS,
+    bonusType: REFERRAL_CONFIG.BONUS_TYPE,
+  }).where(eq(referralProgram.id, referralId));
+  
+  // Add rewards to both users
+  await updateRewardsBalance(referral.referrerId, REFERRAL_CONFIG.REFERRER_BONUS, 0);
+  if (referral.referredUserId) {
+    await updateRewardsBalance(referral.referredUserId, REFERRAL_CONFIG.REFERRED_BONUS, 0);
+  }
+}
+
+/**
+ * Get all referrals by referrer
+ */
+export async function getReferralsByReferrer(referrerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { referralProgram, users } = await import("../drizzle/schema");
+  
+  const referrals = await db.select({
+    id: referralProgram.id,
+    referralCode: referralProgram.referralCode,
+    referralLink: referralProgram.referralLink,
+    status: referralProgram.status,
+    referrerBonus: referralProgram.referrerBonus,
+    referredBonus: referralProgram.referredBonus,
+    createdAt: referralProgram.createdAt,
+    completedAt: referralProgram.completedAt,
+    expiresAt: referralProgram.expiresAt,
+    referredUserId: referralProgram.referredUserId,
+    referredUserName: users.name,
+    referredUserEmail: users.email,
+  })
+  .from(referralProgram)
+  .leftJoin(users, eq(referralProgram.referredUserId, users.id))
+  .where(eq(referralProgram.referrerId, referrerId));
+  
+  return referrals;
+}
+
+/**
+ * Get referral statistics for user
+ */
+export async function getReferralStats(userId: number) {
+  const db = await getDb();
+  if (!db) return {
+    totalReferrals: 0,
+    completedReferrals: 0,
+    pendingReferrals: 0,
+    totalEarned: 0,
+  };
+  
+  const { referralProgram } = await import("../drizzle/schema");
+  
+  const allReferrals = await db.select().from(referralProgram)
+    .where(eq(referralProgram.referrerId, userId));
+  
+  const completed = allReferrals.filter(r => r.status === "completed");
+  const pending = allReferrals.filter(r => r.status === "pending");
+  const totalEarned = completed.reduce((sum, r) => sum + (r.referrerBonus || 0), 0);
+  
+  return {
+    totalReferrals: allReferrals.length,
+    completedReferrals: completed.length,
+    pendingReferrals: pending.length,
+    totalEarned,
+  };
+}
+
 export async function getUserRewardsBalance(userId: number) {
   const db = await getDb();
   if (!db) return null;

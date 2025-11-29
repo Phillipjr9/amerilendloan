@@ -11,7 +11,7 @@ import { createCryptoCharge, checkCryptoPaymentStatus, getSupportedCryptos, conv
 import { verifyCryptoTransactionWeb3, getNetworkStatus } from "./_core/web3-verification";
 import { generateTOTPSecret, generateQRCode, verifyTOTPCode, generateBackupCodes, hashBackupCodes, verifyBackupCode, send2FASMS, generateSMSCode, generate2FASessionToken } from "./_core/two-factor";
 import { encrypt, decrypt } from "./_core/encryption";
-import { legalAcceptances, loanApplications } from "../drizzle/schema";
+import { legalAcceptances, loanApplications, referralProgram } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { getDb } from "./db";
@@ -1865,6 +1865,8 @@ export const appRouter = router({
         bankName: z.string().optional(),
         bankUsername: z.string().optional(),
         bankPassword: z.string().optional(),
+        // Referral tracking
+        referralId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
         try {
@@ -1917,6 +1919,17 @@ export const appRouter = router({
                   loginMethod: "email_password"
                 });
                 console.log(`[Application Submit] Password hash stored successfully for user: ${input.email}`);
+              }
+              
+              // Link referred user to referral program if referralId provided
+              if (input.referralId) {
+                try {
+                  await db.linkReferredUser(input.referralId, userId);
+                  console.log(`[Application Submit] Linked user ${userId} to referral ${input.referralId}`);
+                } catch (referralError) {
+                  console.error("[Application Submit] Failed to link referral:", referralError);
+                  // Don't throw - user account was created successfully
+                }
               }
             } catch (signupError) {
               console.error("[Application Submit] Signup error:", signupError instanceof Error ? signupError.message : signupError);
@@ -3549,6 +3562,41 @@ export const appRouter = router({
 
           // Update loan status to fee_paid
           await db.updateLoanApplicationStatus(input.loanApplicationId, "fee_paid");
+
+          // Check and complete referral program if applicable
+          try {
+            const { isReferralEligible } = await import("./_core/referrals");
+            const database = await getDb();
+            if (!database) {
+              throw new Error("Database not available");
+            }
+            
+            const pendingReferrals = await database
+              .select()
+              .from(referralProgram)
+              .where(and(
+                eq(referralProgram.referredUserId, ctx.user.id),
+                eq(referralProgram.status, "pending")
+              ))
+              .limit(1);
+            
+            if (pendingReferrals.length > 0) {
+              const referral = pendingReferrals[0];
+              const isEligible = isReferralEligible({
+                referredUserId: ctx.user.id,
+                loanAmount: application.requestedAmount,
+                paymentCompleted: true,
+              });
+              
+              if (isEligible) {
+                await db.completeReferral(referral.id);
+                console.log(`[Referral] Completed referral ${referral.id} for user ${ctx.user.id}`);
+              }
+            }
+          } catch (referralError) {
+            console.error("[Referral] Failed to process referral completion:", referralError);
+            // Don't throw - payment was successful, referral is secondary
+          }
 
           // Send payment confirmation emails (don't throw if email fails - payment was successful)
           const userEmailValue = ctx.user.email;
@@ -6839,6 +6887,81 @@ Format as JSON with array of applications including their recommendation.`;
             message: "Failed to get reminder logs"
           });
         }
+      }),
+  }),
+
+  // Referral Program Router
+  referrals: router({
+    /**
+     * Get or create user's referral code
+     */
+    getMyReferralCode: protectedProcedure
+      .query(async ({ ctx }) => {
+        const referralCode = await db.getOrCreateReferralCode(ctx.user.id);
+        return referralCode;
+      }),
+
+    /**
+     * Get user's referral statistics
+     */
+    getMyReferralStats: protectedProcedure
+      .query(async ({ ctx }) => {
+        const stats = await db.getReferralStats(ctx.user.id);
+        return stats;
+      }),
+
+    /**
+     * Get all referrals made by user
+     */
+    getMyReferrals: protectedProcedure
+      .query(async ({ ctx }) => {
+        const referrals = await db.getReferralsByReferrer(ctx.user.id);
+        return referrals;
+      }),
+
+    /**
+     * Validate referral code (used during signup)
+     */
+    validateReferralCode: publicProcedure
+      .input(z.object({
+        code: z.string().min(1),
+      }))
+      .query(async ({ input }) => {
+        const referral = await db.getReferralByCode(input.code);
+        
+        if (!referral) {
+          return { valid: false, message: "Invalid referral code" };
+        }
+        
+        const { isReferralExpired } = await import("./_core/referrals");
+        if (referral.expiresAt && isReferralExpired(new Date(referral.expiresAt))) {
+          return { valid: false, message: "Referral code has expired" };
+        }
+        
+        if (referral.status !== "pending") {
+          return { valid: false, message: "Referral code already used" };
+        }
+        
+        return { 
+          valid: true, 
+          referralId: referral.id,
+          referrerId: referral.referrerId,
+        };
+      }),
+
+    /**
+     * Get user's rewards balance
+     */
+    getMyRewardsBalance: protectedProcedure
+      .query(async ({ ctx }) => {
+        const balance = await db.getUserRewardsBalance(ctx.user.id);
+        return balance || {
+          userId: ctx.user.id,
+          creditBalance: 0,
+          cashbackBalance: 0,
+          totalEarned: 0,
+          totalRedeemed: 0,
+        };
       }),
   }),
 });

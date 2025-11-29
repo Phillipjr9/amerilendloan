@@ -1,372 +1,265 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Copy, Gift, Users, TrendingUp, Share2, CheckCircle } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { Copy, Share2, Mail, DollarSign, Users, CheckCircle, Clock, Gift } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 
-interface Referral {
-  id: string;
-  name: string;
-  email: string;
-  status: "pending" | "completed" | "expired";
-  referralDate: string;
-  rewardAmount: number;
-}
+export default function Referrals() {
+  const { user, isAuthenticated } = useAuth();
+  const [copySuccess, setCopySuccess] = useState(false);
 
-interface Reward {
-  id: string;
-  title: string;
-  description: string;
-  rewardAmount: number;
-  earnedDate: string;
-  expiryDate: string;
-  status: "active" | "expired" | "redeemed";
-}
+  const { data: referralData, isLoading: referralLoading } = trpc.referrals.getMyReferralCode.useQuery();
+  const { data: stats, isLoading: statsLoading } = trpc.referrals.getMyReferralStats.useQuery();
+  const { data: referrals, isLoading: referralsLoading } = trpc.referrals.getMyReferrals.useQuery();
+  const { data: rewards, isLoading: rewardsLoading } = trpc.referrals.getMyRewardsBalance.useQuery();
 
-export function ReferralsAndRewards() {
-  const [copied, setCopied] = useState(false);
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">Please log in to access referrals.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  // Fetch referrals and rewards from backend
-  const { data: referralsData = [], isLoading: loadingReferrals } = trpc.userFeatures.referrals.list.useQuery();
-  const { data: rewardsData, isLoading: loadingRewards } = trpc.userFeatures.referrals.getRewardsBalance.useQuery();
-
-  // Mock referral code and link (TODO: Get from user account or system settings)
-  const referralCode = "AMERILEND2024";
-  const referralLink = `https://amerilendloan.com/apply?ref=${referralCode}`;
-
-  // Map referrals
-  const referrals: Referral[] = referralsData.map((ref: any) => ({
-    id: `REF-${String(ref.id).padStart(3, '0')}`,
-    name: ref.referredUserId ? `User ${ref.referredUserId}` : "Pending",
-    email: ref.referralCode || "",
-    status: ref.status,
-    referralDate: new Date(ref.createdAt).toLocaleDateString(),
-    rewardAmount: ref.status === "completed" ? (ref.referrerBonus || 0) / 100 : 0,
-  }));
-
-  // Calculate stats from rewards balance
-  const completedReferrals = referrals.filter((r) => r.status === "completed").length;
-  const totalEarned = rewardsData ? rewardsData.totalEarned / 100 : 0;
-  const rewardBalance = rewardsData ? rewardsData.creditBalance / 100 : 0;
-
-  // Mock rewards list (since we only have balance, not individual reward transactions)
-  const mockRewards: Reward[] = [];
+  const loading = referralLoading || statsLoading || referralsLoading || rewardsLoading;
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(referralCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge className="bg-green-600">Completed</Badge>;
-      case "pending":
-        return <Badge className="bg-yellow-600">Pending</Badge>;
-      case "expired":
-        return <Badge variant="secondary">Expired</Badge>;
-      default:
-        return null;
+    if (referralData?.referralLink) {
+      navigator.clipboard.writeText(referralData.referralLink);
+      setCopySuccess(true);
+      toast.success("Referral link copied to clipboard!");
+      setTimeout(() => setCopySuccess(false), 2000);
     }
   };
 
-  const getRewardStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-600">Active</Badge>;
-      case "redeemed":
-        return <Badge variant="secondary">Redeemed</Badge>;
-      case "expired":
-        return <Badge className="bg-red-600">Expired</Badge>;
-      default:
-        return null;
-    }
+  const handleEmailShare = () => {
+    if (!referralData?.referralLink) return;
+    
+    const subject = encodeURIComponent("Get $25 with AmeriLend!");
+    const body = encodeURIComponent(
+      `Hi! I thought you might be interested in AmeriLend loans. Use my referral link to get $25 credit when you complete your first payment:\n\n${referralData.referralLink}\n\nI'll also receive $50 as a thank you. It's a win-win!`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-muted/30">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Gift className="w-8 h-8 text-purple-400" />
-            <h1 className="text-3xl font-bold text-white">Referrals & Rewards</h1>
+          <h1 className="text-3xl font-bold mb-2">Referral Program</h1>
+          <p className="text-muted-foreground">
+            Earn $50 for every friend who completes their first payment. Your friend gets $25 too!
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
-          <p className="text-slate-400">Earn rewards by referring friends to Amerilend</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-gradient-to-br from-purple-900/30 to-purple-800/10 border-purple-600/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-sm mb-1">Reward Balance</p>
-                  <p className="text-2xl font-bold text-purple-400">
-                    {formatCurrency(rewardBalance)}
-                  </p>
-                </div>
-                <div className="bg-purple-500/20 p-3 rounded-lg">
-                  <Gift className="w-6 h-6 text-purple-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-slate-800 border-slate-700">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-sm mb-1">Total Earned</p>
-                  <p className="text-2xl font-bold text-green-400">
-                    {formatCurrency(totalEarned)}
-                  </p>
-                </div>
-                <div className="bg-green-500/20 p-3 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-green-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-slate-800 border-slate-700">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-sm mb-1">Successful Referrals</p>
-                  <p className="text-2xl font-bold text-blue-400">{completedReferrals}</p>
-                </div>
-                <div className="bg-blue-500/20 p-3 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-slate-800 border-slate-700">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-sm mb-1">Active Referrals</p>
-                  <p className="text-3xl font-bold text-white">
-                    {referrals.filter((r) => r.status === "pending").length}
-                  </p>
-                </div>
-                <div className="bg-yellow-500/20 p-3 rounded-lg">
-                  <Share2 className="w-6 h-6 text-yellow-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Referral Section */}
-        <Card className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-600/20 mb-8">
-          <CardHeader>
-            <CardTitle>Invite Your Friends</CardTitle>
-            <CardDescription>Share your referral code and earn rewards when they sign up</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-              <p className="text-slate-400 text-sm mb-2">Your Referral Code</p>
-              <div className="flex gap-2">
-                <div className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white font-mono flex items-center">
-                  {referralCode}
-                </div>
-                <Button
-                  onClick={handleCopyCode}
-                  variant="outline"
-                  className="text-blue-400 border-blue-600 hover:bg-blue-600/20"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  {copied ? "Copied!" : "Copy"}
-                </Button>
-              </div>
-              <p className="text-slate-400 text-xs mt-2">
-                Share this code with friends and earn {formatCurrency(50)} per successful referral
-              </p>
-            </div>
-
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-              <p className="text-slate-400 text-sm mb-2">Referral Link</p>
-              <div className="flex gap-2">
-                <div className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white text-sm truncate">
-                  {referralLink}
-                </div>
-                <Button
-                  onClick={handleCopyLink}
-                  variant="outline"
-                  className="text-blue-400 border-blue-600 hover:bg-blue-600/20"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  {copied ? "Copied!" : "Copy"}
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share on Facebook
-              </Button>
-              <Button className="bg-blue-500 hover:bg-blue-600">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share on Twitter/X
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Referrals List */}
-        <Card className="bg-slate-800 border-slate-700 mb-8">
-          <CardHeader>
-            <CardTitle>Your Referrals</CardTitle>
-            <CardDescription>Track the status of all your referrals</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingReferrals ? (
-              <div className="text-center py-12">
-                <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-400">Loading referrals...</p>
-              </div>
-            ) : referrals.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 text-slate-500 mx-auto mb-4 opacity-50" />
-                <p className="text-slate-400">No referrals yet. Start sharing your code!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {referrals.map((referral) => (
-                  <div
-                    key={referral.id}
-                    className="p-4 rounded-lg border border-slate-600 bg-slate-700/50 hover:bg-slate-700 transition-all flex items-center justify-between"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-white font-semibold">{referral.name}</h3>
-                        {getStatusBadge(referral.status)}
-                      </div>
-                      <p className="text-slate-400 text-sm">{referral.email}</p>
-                      <p className="text-slate-500 text-xs mt-1">
-                        Referred on {referral.referralDate}
-                      </p>
+        ) : (
+          <div className="grid gap-6">
+            {/* Rewards Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-primary" />
+                  Your Rewards
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-600" />
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(rewards?.creditBalance || 0)}
                     </div>
-                    <div className="text-right">
-                      {referral.rewardAmount > 0 && (
-                        <p className="text-green-400 font-semibold text-lg">
-                          +{formatCurrency(referral.rewardAmount)}
-                        </p>
-                      )}
-                    </div>
+                    <div className="text-sm text-muted-foreground">Account Credit</div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <Users className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+                    <div className="text-2xl font-bold text-blue-600">
+                      {stats?.totalReferrals || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Referrals</div>
+                  </div>
+                  <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <CheckCircle className="h-6 w-6 mx-auto mb-2 text-green-600" />
+                    <div className="text-2xl font-bold text-green-600">
+                      {stats?.completedReferrals || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Completed</div>
+                  </div>
+                  <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <DollarSign className="h-6 w-6 mx-auto mb-2 text-primary" />
+                    <div className="text-2xl font-bold text-primary">
+                      {formatCurrency(stats?.totalEarned || 0)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Earned</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Rewards Section */}
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle>Your Rewards</CardTitle>
-            <CardDescription>Manage and redeem your earned rewards</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {mockRewards.length === 0 ? (
-              <div className="text-center py-12">
-                <Gift className="w-12 h-12 text-slate-500 mx-auto mb-4 opacity-50" />
-                <p className="text-slate-400">No rewards yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {mockRewards.map((reward) => (
-                  <div
-                    key={reward.id}
-                    className="p-4 rounded-lg border border-slate-600 bg-slate-700/50 hover:bg-slate-700 transition-all"
+            {/* Share Your Link */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Share2 className="h-5 w-5 text-primary" />
+                  Share Your Referral Link
+                </CardTitle>
+                <CardDescription>
+                  Share this link with friends. When they complete their first payment, you both earn rewards!
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    value={referralData?.referralLink || ""}
+                    readOnly
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    onClick={handleCopyLink}
+                    variant={copySuccess ? "default" : "outline"}
+                    className="shrink-0"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-white font-semibold">{reward.title}</h3>
-                          {getRewardStatusBadge(reward.status)}
+                    <Copy className="h-4 w-4 mr-2" />
+                    {copySuccess ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleEmailShare} variant="outline" className="flex-1">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Share via Email
+                  </Button>
+                </div>
+
+                <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                  <p className="font-semibold text-sm">Your Referral Code:</p>
+                  <p className="text-2xl font-mono font-bold text-primary tracking-wider">
+                    {referralData?.referralCode || ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Expires: {referralData?.expiresAt ? new Date(referralData.expiresAt).toLocaleDateString() : "Never"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* How It Works */}
+            <Card>
+              <CardHeader>
+                <CardTitle>How It Works</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-xl font-bold text-primary">1</span>
+                    </div>
+                    <h3 className="font-semibold mb-2">Share Your Link</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Send your unique referral link to friends and family
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-xl font-bold text-primary">2</span>
+                    </div>
+                    <h3 className="font-semibold mb-2">They Apply & Pay</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your friend applies for a loan (min. $1,000) and makes their first payment
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-xl font-bold text-primary">3</span>
+                    </div>
+                    <h3 className="font-semibold mb-2">Earn Rewards</h3>
+                    <p className="text-sm text-muted-foreground">
+                      You get $50 credit, they get $25 credit—everyone wins!
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Referral History */}
+            {referrals && referrals.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Referrals</CardTitle>
+                  <CardDescription>Track the status of your referrals</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {referrals.map((referral) => (
+                      <div
+                        key={referral.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">
+                            {referral.referredUserName || "User"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {referral.referredUserEmail}
+                          </p>
                         </div>
-                        <p className="text-slate-400 text-sm">{reward.description}</p>
+                        <div className="flex items-center gap-4">
+                          {referral.status === "completed" ? (
+                            <div className="flex items-center gap-2 text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-sm font-medium">
+                                Completed - {formatCurrency(referral.referrerBonus || 0)}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-amber-600">
+                              <Clock className="h-4 w-4" />
+                              <span className="text-sm font-medium">Pending</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right flex-shrink-0 ml-4">
-                        <p className="text-2xl font-bold text-purple-400">
-                          {formatCurrency(reward.rewardAmount)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span>Earned: {reward.earnedDate}</span>
-                      <span>Expires: {reward.expiryDate}</span>
-                      {reward.status === "active" && (
-                        <Button size="sm" className="ml-2">
-                          Apply to Loan
-                        </Button>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
 
-        {/* How It Works */}
-        <Card className="bg-slate-800 border-slate-700 mt-6">
-          <CardHeader>
-            <CardTitle>How Referrals Work</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  step: "1",
-                  title: "Share Your Code",
-                  description: "Share your unique referral code with friends and family",
-                },
-                {
-                  step: "2",
-                  title: "They Apply",
-                  description: "Your friend applies for a loan using your referral code",
-                },
-                {
-                  step: "3",
-                  title: "Get Approved",
-                  description: "Once their loan is approved, you earn your reward",
-                },
-                {
-                  step: "4",
-                  title: "Earn Rewards",
-                  description: "Use your earned rewards to reduce your loan interest rate",
-                },
-              ].map((item) => (
-                <div key={item.step} className="flex gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-                      {item.step}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-white font-semibold mb-1">{item.title}</h4>
-                    <p className="text-slate-400 text-sm">{item.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            {/* Terms */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Program Terms</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-2">
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Referrer earns $50 account credit per successful referral</li>
+                  <li>Referred user earns $25 account credit</li>
+                  <li>Referred user must apply for minimum $1,000 loan</li>
+                  <li>Rewards are credited after referred user makes first payment</li>
+                  <li>Referral codes expire after 365 days</li>
+                  <li>Account credits can be used toward future loan payments</li>
+                  <li>Cannot refer yourself or existing customers</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-export default ReferralsAndRewards;

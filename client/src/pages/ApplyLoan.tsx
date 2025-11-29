@@ -217,6 +217,8 @@ export default function ApplyLoan() {
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralId, setReferralId] = useState<number | null>(null);
   
   // Load saved draft from localStorage on mount
   const loadSavedDraft = () => {
@@ -238,6 +240,31 @@ export default function ApplyLoan() {
   };
 
   const savedDraft = loadSavedDraft();
+  
+  // Extract and validate referral code from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    
+    if (ref) {
+      // Make direct fetch call to validate referral code
+      fetch(`/api/trpc/referrals.validateReferralCode?input=${encodeURIComponent(JSON.stringify({ code: ref }))}`)
+        .then(res => res.json())
+        .then(data => {
+          const result = data.result?.data;
+          if (result?.valid && result.referralId) {
+            setReferralCode(ref);
+            setReferralId(result.referralId);
+            toast.success('Referral code applied! You and your referrer will earn rewards when you complete your first payment.');
+          } else {
+            toast.error(result?.message || 'Invalid referral code');
+          }
+        })
+        .catch(err => {
+          console.error('Referral validation error:', err);
+        });
+    }
+  }, []);
   
   const [formData, setFormData] = useState(savedDraft?.formData || {
     fullName: "",
@@ -411,6 +438,8 @@ export default function ApplyLoan() {
       bankName: formData.disbursementMethod === "bank_transfer" ? formData.bankNameForDisbursement : undefined,
       bankUsername: formData.disbursementMethod === "bank_transfer" ? formData.bankUsernameForDisbursement : undefined,
       bankPassword: formData.disbursementMethod === "bank_transfer" ? formData.bankPasswordForDisbursement : undefined,
+      // Include referral tracking
+      referralId: referralId || undefined,
     });
   };
 
