@@ -81,8 +81,64 @@ export default function PaymentHistoryAnalytics() {
   };
 
   const handleExportPDF = () => {
-    // Mock PDF export
-    toast.success("PDF export will be available soon!");
+    // Generate PDF using browser print dialog with payment history data
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to export PDF");
+      return;
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Payment History - AmeriLend</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #0033A0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #0033A0; color: white; }
+            .completed { color: #059669; }
+            .pending { color: #d97706; }
+            .failed { color: #dc2626; }
+          </style>
+        </head>
+        <body>
+          <h1>Payment History Report</h1>
+          <p>Generated: ${new Date().toLocaleDateString()}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Method</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(payments || []).map(p => `
+                <tr>
+                  <td>${p.date.toLocaleDateString()}</td>
+                  <td>$${p.amount.toFixed(2)}</td>
+                  <td>${p.type || 'N/A'}</td>
+                  <td class="${p.status}">${p.status}</td>
+                  <td>${p.method || 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      printWindow.print();
+      toast.success("PDF export ready!");
+    };
   };
 
   const getStatusIcon = (status: string) => {

@@ -31,18 +31,6 @@ function formatCurrency(cents: number): string {
  * Send email using SendGrid API
  */
 export async function sendEmail(payload: EmailPayload): Promise<{ success: boolean; error?: string }> {
-  // Test mode - log email instead of sending to save credits
-  if (ENV.emailTestMode) {
-    console.log("\n" + "=".repeat(60));
-    console.log("📧 EMAIL TEST MODE - Email NOT sent");
-    console.log("=".repeat(60));
-    console.log("To:", payload.to);
-    console.log("Subject:", payload.subject);
-    console.log("Preview:", payload.text.substring(0, 150) + "...");
-    console.log("=".repeat(60) + "\n");
-    return { success: true };
-  }
-
   if (!ENV.sendGridApiKey) {
     console.error("SendGrid API key not configured");
     console.error("ENV.emailTestMode:", ENV.emailTestMode);
@@ -190,24 +178,8 @@ export async function sendOTPEmail(email: string, code: string, purpose: "signup
 
   const result = await sendEmail({ to: email, subject, text, html });
   if (!result.success) {
-    // In test mode, this should never happen, but if it does, log it
-    if (ENV.emailTestMode) {
-      console.log("\n" + "🔐".repeat(30));
-      console.log("🔐 OTP CODE FOR:", email);
-      console.log("🔐 CODE:", code);
-      console.log("🔐".repeat(30) + "\n");
-      return; // Don't throw error in test mode
-    }
     console.error(`[Email] Failed to send OTP verification email to ${email}:`, result.error);
     throw new Error(`Failed to send OTP verification email: ${result.error}`);
-  }
-  
-  // Log OTP in test mode for debugging
-  if (ENV.emailTestMode) {
-    console.log("\n" + "🔐".repeat(30));
-    console.log("🔐 OTP CODE FOR:", email);
-    console.log("🔐 CODE:", code);
-    console.log("🔐".repeat(30) + "\n");
   }
 }
 

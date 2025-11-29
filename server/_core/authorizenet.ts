@@ -19,7 +19,7 @@ export function getAuthorizeNetConfig(): AuthorizeNetConfig {
   return {
     apiLoginId: process.env.AUTHORIZENET_API_LOGIN_ID || "",
     transactionKey: process.env.AUTHORIZENET_TRANSACTION_KEY || "",
-    environment: (process.env.AUTHORIZENET_ENVIRONMENT as "sandbox" | "production") || "sandbox",
+    environment: (process.env.AUTHORIZENET_ENVIRONMENT as "sandbox" | "production") || "production",
   };
 }
 

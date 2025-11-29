@@ -26,7 +26,7 @@ export function getCryptoPaymentConfig(): CryptoPaymentConfig {
   return {
     apiKey: process.env.COINBASE_COMMERCE_API_KEY || "",
     webhookSecret: process.env.COINBASE_COMMERCE_WEBHOOK_SECRET || "",
-    environment: (process.env.CRYPTO_PAYMENT_ENVIRONMENT as "sandbox" | "production") || "sandbox",
+    environment: (process.env.CRYPTO_PAYMENT_ENVIRONMENT as "sandbox" | "production") || "production",
   };
 }
 
