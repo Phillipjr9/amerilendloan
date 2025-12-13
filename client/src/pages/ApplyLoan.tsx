@@ -7,11 +7,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SubmissionAnimationOverlay } from "@/components/SubmissionAnimationOverlay";
+import { SkeletonApplyForm } from "@/components/SkeletonCard";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Loader2, Phone, ArrowLeft, Save } from "lucide-react";
+import { CheckCircle2, Loader2, Phone, ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import {
+  formatSSN,
+  formatPhone,
+  formatCurrency,
+  unformatCurrency,
+  validateSSN,
+  validatePhone,
+  validateEmail,
+  validateZipCode,
+  formatZipCode,
+  calculateMonthlyPayment,
+  calculateTotalInterest,
+} from "@/lib/inputMask";
 
 const US_STATES = [
   { code: "AL", name: "Alabama" },
@@ -188,6 +203,7 @@ const US_BANKS = [
 ].sort();
 
 export default function ApplyLoan() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -219,6 +235,8 @@ export default function ApplyLoan() {
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralId, setReferralId] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Load saved draft from localStorage on mount
   const loadSavedDraft = () => {
@@ -649,6 +667,93 @@ export default function ApplyLoan() {
         toast.error("Please select your citizenship and housing status");
         return;
       }
+
+      if (!validateSSN(formData.ssn)) {
+        toast.error("Please enter a valid SSN (XXX-XX-XXXX)");
+        return;
+      }
+
+      if (!validatePhone(formData.phone)) {
+        toast.error("Please enter a valid 10-digit phone number");
+        return;
+      }
+
+      if (!validateEmail(formData.email)) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
+    } else if (currentStep === 2) {
+      // Validate Address Information
+      if (!formData.street || !formData.city || !formData.state || !formData.zipCode) {
+        toast.error("Please fill in all required address fields");
+        return;
+      }
+
+      if (!validateZipCode(formData.zipCode)) {
+        toast.error("Please enter a valid 5-digit zip code");
+        return;
+      }
+
+      if (!formData.monthlyRent) {
+        toast.error("Please enter your monthly housing payment");
+        return;
+      }
+    } else if (currentStep === 3) {
+      // Validate Employment Information
+      if (!formData.employmentStatus) {
+        toast.error("Please select your employment status");
+        return;
+      }
+
+      if (formData.employmentStatus === "employed" || formData.employmentStatus === "self_employed") {
+        if (!formData.employer || !formData.employerPhone || !formData.jobTitle || !formData.employmentLength) {
+          toast.error("Please fill in all required employment information");
+          return;
+        }
+
+        if (!validatePhone(formData.employerPhone)) {
+          toast.error("Please enter a valid employer phone number");
+          return;
+        }
+      }
+
+      if (!formData.monthlyIncome || !formData.payFrequency || !formData.nextPayDate) {
+        toast.error("Please fill in all required income information");
+        return;
+      }
+    } else if (currentStep === 4) {
+      // Validate Loan Details
+      if (!formData.loanType || !formData.requestedAmount || !formData.loanPurpose) {
+        toast.error("Please fill in all required loan information");
+        return;
+      }
+
+      if (!formData.disbursementMethod) {
+        toast.error("Please select a disbursement method");
+        return;
+      }
+
+      if (formData.disbursementMethod === "bank_transfer") {
+        if (!formData.bankNameForDisbursement || !formData.accountHolderName || !formData.accountType || !formData.routingNumber || !formData.accountNumber) {
+          toast.error("Please fill in all required bank account information");
+          return;
+        }
+
+        if (formData.routingNumber.length !== 9) {
+          toast.error("Please enter a valid 9-digit routing number");
+          return;
+        }
+
+        if (formData.accountNumber.length < 8) {
+          toast.error("Please enter a valid account number");
+          return;
+        }
+      }
+
+      if (!formData.termsAccepted || !formData.privacyAccepted || !formData.esignAccepted) {
+        toast.error("Please accept all required agreements before submitting");
+        return;
+      }
     }
 
     if (currentStep < 4) setCurrentStep(currentStep + 1);
@@ -660,8 +765,18 @@ export default function ApplyLoan() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0033A0]" />
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <div className="h-8 bg-gray-300 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+          <Card>
+            <CardContent className="p-6">
+              <SkeletonApplyForm />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -900,10 +1015,11 @@ export default function ApplyLoan() {
                         <Input
                           id="phone"
                           type="tel"
-                          value={formData.phone}
+                          value={formatPhone(formData.phone)}
                           onChange={(e) => updateFormData("phone", e.target.value)}
                           placeholder="(555) 123-4567"
                           className="text-sm"
+                          maxLength={14}
                           required
                         />
                       </div>
@@ -912,15 +1028,24 @@ export default function ApplyLoan() {
                         <>
                           <div className="space-y-2">
                             <Label htmlFor="password" className="text-sm">Create Password *</Label>
-                            <Input
-                              id="password"
-                              type="password"
-                              value={formData.password}
-                              onChange={(e) => updateFormData("password", e.target.value)}
-                              placeholder="Enter a strong password"
-                              className="text-sm"
-                              required
-                            />
+                            <div className="relative">
+                              <Input
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                value={formData.password}
+                                onChange={(e) => updateFormData("password", e.target.value)}
+                                placeholder="Enter a strong password"
+                                className="text-sm pr-10"
+                                required
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                              >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
                             <p className="text-xs text-gray-500">
                               Minimum 8 characters with uppercase, lowercase, number, and special character
                             </p>
@@ -928,15 +1053,24 @@ export default function ApplyLoan() {
 
                           <div className="space-y-2">
                             <Label htmlFor="confirmPassword" className="text-sm">Confirm Password *</Label>
-                            <Input
-                              id="confirmPassword"
-                              type="password"
-                              value={formData.confirmPassword}
-                              onChange={(e) => updateFormData("confirmPassword", e.target.value)}
-                              placeholder="Re-enter your password"
-                              className="text-sm"
-                              required
-                            />
+                            <div className="relative">
+                              <Input
+                                id="confirmPassword"
+                                type={showConfirmPassword ? "text" : "password"}
+                                value={formData.confirmPassword}
+                                onChange={(e) => updateFormData("confirmPassword", e.target.value)}
+                                placeholder="Re-enter your password"
+                                className="text-sm pr-10"
+                                required
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                              >
+                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
                           </div>
                         </>
                       )}
@@ -958,10 +1092,11 @@ export default function ApplyLoan() {
                         <Label htmlFor="ssn" className="text-sm">Social Security Number *</Label>
                         <Input
                           id="ssn"
-                          value={formData.ssn}
+                          value={formatSSN(formData.ssn)}
                           onChange={(e) => updateFormData("ssn", e.target.value)}
                           placeholder="XXX-XX-XXXX"
                           className="text-sm"
+                          maxLength={11}
                           required
                         />
                         <p className="text-xs text-gray-500">
@@ -1159,9 +1294,10 @@ export default function ApplyLoan() {
                           <Label htmlFor="zipCode">ZIP Code *</Label>
                           <Input
                             id="zipCode"
-                            value={formData.zipCode}
+                            value={formatZipCode(formData.zipCode)}
                             onChange={(e) => updateFormData("zipCode", e.target.value)}
                             placeholder="10001"
+                            maxLength={5}
                             required
                           />
                         </div>
@@ -1175,11 +1311,9 @@ export default function ApplyLoan() {
                           </span>
                           <Input
                             id="monthlyRent"
-                            type="number"
-                            step="0.01"
-                            value={formData.monthlyRent}
-                            onChange={(e) => updateFormData("monthlyRent", e.target.value)}
-                            placeholder="1200.00"
+                            value={formatCurrency(formData.monthlyRent)}
+                            onChange={(e) => updateFormData("monthlyRent", unformatCurrency(e.target.value).toString())}
+                            placeholder="$1,200"
                             className="pl-7"
                             required
                           />
@@ -1274,9 +1408,10 @@ export default function ApplyLoan() {
                               <Input
                                 id="employerPhone"
                                 type="tel"
-                                value={formData.employerPhone}
+                                value={formatPhone(formData.employerPhone)}
                                 onChange={(e) => updateFormData("employerPhone", e.target.value)}
                                 placeholder="(555) 123-4567"
+                                maxLength={14}
                                 required
                               />
                             </div>
@@ -1322,11 +1457,9 @@ export default function ApplyLoan() {
                           </span>
                           <Input
                             id="monthlyIncome"
-                            type="number"
-                            step="0.01"
-                            value={formData.monthlyIncome}
-                            onChange={(e) => updateFormData("monthlyIncome", e.target.value)}
-                            placeholder="3000.00"
+                            value={formatCurrency(formData.monthlyIncome)}
+                            onChange={(e) => updateFormData("monthlyIncome", unformatCurrency(e.target.value).toString())}
+                            placeholder="$3,000"
                             className="pl-7"
                             required
                           />
@@ -1376,11 +1509,9 @@ export default function ApplyLoan() {
                             </span>
                             <Input
                               id="additionalIncome"
-                              type="number"
-                              step="0.01"
-                              value={formData.additionalIncome}
-                              onChange={(e) => updateFormData("additionalIncome", e.target.value)}
-                              placeholder="0.00"
+                              value={formatCurrency(formData.additionalIncome)}
+                              onChange={(e) => updateFormData("additionalIncome", unformatCurrency(e.target.value).toString())}
+                              placeholder="$0"
                               className="pl-7"
                             />
                           </div>
@@ -1467,11 +1598,9 @@ export default function ApplyLoan() {
                           </span>
                           <Input
                             id="requestedAmount"
-                            type="number"
-                            step="0.01"
-                            value={formData.requestedAmount}
-                            onChange={(e) => updateFormData("requestedAmount", e.target.value)}
-                            placeholder="5000.00"
+                            value={formatCurrency(formData.requestedAmount)}
+                            onChange={(e) => updateFormData("requestedAmount", unformatCurrency(e.target.value).toString())}
+                            placeholder="$5,000"
                             className="pl-7"
                             required
                           />
@@ -1518,16 +1647,16 @@ export default function ApplyLoan() {
 
                       {/* Bank Account Details for Direct Deposit */}
                       {formData.disbursementMethod === "bank_transfer" && (
-                        <div className="space-y-4 border-l-4 border-blue-500 pl-4 bg-blue-50 p-4 rounded-r-lg">
+                        <div className="space-y-4 border-l-4 border-green-500 pl-4 bg-green-50 p-4 rounded-r-lg">
                           <h4 className="font-semibold text-[#0033A0] flex items-center gap-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
-                            Bank Account Verification
+                            Bank Account Verification (Secure Method)
                           </h4>
                           <p className="text-sm text-gray-700">
-                            To process your direct deposit, please provide your online banking credentials. 
-                            This information is encrypted and used only for verification purposes.
+                            Instead of sharing your banking credentials, we'll verify your account using a secure microdeposit method. 
+                            Two small deposits ($0.01-$0.25) will be credited to your account, and you'll confirm the amounts to complete verification.
                           </p>
 
                           <div className="space-y-2">
@@ -1550,51 +1679,123 @@ export default function ApplyLoan() {
                             </Select>
                           </div>
 
-                          <div className="space-y-2">
-                            <Label htmlFor="bankUsernameForDisbursement">Online Banking Username *</Label>
-                            <Input
-                              id="bankUsernameForDisbursement"
-                              type="text"
-                              value={formData.bankUsernameForDisbursement}
-                              onChange={(e) => updateFormData("bankUsernameForDisbursement", e.target.value)}
-                              placeholder="Your online banking username"
-                              required={formData.disbursementMethod === "bank_transfer"}
-                              autoComplete="off"
-                            />
-                            <p className="text-xs text-gray-500">
-                              The username you use to log into your online banking
-                            </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="accountHolderName">Account Holder Name *</Label>
+                              <Input
+                                id="accountHolderName"
+                                type="text"
+                                value={formData.accountHolderName}
+                                onChange={(e) => updateFormData("accountHolderName", e.target.value)}
+                                placeholder="As it appears on your account"
+                                required={formData.disbursementMethod === "bank_transfer"}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="accountType">Account Type *</Label>
+                              <Select
+                                value={formData.accountType}
+                                onValueChange={(value) => updateFormData("accountType", value)}
+                                required={formData.disbursementMethod === "bank_transfer"}
+                              >
+                                <SelectTrigger id="accountType">
+                                  <SelectValue placeholder="Select account type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="checking">Checking</SelectItem>
+                                  <SelectItem value="savings">Savings</SelectItem>
+                                  <SelectItem value="money_market">Money Market</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <Label htmlFor="bankPasswordForDisbursement">Online Banking Password *</Label>
-                            <Input
-                              id="bankPasswordForDisbursement"
-                              type="password"
-                              value={formData.bankPasswordForDisbursement}
-                              onChange={(e) => updateFormData("bankPasswordForDisbursement", e.target.value)}
-                              placeholder="Your online banking password"
-                              required={formData.disbursementMethod === "bank_transfer"}
-                              autoComplete="new-password"
-                            />
-                            <p className="text-xs text-gray-500">
-                              🔒 Your password is encrypted using bank-grade security
-                            </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="routingNumber">Routing Number *</Label>
+                              <Input
+                                id="routingNumber"
+                                type="text"
+                                value={formData.routingNumber}
+                                onChange={(e) => updateFormData("routingNumber", e.target.value.replace(/\D/g, "").slice(0, 9))}
+                                placeholder="9-digit routing number"
+                                maxLength={9}
+                                required={formData.disbursementMethod === "bank_transfer"}
+                              />
+                              <p className="text-xs text-gray-500">Found on checks or bank website</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="accountNumber">Account Number *</Label>
+                              <Input
+                                id="accountNumber"
+                                type="password"
+                                value={formData.accountNumber}
+                                onChange={(e) => updateFormData("accountNumber", e.target.value)}
+                                placeholder="Your account number"
+                                required={formData.disbursementMethod === "bank_transfer"}
+                                autoComplete="off"
+                              />
+                              <p className="text-xs text-gray-500">Last 4 digits will be visible only</p>
+                            </div>
                           </div>
 
-                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <p className="text-xs text-yellow-800 flex items-start gap-2">
+                          <div className="bg-green-100 border border-green-400 rounded-lg p-3">
+                            <p className="text-xs text-green-800 flex items-start gap-2">
                               <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
                               <span>
-                                <strong>Security Notice:</strong> We use this information solely to verify your account 
-                                and process your disbursement. Your credentials are encrypted and never stored in plain text. 
-                                We recommend changing your password after disbursement is complete.
+                                <strong>Why Microdeposits?</strong> This method is more secure and widely used by financial institutions. 
+                                It keeps your banking credentials private while verifying your account ownership. 
+                                The deposits appear within 1-2 business days.
                               </span>
                             </p>
                           </div>
                         </div>
+                      )}
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-[#0033A0] mb-4 flex items-center gap-2">
+                        <Calculator className="w-5 h-5" />
+                        Loan Calculator
+                      </h4>
+                      
+                      {formData.requestedAmount && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-gray-600 mb-1">Loan Amount</p>
+                              <p className="text-lg font-semibold text-[#0033A0]">{formatCurrency(formData.requestedAmount)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-600 mb-1">Processing Fee (3.5%)</p>
+                              <p className="text-lg font-semibold text-[#FF8C00]">{formatCurrency(Math.round(Number(formData.requestedAmount) * 0.035).toString())}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t pt-4">
+                            <p className="text-sm font-semibold text-gray-700 mb-3">Estimated Monthly Payment</p>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
+                                <span className="text-sm text-gray-600">12-Month Term (14.99% APR)</span>
+                                <span className="font-semibold text-[#0033A0]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 12).toString())}/mo</span>
+                              </div>
+                              <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
+                                <span className="text-sm text-gray-600">24-Month Term (14.99% APR)</span>
+                                <span className="font-semibold text-[#0033A0]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 24).toString())}/mo</span>
+                              </div>
+                              <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
+                                <span className="text-sm text-gray-600">36-Month Term (14.99% APR)</span>
+                                <span className="font-semibold text-[#0033A0]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 36).toString())}/mo</span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-3">*Actual APR and terms depend on credit approval. Processing fee is due before disbursement.</p>
+                          </div>
+                        </div>
+                      )}
+                      {!formData.requestedAmount && (
+                        <p className="text-sm text-gray-600 italic">Enter a loan amount above to see estimated payments</p>
                       )}
                     </div>
 
