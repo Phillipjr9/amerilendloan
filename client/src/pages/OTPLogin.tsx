@@ -256,6 +256,15 @@ export default function OTPLogin() {
       return;
     }
 
+    // Check if account already exists with this email
+    if (existingAccountInfo?.exists) {
+      toast.error("This email is already registered! Please log in instead.");
+      setIsLogin(true);
+      setLoginIdentifier(signupEmail);
+      setStep("form");
+      return;
+    }
+
     if (signupUsername.length < 3) {
       toast.error("Username must be at least 3 characters");
       return;
@@ -585,8 +594,12 @@ export default function OTPLogin() {
                       placeholder="Enter your email"
                       value={signupEmail}
                       onChange={(e) => {
-                        setSignupEmail(e.target.value);
-                        setExistingAccountInfo(null);
+                        const newEmail = e.target.value;
+                        setSignupEmail(newEmail);
+                        // Only clear existing account info if email actually changed
+                        if (existingAccountInfo?.email !== newEmail) {
+                          setExistingAccountInfo(null);
+                        }
                       }}
                       onBlur={(e) => {
                         // Check if email already exists during signup
