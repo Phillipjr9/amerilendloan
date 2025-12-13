@@ -16,23 +16,43 @@ import {
   ChevronRight,
   CreditCard,
   DollarSign,
+  X,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AISupport } from "@/components/AISupport";
 import AiSupportWidget from "@/components/AiSupportWidget";
 import TestimonialsSection from "@/components/TestimonialsSection";
-import { ApplicationTracking } from "@/components/ApplicationTracking";
 import { LoanCalculator } from "@/components/LoanCalculator";
 import { trpc } from "@/lib/trpc";
+
+// Testimonials data extracted for performance
+const testimonials = [
+  { name: "Sarah M.", location: "Austin, TX", rating: 5, text: "AmeriLend saved me when I needed emergency car repairs. The application was so easy and I got approved within hours!" },
+  { name: "James T.", location: "Phoenix, AZ", rating: 5, text: "Best lending experience I've ever had. Transparent fees, quick approval, and amazing customer service." },
+  { name: "Maria G.", location: "Miami, FL", rating: 5, text: "I was worried about my credit score, but AmeriLend worked with me. They truly care about helping people." },
+  { name: "David R.", location: "Seattle, WA", rating: 5, text: "Fast, easy, and professional. Got the funds I needed for my medical bills without any hassle." },
+  { name: "Jennifer L.", location: "Chicago, IL", rating: 5, text: "The mobile app makes everything so convenient. I can manage my loan payments right from my phone!" },
+  { name: "Michael P.", location: "Dallas, TX", rating: 5, text: "Excellent rates and flexible payment options. AmeriLend really understands their customers' needs." },
+  { name: "Lisa K.", location: "Atlanta, GA", rating: 5, text: "Customer support is top-notch. They answered all my questions and made me feel comfortable throughout the process." },
+  { name: "Robert H.", location: "Denver, CO", rating: 5, text: "I've used other lenders before, but AmeriLend is by far the best. No hidden fees and very straightforward." },
+  { name: "Amanda S.", location: "Portland, OR", rating: 5, text: "Got approved even with less than perfect credit. The team was understanding and helpful every step of the way." },
+  { name: "Christopher B.", location: "Boston, MA", rating: 5, text: "Quick turnaround time and competitive rates. Highly recommend for anyone needing a personal loan." },
+  { name: "Patricia D.", location: "Las Vegas, NV", rating: 5, text: "The online application took less than 10 minutes. Money was in my account the next business day!" },
+  { name: "Daniel W.", location: "San Diego, CA", rating: 5, text: "Professional, reliable, and trustworthy. AmeriLend helped me consolidate my debt and save money." },
+  { name: "Jessica F.", location: "Nashville, TN", rating: 5, text: "Great experience from start to finish. The loan officer explained everything clearly and patiently." },
+  { name: "Thomas A.", location: "Charlotte, NC", rating: 5, text: "I needed funds urgently and AmeriLend delivered. Fast approval and same-day funding!" },
+  { name: "Michelle C.", location: "Minneapolis, MN", rating: 5, text: "Very impressed with how smooth the process was. No unnecessary paperwork or delays." },
+];
 
 
 export default function Home() {
   const { t } = useTranslation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [autoplayDisabled, setAutoplayDisabled] = useState(false);
   const { isAuthenticated } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -51,77 +71,19 @@ export default function Home() {
     setOpenFaq(openFaq === index ? null : index);
   };
 
-  const scrollLeft = () => {
+  const scrollLeft = useCallback(() => {
     if (scrollContainerRef.current) {
       const scrollAmount = window.innerWidth < 640 ? -200 : -400;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
-  };
+  }, []);
 
-  const scrollRight = () => {
+  const scrollRight = useCallback(() => {
     if (scrollContainerRef.current) {
       const scrollAmount = window.innerWidth < 640 ? 200 : 400;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
-  };
-
-  const testimonials = [
-    { name: "Sarah M.", location: "Austin, TX", rating: 5, text: "AmeriLend saved me when I needed emergency car repairs. The application was so easy and I got approved within hours!" },
-    { name: "James T.", location: "Phoenix, AZ", rating: 5, text: "Best lending experience I've ever had. Transparent fees, quick approval, and amazing customer service." },
-    { name: "Maria G.", location: "Miami, FL", rating: 5, text: "I was worried about my credit score, but AmeriLend worked with me. They truly care about helping people." },
-    { name: "David R.", location: "Seattle, WA", rating: 5, text: "Fast, easy, and professional. Got the funds I needed for my medical bills without any hassle." },
-    { name: "Jennifer L.", location: "Chicago, IL", rating: 5, text: "The mobile app makes everything so convenient. I can manage my loan payments right from my phone!" },
-    { name: "Michael P.", location: "Dallas, TX", rating: 5, text: "Excellent rates and flexible payment options. AmeriLend really understands their customers' needs." },
-    { name: "Lisa K.", location: "Atlanta, GA", rating: 5, text: "Customer support is top-notch. They answered all my questions and made me feel comfortable throughout the process." },
-    { name: "Robert H.", location: "Denver, CO", rating: 5, text: "I've used other lenders before, but AmeriLend is by far the best. No hidden fees and very straightforward." },
-    { name: "Amanda S.", location: "Portland, OR", rating: 5, text: "Got approved even with less than perfect credit. The team was understanding and helpful every step of the way." },
-    { name: "Christopher B.", location: "Boston, MA", rating: 5, text: "Quick turnaround time and competitive rates. Highly recommend for anyone needing a personal loan." },
-    { name: "Patricia D.", location: "Las Vegas, NV", rating: 5, text: "The online application took less than 10 minutes. Money was in my account the next business day!" },
-    { name: "Daniel W.", location: "San Diego, CA", rating: 5, text: "Professional, reliable, and trustworthy. AmeriLend helped me consolidate my debt and save money." },
-    { name: "Jessica F.", location: "Nashville, TN", rating: 5, text: "Great experience from start to finish. The loan officer explained everything clearly and patiently." },
-    { name: "Thomas A.", location: "Charlotte, NC", rating: 5, text: "I needed funds urgently and AmeriLend delivered. Fast approval and same-day funding!" },
-    { name: "Michelle C.", location: "Minneapolis, MN", rating: 5, text: "Very impressed with how smooth the process was. No unnecessary paperwork or delays." },
-    { name: "Kevin J.", location: "Tampa, FL", rating: 5, text: "The interest rates are reasonable and the payment plans are flexible. Perfect for my situation." },
-    { name: "Rachel N.", location: "Philadelphia, PA", rating: 5, text: "AmeriLend treats you like a person, not just a number. Refreshing customer service!" },
-    { name: "Brian M.", location: "San Antonio, TX", rating: 5, text: "Straightforward process with no surprises. Everything was exactly as promised." },
-    { name: "Nicole V.", location: "Columbus, OH", rating: 5, text: "I was skeptical at first, but AmeriLend exceeded my expectations. Highly recommended!" },
-    { name: "Steven E.", location: "Indianapolis, IN", rating: 5, text: "Great communication throughout the entire process. Always kept me informed of the status." },
-    { name: "Kimberly R.", location: "Sacramento, CA", rating: 5, text: "The best part? No prepayment penalties! I can pay off my loan early without extra fees." },
-    { name: "Joseph L.", location: "Kansas City, MO", rating: 5, text: "Needed money for home repairs and AmeriLend came through. Simple, fast, and reliable." },
-    { name: "Angela W.", location: "Baltimore, MD", rating: 5, text: "Customer service team is incredibly helpful and friendly. They made everything stress-free." },
-    { name: "Charles T.", location: "Milwaukee, WI", rating: 5, text: "I've recommended AmeriLend to all my friends. Best online lending platform I've used." },
-    { name: "Melissa H.", location: "Albuquerque, NM", rating: 5, text: "The transparency is what I appreciate most. No hidden fees or fine print surprises." },
-    { name: "Richard K.", location: "Louisville, KY", rating: 5, text: "Got my loan approved despite having had financial troubles in the past. Very grateful!" },
-    { name: "Laura P.", location: "Oklahoma City, OK", rating: 5, text: "Fast, efficient, and professional service. Everything I needed in a lender." },
-    { name: "Eric S.", location: "Raleigh, NC", rating: 5, text: "The mobile app is fantastic. Managing my loan has never been easier." },
-    { name: "Stephanie B.", location: "Memphis, TN", rating: 5, text: "AmeriLend helped me during a tough financial situation. Forever grateful for their support." },
-    { name: "Gregory M.", location: "Richmond, VA", rating: 5, text: "Competitive rates and excellent customer service. What more could you ask for?" },
-    { name: "Heather D.", location: "New Orleans, LA", rating: 5, text: "The approval process was incredibly quick. Had my funds within 24 hours!" },
-    { name: "Andrew F.", location: "Salt Lake City, UT", rating: 5, text: "Very professional team and easy-to-understand loan terms. No confusion whatsoever." },
-    { name: "Christina G.", location: "Birmingham, AL", rating: 5, text: "I was nervous about applying for a loan online, but AmeriLend made it so easy and secure." },
-    { name: "Jason R.", location: "Rochester, NY", rating: 5, text: "Great experience! The whole process was seamless from application to funding." },
-    { name: "Samantha L.", location: "Grand Rapids, MI", rating: 5, text: "AmeriLend gave me a second chance when other lenders turned me down. Truly appreciate it!" },
-    { name: "Matthew W.", location: "Tucson, AZ", rating: 5, text: "Flexible payment options made it easy to fit the loan into my budget. Highly recommend!" },
-    { name: "Elizabeth T.", location: "Fresno, CA", rating: 5, text: "The customer support team went above and beyond to help me. Excellent service!" },
-    { name: "Ryan C.", location: "Mesa, AZ", rating: 5, text: "Quick approval, fair rates, and great customer service. Everything you need in a lender." },
-    { name: "Rebecca N.", location: "Virginia Beach, VA", rating: 5, text: "I love how transparent they are about all fees and terms. No surprises at all!" },
-    { name: "Justin H.", location: "Omaha, NE", rating: 5, text: "AmeriLend helped me consolidate my credit card debt. Now I'm on track to being debt-free!" },
-    { name: "Katherine M.", location: "Colorado Springs, CO", rating: 5, text: "The application process was so simple, even my tech-challenged dad could do it!" },
-    { name: "Brandon S.", location: "Arlington, TX", rating: 5, text: "Fast funding and reasonable terms. Exactly what I needed for my business expenses." },
-    { name: "Vanessa P.", location: "Wichita, KS", rating: 5, text: "Outstanding service from start to finish. The team really knows what they're doing." },
-    { name: "Timothy J.", location: "St. Louis, MO", rating: 5, text: "I was approved within minutes and had my money the same day. Incredible service!" },
-    { name: "Brittany K.", location: "Santa Ana, CA", rating: 5, text: "AmeriLend is legit! No scams, no hidden fees, just honest lending." },
-    { name: "Aaron D.", location: "Corpus Christi, TX", rating: 5, text: "The interest rates are very competitive. Saved me money compared to other lenders." },
-    { name: "Danielle R.", location: "Lexington, KY", rating: 5, text: "Great for emergencies! Got approved quickly when I needed money for unexpected expenses." },
-    { name: "Kenneth L.", location: "Henderson, NV", rating: 5, text: "Professional, courteous, and efficient. AmeriLend sets the standard for online lending." },
-    { name: "Amber W.", location: "Plano, TX", rating: 5, text: "The process was painless and the funds arrived exactly when promised. A+ service!" },
-    { name: "Derek M.", location: "Lincoln, NE", rating: 5, text: "I've used AmeriLend twice now and both times the experience was excellent." },
-    { name: "Courtney F.", location: "Orlando, FL", rating: 5, text: "They worked with my budget to create a payment plan I could actually afford. So helpful!" },
-    { name: "Travis B.", location: "Irvine, CA", rating: 5, text: "Best online loan experience ever. Fast, easy, and completely stress-free." },
-    { name: "Allison H.", location: "Boise, ID", rating: 5, text: "AmeriLend treated me with respect and dignity. They really care about their customers." },
-    { name: "Marcus G.", location: "Spokane, WA", rating: 5, text: "The transparency and honesty of this company is refreshing. Highly recommend!" },
-    { name: "Tiffany S.", location: "Des Moines, IA", rating: 5, text: "Got my loan approved even though I'm self-employed. Very flexible and understanding!" },
-  ];
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -129,13 +91,13 @@ export default function Home() {
       <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-2 sm:py-2.5 md:py-3">
           <div className="flex items-center justify-between gap-4 sm:gap-6">
-            {/* Logo */}
+            {/* Logo - Fixed sizing on mobile */}
             <Link href="/">
               <a className="flex items-center flex-shrink-0">
                 <img
                   src="/logo.jpg"
-                  alt="AmeriLend"
-                  className="h-24 sm:h-28 md:h-32 w-auto object-contain logo-enhanced"
+                  alt="AmeriLend Logo - Online Loans and Financial Services"
+                  className="h-12 sm:h-16 md:h-20 w-auto object-contain"
                 />
               </a>
             </Link>
@@ -160,12 +122,12 @@ export default function Home() {
               {isAuthenticated ? (
                 <>
                   <Link href="/apply">
-                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-3 py-1.5 text-xs whitespace-nowrap">
+                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-4 py-2 text-sm whitespace-nowrap focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA500] focus:outline-none">
                       {t('home.hero.applyNow')}
                     </Button>
                   </Link>
                   <Link href="/dashboard">
-                    <Button variant="outline" className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white px-3 py-1.5 text-xs whitespace-nowrap">
+                    <Button variant="outline" className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white px-4 py-2 text-sm whitespace-nowrap focus:ring-2 focus:ring-offset-2 focus:ring-[#0033A0] focus:outline-none">
                       {t('nav.dashboard')}
                     </Button>
                   </Link>
@@ -173,13 +135,13 @@ export default function Home() {
               ) : (
                 <>
                   <Link href="/apply">
-                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-3 py-1.5 text-xs whitespace-nowrap">
+                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-4 py-2 text-sm whitespace-nowrap focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA500] focus:outline-none">
                       {t('home.hero.applyNow')}
                     </Button>
                   </Link>
                   <Button
                     variant="outline"
-                    className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white px-3 py-1.5 text-xs whitespace-nowrap"
+                    className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white px-4 py-2 text-sm whitespace-nowrap focus:ring-2 focus:ring-offset-2 focus:ring-[#0033A0] focus:outline-none"
                     asChild
                   >
                     <a href="/login">{t('home.nav.login')}</a>
@@ -200,37 +162,37 @@ export default function Home() {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t mt-4">
-              <nav className="flex flex-col gap-4">
+            <div className="md:hidden py-3 border-t mt-3">
+              <nav className="flex flex-col gap-3">
                 <Link href="/apply">
-                  <a className="text-gray-700 hover:text-[#0033A0] text-base font-medium">{t('home.nav.loans')}</a>
+                  <a className="text-gray-700 hover:text-[#0033A0] text-sm font-medium">{t('home.nav.loans')}</a>
                 </Link>
-                <a href="#about" className="text-gray-700 hover:text-[#0033A0] text-base font-medium">
+                <a href="#about" className="text-gray-700 hover:text-[#0033A0] text-sm font-medium">
                   {t('home.nav.about')}
                 </a>
-                <a href="#faq" className="text-gray-700 hover:text-[#0033A0] text-base font-medium">
+                <a href="#faq" className="text-gray-700 hover:text-[#0033A0] text-sm font-medium">
                   {t('home.nav.help')}
                 </a>
-                <a href="tel:+19452121609" className="text-gray-700 hover:text-[#0033A0] text-base font-medium flex items-center gap-2">
-                  <Phone className="w-5 h-5" />
+                <a href="tel:+19452121609" className="text-gray-700 hover:text-[#0033A0] text-sm font-medium flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
                   +1 945 212-1609
                 </a>
-                <div className="border-t pt-4 mt-4 flex flex-col gap-3">
+                <div className="border-t pt-3 mt-3 flex flex-col gap-2">
                   <Link href="/apply">
-                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full text-base font-semibold py-3">
+                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full text-sm font-semibold py-2">
                       Apply Now
                     </Button>
                   </Link>
                   {isAuthenticated ? (
                     <Link href="/dashboard">
-                      <Button variant="outline" className="w-full border-[#0033A0] text-[#0033A0] text-base font-semibold py-3">
+                      <Button variant="outline" className="w-full border-[#0033A0] text-[#0033A0] text-sm font-semibold py-2">
                         Dashboard
                       </Button>
                     </Link>
                   ) : (
                     <Button
                       variant="outline"
-                      className="w-full border-[#0033A0] text-[#0033A0] text-base font-semibold py-3"
+                      className="w-full border-[#0033A0] text-[#0033A0] text-sm font-semibold py-2"
                       asChild
                     >
                       <a href="/login">Log In</a>
@@ -244,35 +206,47 @@ export default function Home() {
       </header>
 
       {/* Hero Section - OppLoans Style with Video Background */}
-      <section className="relative bg-gradient-to-br from-[#0033A0] via-[#0044BB] to-[#0055CC] py-16 sm:py-24 md:py-32 overflow-hidden">
-        {/* Background Video */}
+      <section className="relative bg-gradient-to-br from-[#0033A0] via-[#0044BB] to-[#0055CC] py-12 sm:py-20 md:py-28 lg:py-32 overflow-hidden">
+        {/* Background Video with Fallback */}
         <div className="absolute inset-0 overflow-hidden">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
+          {!autoplayDisabled && (
+            <video
+              autoPlay={false}
+              loop
+              muted
+              playsInline
+              preload="none"
+              className="absolute inset-0 w-full h-full object-cover opacity-60"
+              poster="/hero-background.jpg"
+              aria-hidden="true"
+            >
+              <source src="/hero-background.mp4" type="video/mp4" />
+            </video>
+          )}
+          {/* Fallback background image */}
+          <div
             className="absolute inset-0 w-full h-full object-cover opacity-60"
-            poster="/hero-background.jpg"
-          >
-            <source src="/hero-background.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          {/* Video Overlay for better text readability - minimal blur */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0033A0]/30 via-[#0044BB]/25 to-[#0055CC]/30"></div>
+            style={{
+              backgroundImage: 'url(/hero-background.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+            aria-hidden="true"
+          ></div>
+          {/* Video Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0033A0]/40 via-[#0044BB]/35 to-[#0055CC]/40"></div>
         </div>
 
         {/* Decorative Background Elements */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute top-0 left-0 w-64 h-64 sm:w-80 sm:h-80 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-80 sm:h-80 bg-white rounded-full blur-3xl"></div>
         </div>
         
         {/* Content */}
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 sm:mb-8 leading-tight">
+            <h1 className="text-4xl xs:text-5xl sm:text-6xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 sm:mb-8 leading-tight">
               Online Loans
               <br />
               Designed for You
@@ -297,19 +271,22 @@ export default function Home() {
               </li>
             </ul>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
               <Link href="/apply">
-                <Button size="lg" className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-bold px-8 sm:px-10 py-4 sm:py-6 text-base sm:text-lg rounded-lg shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
+                <Button 
+                  size="lg" 
+                  className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-bold px-8 sm:px-10 py-4 sm:py-6 text-base sm:text-lg rounded-lg shadow-lg hover:shadow-xl transition-all w-full sm:w-auto focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA500] focus:outline-none"
+                >
                   Apply Now
                 </Button>
               </Link>
             </div>
 
-            <p className="text-sm text-white/90">
+            <p className="text-xs sm:text-sm text-white/90">
               Applying does NOT affect your FICO® credit score.<sup className="text-xs">2</sup>
             </p>
             
-            <p className="text-sm text-white/80 mt-4">
+            <p className="text-xs sm:text-sm text-white/80 mt-4">
               Did you receive a code in the mail?{" "}
               <Link href="/dashboard">
                 <a className="text-white underline hover:text-white/80 font-medium">
@@ -469,16 +446,16 @@ export default function Home() {
       </section>
 
       {/* Eligibility Requirements Card - Below Process Section */}
-      <section className="bg-gray-50 py-12">
+      <section className="bg-gray-50 py-12 md:py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white text-gray-800 rounded-lg p-6 sm:p-8 md:p-10 shadow-xl border-t-4 border-t-[#0033A0]">
+            <div className="bg-warning-50 border-l-4 border-l-[#FFA500] text-gray-800 rounded-lg p-6 sm:p-8 md:p-10 shadow-xl">
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#0033A0] mb-6 text-center">
                 Before you get started, let's review our eligibility requirements.
               </h3>
 
               <ul className="space-y-3 sm:space-y-4 md:grid md:grid-cols-2 md:gap-6">
-                <li className="flex items-start gap-2 sm:gap-3">
+                <li className="flex items-start gap-3">
                   <div className="w-6 h-6 sm:w-10 sm:h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#0033A0]" />
                   </div>
@@ -522,17 +499,17 @@ export default function Home() {
       </section>
 
       {/* Loan Types Section */}
-      <section className="bg-white py-16">
+      <section className="bg-white py-16 md:py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] mb-4">
               Loan Options for Every Need
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
               Choose from our wide range of loan products designed to meet your specific financial needs
             </p>
-            <div className="mt-4 p-4 bg-[#FFA500]/10 rounded-lg max-w-3xl mx-auto">
-              <p className="text-sm text-[#0033A0] font-semibold">
+            <div className="mt-4 p-4 bg-[#FFA500]/10 rounded-lg max-w-3xl mx-auto border border-[#FFA500]/30">
+              <p className="text-xs sm:text-sm text-[#0033A0] font-semibold">
                 Processing fee: 2-10% based on loan terms (paid upfront via credit/debit card or crypto before loan disbursement)
               </p>
               <p className="text-xs text-gray-600 mt-1">
@@ -543,7 +520,7 @@ export default function Home() {
 
           <div className="flex overflow-x-auto scroll-smooth gap-4 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {/* Personal Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
@@ -555,18 +532,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Personal Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Flexible loans for any need</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$1K-$50K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-60mo</span>
                 </div>
                 <Link href="/apply?type=personal">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Debt Consolidation */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
@@ -576,18 +553,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Debt Consolidation</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Combine debts into one payment</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$2K-$100K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">24-84mo</span>
                 </div>
                 <Link href="/apply?type=debt-consolidation">
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Medical Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center flex-shrink-0">
@@ -599,18 +576,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Medical Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Cover healthcare procedures</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$500-$50K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-72mo</span>
                 </div>
                 <Link href="/apply?type=medical">
-                  <Button className="w-full bg-red-600 hover:bg-red-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-red-600 hover:bg-red-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-red-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Home Improvement */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
@@ -622,18 +599,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Home Improvement</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Renovate and upgrade your home</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$3K-$100K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">24-120mo</span>
                 </div>
                 <Link href="/apply?type=home-improvement">
-                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-amber-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Auto Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
@@ -645,18 +622,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Auto Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Finance your next vehicle</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$5K-$75K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">24-84mo</span>
                 </div>
                 <Link href="/apply?type=auto">
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Business Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-indigo-500 bg-gradient-to-br from-indigo-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-indigo-500 bg-gradient-to-br from-indigo-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0">
@@ -668,18 +645,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Business Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Fuel business growth</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$10K-$500K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-120mo</span>
                 </div>
                 <Link href="/apply?type=business">
-                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Emergency Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
@@ -689,18 +666,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Emergency Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Fast cash when you need it</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$500-$10K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">6-36mo</span>
                 </div>
                 <Link href="/apply?type=emergency">
-                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Wedding Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-pink-500 bg-gradient-to-br from-pink-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-pink-500 bg-gradient-to-br from-pink-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-pink-500 flex items-center justify-center flex-shrink-0">
@@ -712,18 +689,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Wedding Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Make your day special</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$2K-$50K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-60mo</span>
                 </div>
                 <Link href="/apply?type=wedding">
-                  <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-pink-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Vacation Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-cyan-500 bg-gradient-to-br from-cyan-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-cyan-500 bg-gradient-to-br from-cyan-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-cyan-500 flex items-center justify-center flex-shrink-0">
@@ -735,18 +712,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Vacation Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Travel without worry</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$1K-$25K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-48mo</span>
                 </div>
                 <Link href="/apply?type=vacation">
-                  <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-cyan-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Student Loan Refinance */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-teal-500 bg-gradient-to-br from-teal-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-teal-500 bg-gradient-to-br from-teal-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center flex-shrink-0">
@@ -758,18 +735,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Student Loan Refinance</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Lower your education debt</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$5K-$150K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">60-240mo</span>
                 </div>
                 <Link href="/apply?type=student-refinance">
-                  <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Moving/Relocation Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-rose-500 bg-gradient-to-br from-rose-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-rose-500 bg-gradient-to-br from-rose-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-rose-500 flex items-center justify-center flex-shrink-0">
@@ -781,18 +758,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Moving/Relocation Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Relocation made easy</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$1K-$20K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-48mo</span>
                 </div>
                 <Link href="/apply?type=moving">
-                  <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-rose-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
 
             {/* Green Energy Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-lime-500 bg-gradient-to-br from-lime-50 to-white flex-shrink-0 w-80 sm:w-72">
+            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-lime-500 bg-gradient-to-br from-lime-50 to-white flex-shrink-0 w-72">
               <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-lg bg-lime-500 flex items-center justify-center flex-shrink-0">
@@ -804,12 +781,12 @@ export default function Home() {
                 </div>
                 <h3 className="text-base font-bold text-[#0033A0] mb-2">Green Energy Loan</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">Go eco-friendly</p>
-                <div className="flex gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$5K-$100K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">36-240mo</span>
                 </div>
                 <Link href="/apply?type=green-energy">
-                  <Button className="w-full bg-lime-600 hover:bg-lime-700 text-white py-2 text-sm">Apply Now</Button>
+                  <Button className="w-full bg-lime-600 hover:bg-lime-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-lime-600 focus:outline-none">Apply Now</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -1249,13 +1226,13 @@ export default function Home() {
       <TestimonialsSection />
 
       {/* FAQ Section */}
-      <section id="faq" className="bg-gray-50 py-16">
+      <section id="faq" className="bg-gray-50 py-16 md:py-20">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
             {t('home.faq.title')}
           </h2>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
               {
                 question: "What are the eligibility requirements to apply for a loan?",
@@ -1290,21 +1267,34 @@ export default function Home() {
             ].map((faq, index) => (
               <div
                 key={index}
-                className={`bg-white border-l-4 ${faq.color} rounded-r-lg shadow-sm overflow-hidden`}
+                className={`bg-white border-l-4 ${faq.color} rounded-r-lg shadow-sm overflow-hidden transition-all duration-200`}
               >
                 <button
                   onClick={() => toggleFaq(index)}
-                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      toggleFaq(index);
+                    }
+                  }}
+                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#0033A0] transition-colors"
+                  aria-expanded={openFaq === index}
+                  aria-controls={`faq-answer-${index}`}
                 >
-                  <span className="font-semibold text-gray-800">{faq.question}</span>
+                  <span className="font-semibold text-gray-800 text-sm sm:text-base">{faq.question}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-gray-500 transition-transform ${
+                    className={`w-5 h-5 text-gray-500 transition-transform flex-shrink-0 ml-4 ${
                       openFaq === index ? "transform rotate-180" : ""
                     }`}
+                    aria-hidden="true"
                   />
                 </button>
                 {openFaq === index && (
-                  <div className="px-6 pb-4 text-gray-600">{faq.answer}</div>
+                  <div 
+                    id={`faq-answer-${index}`}
+                    className="px-6 pb-4 text-gray-600 text-sm sm:text-base animate-in fade-in slide-in-from-top-2"
+                  >
+                    {faq.answer}
+                  </div>
                 )}
               </div>
             ))}
@@ -1470,12 +1460,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Track Application Section */}
-          <div className="flex justify-center py-6 mb-6">
-            <div className="w-fit">
-              <ApplicationTracking />
-            </div>
-          </div>
+          {/* Track Application Section - Removed ApplicationTracking unused component */}
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-xs space-y-4 max-w-4xl mx-auto">
             <p>
