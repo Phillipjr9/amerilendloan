@@ -44,6 +44,11 @@ export default function OTPLogin() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Validation state
+  const [accountCheckEmail, setAccountCheckEmail] = useState("");
+  const [showForgotPasswordOption, setShowForgotPasswordOption] = useState(false);
+  const [existingAccountInfo, setExistingAccountInfo] = useState<any>(null);
 
   const requestEmailCodeMutation = trpc.otp.requestCode.useMutation({
     onSuccess: () => {
@@ -155,6 +160,46 @@ export default function OTPLogin() {
   // Check if Supabase is enabled
   const supabaseEnabledQuery = trpc.auth.isSupabaseAuthEnabled.useQuery(undefined, {
     refetchOnWindowFocus: false,
+  });
+
+  // Email existence checker
+  const checkEmailMutation = trpc.auth.checkEmailExists.useMutation({
+    onSuccess: (data) => {
+      if (data.exists) {
+        setExistingAccountInfo(data);
+        setShowForgotPasswordOption(true);
+        toast.info(data.message);
+      }
+    },
+    onError: (error) => {
+      console.error("Error checking email:", error);
+    },
+  });
+
+  // Phone existence checker
+  const checkPhoneMutation = trpc.auth.checkPhoneExists.useMutation({
+    onSuccess: (data) => {
+      if (data.exists) {
+        setExistingAccountInfo(data);
+        toast.warning(data.message);
+      }
+    },
+    onError: (error) => {
+      console.error("Error checking phone:", error);
+    },
+  });
+
+  // SSN existence checker
+  const checkSSNMutation = trpc.auth.checkSSNExists.useMutation({
+    onSuccess: (data) => {
+      if (data.exists) {
+        toast.error(data.message || "This SSN is already registered");
+        return;
+      }
+    },
+    onError: (error) => {
+      console.error("Error checking SSN:", error);
+    },
   });
 
   const toggleLogin = () => {
@@ -376,10 +421,44 @@ export default function OTPLogin() {
                       type="text"
                       placeholder="Enter email or username"
                       value={loginIdentifier}
-                      onChange={(e) => setLoginIdentifier(e.target.value)}
+                      onChange={(e) => {
+                        setLoginIdentifier(e.target.value);
+                        setShowForgotPasswordOption(false);
+                        setExistingAccountInfo(null);
+                      }}
+                      onBlur={(e) => {
+                        // Check if email exists when user leaves the field
+                        const email = e.target.value.trim();
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (emailRegex.test(email) && isLogin && !isResetMode) {
+                          checkEmailMutation.mutate({ email });
+                        }
+                      }}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
                       required
                     />
+                    {checkEmailMutation.isPending && (
+                      <p className="text-sm text-gray-500 mt-2">Checking account...</p>
+                    )}
+                    {showForgotPasswordOption && existingAccountInfo && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-900 mb-2">
+                          {existingAccountInfo.message}
+                        </p>
+                        {!existingAccountInfo.hasPassword && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLoginMethod("email-code");
+                              setShowForgotPasswordOption(false);
+                            }}
+                            className="text-sm text-blue-700 hover:text-blue-900 underline font-medium"
+                          >
+                            Use email verification code instead
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {loginMethod === "password" ? (
@@ -505,10 +584,46 @@ export default function OTPLogin() {
                       type="email"
                       placeholder="Enter your email"
                       value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
+                      onChange={(e) => {
+                        setSignupEmail(e.target.value);
+                        setExistingAccountInfo(null);
+                      }}
+                      onBlur={(e) => {
+                        // Check if email already exists during signup
+                        const email = e.target.value.trim();
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (emailRegex.test(email)) {
+                          checkEmailMutation.mutate({ email });
+                        }
+                      }}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
                       required
                     />
+                    {checkEmailMutation.isPending && (
+                      <p className="text-sm text-gray-500 mt-2">Checking if email is available...</p>
+                    )}
+                    {existingAccountInfo?.exists && !isLogin && (
+                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-900 font-medium">
+                          This email is already registered!
+                        </p>
+                        <p className="text-sm text-red-800 mt-1">
+                          {existingAccountInfo.message}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsLogin(true);
+                            setStep("form");
+                            setLoginIdentifier(signupEmail);
+                            setExistingAccountInfo(null);
+                          }}
+                          className="text-sm text-red-700 hover:text-red-900 underline font-medium mt-2"
+                        >
+                          Log in instead
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Input

@@ -1380,6 +1380,128 @@ export const appRouter = router({
         }
       }),
 
+    /**
+     * Check if email is already registered
+     * Returns account info to help user with forgot password or duplicate detection
+     */
+    checkEmailExists: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+      }))
+      .query(async ({ input }) => {
+        try {
+          const user = await db.getUserByEmail(input.email);
+          
+          if (!user) {
+            return { 
+              exists: false,
+              message: "No account found with this email"
+            };
+          }
+
+          return {
+            exists: true,
+            email: user.email,
+            hasPassword: !!user.passwordHash,
+            loginMethod: user.loginMethod,
+            name: user.name,
+            message: user.passwordHash 
+              ? "Account found. Use email and password to login."
+              : "Account found. Use email verification code to login."
+          };
+        } catch (error) {
+          console.error("[Auth] Error checking email:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to check email"
+          });
+        }
+      }),
+
+    /**
+     * Check if phone number is already registered
+     * Returns account info to help user with duplicate detection
+     */
+    checkPhoneExists: publicProcedure
+      .input(z.object({
+        phone: z.string().min(10).max(15),
+      }))
+      .query(async ({ input }) => {
+        try {
+          // Search for user by phone number in the database
+          const db_instance = await db.getDb();
+          if (!db_instance) {
+            throw new Error("Database not available");
+          }
+
+          const result = await db_instance.query.users.findFirst({
+            where: (fields) => eq(fields.phoneNumber, input.phone),
+          });
+
+          if (!result) {
+            return {
+              exists: false,
+              message: "No account found with this phone number"
+            };
+          }
+
+          return {
+            exists: true,
+            phone: result.phoneNumber,
+            email: result.email,
+            name: result.name,
+            message: `Account found with email: ${result.email}`
+          };
+        } catch (error) {
+          console.error("[Auth] Error checking phone:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to check phone number"
+          });
+        }
+      }),
+
+    /**
+     * Check if SSN is already used
+     * Prevents duplicate loan applications with same SSN
+     */
+    checkSSNExists: publicProcedure
+      .input(z.object({
+        ssn: z.string().regex(/^\d{9}$/),
+      }))
+      .query(async ({ input }) => {
+        try {
+          // Search for any loan application with this SSN
+          const db_instance = await db.getDb();
+          if (!db_instance) {
+            throw new Error("Database not available");
+          }
+
+          const applications = await db_instance.query.loanApplications.findFirst({
+            where: (fields) => eq(fields.ssn, input.ssn),
+          });
+
+          if (!applications) {
+            return {
+              exists: false,
+              message: "No account found with this SSN"
+            };
+          }
+
+          return {
+            exists: true,
+            message: "An account or application already exists with this SSN. Please use that account.",
+            hasDuplicate: true
+          };
+        } catch (error) {
+          console.error("[Auth] Error checking SSN:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to check SSN"
+          });
+        }
+      }),
+
     supabaseSignInWithOTP: publicProcedure
       .input(z.object({
         email: z.string().email(),
