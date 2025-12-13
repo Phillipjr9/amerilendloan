@@ -25,7 +25,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { AISupport } from "@/components/AISupport";
 import AiSupportWidget from "@/components/AiSupportWidget";
 import TestimonialsSection from "@/components/TestimonialsSection";
-import { LoanCalculator } from "@/components/LoanCalculator";
 import { trpc } from "@/lib/trpc";
 
 // Testimonials data extracted for performance
@@ -52,7 +51,8 @@ export default function Home() {
   const { t } = useTranslation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [autoplayDisabled, setAutoplayDisabled] = useState(false);
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
   const { isAuthenticated } = useAuth();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -207,32 +207,20 @@ export default function Home() {
 
       {/* Hero Section - OppLoans Style with Video Background */}
       <section className="relative bg-gradient-to-br from-[#0033A0] via-[#0044BB] to-[#0055CC] py-12 sm:py-20 md:py-28 lg:py-32 overflow-hidden">
-        {/* Background Video with Fallback */}
+        {/* Background Video */}
         <div className="absolute inset-0 overflow-hidden">
-          {!autoplayDisabled && (
-            <video
-              autoPlay={false}
-              loop
-              muted
-              playsInline
-              preload="none"
-              className="absolute inset-0 w-full h-full object-cover opacity-60"
-              poster="/hero-background.jpg"
-              aria-hidden="true"
-            >
-              <source src="/hero-background.mp4" type="video/mp4" />
-            </video>
-          )}
-          {/* Fallback background image */}
-          <div
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
             className="absolute inset-0 w-full h-full object-cover opacity-60"
-            style={{
-              backgroundImage: 'url(/hero-background.jpg)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
+            poster="/hero-background.jpg"
             aria-hidden="true"
-          ></div>
+          >
+            <source src="/hero-background.mp4" type="video/mp4" />
+          </video>
           {/* Video Overlay for better text readability */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0033A0]/40 via-[#0044BB]/35 to-[#0055CC]/40"></div>
         </div>
@@ -288,18 +276,16 @@ export default function Home() {
             
             <p className="text-xs sm:text-sm text-white/80 mt-4">
               Did you receive a code in the mail?{" "}
-              <Link href="/dashboard">
-                <a className="text-white underline hover:text-white/80 font-medium">
-                  Click here
-                </a>
-              </Link>
+              <button
+                onClick={() => setShowCodeModal(true)}
+                className="text-white underline hover:text-white/80 font-medium cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-white focus:outline-none rounded px-1"
+              >
+                Click here
+              </button>
             </p>
           </div>
         </div>
       </section>
-
-      {/* Quick Loan Calculator - Above the Fold */}
-      <LoanCalculator />
 
       {/* Live Statistics Section */}
       <section className="bg-[#0033A0] py-8 md:py-12">
@@ -1536,6 +1522,82 @@ export default function Home() {
 
       {/* AI Support Widget - Unauthenticated users */}
       <AiSupportWidget isAuthenticated={false} />
+
+      {/* Code Entry Modal */}
+      {showCodeModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 sm:p-8">
+            {/* Close Button */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Enter Your Code</h2>
+              <button
+                onClick={() => {
+                  setShowCodeModal(false);
+                  setVerificationCode("");
+                }}
+                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0033A0] rounded p-1"
+                aria-label="Close modal"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <p className="text-gray-600 mb-6">
+              Enter the verification code you received in the mail to access your account.
+            </p>
+
+            {/* Code Input Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (verificationCode.trim()) {
+                  // Navigate to dashboard with code parameter
+                  window.location.href = `/dashboard?code=${encodeURIComponent(verificationCode)}`;
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
+                  Verification Code
+                </label>
+                <input
+                  id="code"
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
+                  placeholder="Enter code (e.g., ABC123)"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent outline-none text-center text-lg font-semibold tracking-wider"
+                  autoFocus
+                  maxLength={20}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={!verificationCode.trim()}
+                className="w-full bg-[#0033A0] hover:bg-[#0025A0] disabled:bg-gray-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-[#0033A0] focus:outline-none"
+              >
+                Verify Code
+              </button>
+
+              {/* Cancel Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCodeModal(false);
+                  setVerificationCode("");
+                }}
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold py-2 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 focus:outline-none"
+              >
+                Cancel
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
