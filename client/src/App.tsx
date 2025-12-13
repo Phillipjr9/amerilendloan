@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import LanguageSelector from "./components/LanguageSelector";
 import Home from "./pages/Home";
 import ApplyLoan from "./pages/ApplyLoan";
 import Dashboard from "./pages/Dashboard";
@@ -30,6 +31,19 @@ import AdminSupportManagement from "./pages/AdminSupportManagement";
 import AdminSettings from "./pages/AdminSettings";
 import AdminApplicationDetail from "./pages/AdminApplicationDetail";
 import PayFee from "./pages/PayFee";
+import HardshipPrograms from "./pages/HardshipPrograms";
+import TaxDocuments from "./pages/TaxDocuments";
+import AccountClosure from "./pages/AccountClosure";
+import PaymentPreferences from "./pages/PaymentPreferences";
+import LiveChat from "./pages/LiveChat";
+import AdminLiveChat from "./pages/admin/AdminLiveChat";
+import FraudDetection from "./pages/admin/FraudDetection";
+import CoSigners from "./pages/CoSigners";
+import Collections from "./pages/admin/Collections";
+import FinancialTools from "./pages/FinancialTools";
+import ESignatures from "./pages/ESignatures";
+import MarketingCampaigns from "./pages/admin/MarketingCampaigns";
+import NotificationSettings from "./pages/NotificationSettings";
 
 function Router() {
   return (
@@ -47,6 +61,15 @@ function Router() {
       <Route path={"/payment-history"} component={PaymentHistory} />
       <Route path={"/referrals"} component={ReferralsAndRewards} />
       <Route path={"/bank-accounts"} component={BankAccountManagement} />
+      <Route path={"/hardship"} component={HardshipPrograms} />
+      <Route path={"/tax-documents"} component={TaxDocuments} />
+      <Route path={"/account-closure"} component={AccountClosure} />
+      <Route path={"/payment-preferences"} component={PaymentPreferences} />
+      <Route path={"/chat"} component={LiveChat} />
+      <Route path={"/co-signers"} component={CoSigners} />
+      <Route path={"/financial-tools"} component={FinancialTools} />
+      <Route path={"/e-signatures"} component={ESignatures} />
+      <Route path={"/notification-settings"} component={NotificationSettings} />
       <Route path={"/settings"} component={Settings} />
       <Route path={"/admin"} component={AdminDashboardFalcon} />
       <Route path={"/admin/application/:id"} component={AdminApplicationDetail} />
@@ -54,6 +77,10 @@ function Router() {
       <Route path={"/admin/users"} component={AdminUserManagement} />
       <Route path={"/admin/kyc"} component={AdminKYCManagement} />
       <Route path={"/admin/support"} component={AdminSupportManagement} />
+      <Route path={"/admin/chat"} component={AdminLiveChat} />
+      <Route path={"/admin/fraud"} component={FraudDetection} />
+      <Route path={"/admin/collections"} component={Collections} />
+      <Route path={"/admin/marketing"} component={MarketingCampaigns} />
       <Route path={"/payment/:id"} component={PaymentPage} />
       <Route path={"/pay-fee"} component={PayFee} />
       <Route path={"/otp-login"} component={OTPLogin} />
@@ -82,7 +109,10 @@ function App() {
       >
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <div className="pb-24">
+            <Router />
+          </div>
+          <LanguageSelector />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

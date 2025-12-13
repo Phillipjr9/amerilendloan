@@ -7063,6 +7063,20 @@ Format as JSON with array of applications including their recommendation.`;
         }
       }),
   }),
+  
+  // Enhanced Features - TEMPORARILY COMMENTED OUT UNTIL ROUTERS ARE MOVED
+  // hardship: hardshipRouter,
+  // taxDocuments: taxDocumentsRouter,
+  // pushNotifications: pushNotificationsRouter,
+  // notifications: notificationsRouter,
+  // coSigners: coSignersRouter,
+  // accountClosure: accountClosureRouter,
+  // paymentPreferences: paymentPreferencesRouter,
+  // fraudDetection: fraudDetectionRouter,
+  // liveChat: liveChatRouter,
+  // eSignature: eSignatureRouter,
+  // marketing: marketingRouter,
+  // collections: collectionsRouter,
 });
 
 // Helper function to determine next steps based on application status
@@ -7156,6 +7170,566 @@ const autoPayRouter = router({
           message: "Failed to get auto-pay logs"
         });
       }
+    }),
+});
+
+// ============================================
+// ENHANCED FEATURES ROUTERS
+// ============================================
+
+const hardshipRouter = router({
+  create: protectedProcedure
+    .input(z.object({
+      loanApplicationId: z.number(),
+      programType: z.enum(["forbearance", "deferment", "payment_reduction", "term_extension", "settlement"]),
+      reason: z.string().min(20),
+      monthlyIncomeChange: z.number().optional(),
+      proposedPaymentAmount: z.number().optional(),
+      requestedDuration: z.number().optional(),
+      supportingDocuments: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const request = await db.createHardshipRequest({
+        ...input,
+        userId: ctx.user.id,
+      });
+      return { success: true, data: request };
+    }),
+
+  getUserRequests: protectedProcedure
+    .query(async ({ ctx }) => {
+      const requests = await db.getUserHardshipRequests(ctx.user.id);
+      return { success: true, data: requests };
+    }),
+
+  adminGetAll: adminProcedure
+    .input(z.object({
+      status: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const requests = await db.getAllHardshipRequests(input.status);
+      return { success: true, data: requests };
+    }),
+
+  adminReview: adminProcedure
+    .input(z.object({
+      requestId: z.number(),
+      status: z.enum(["approved", "rejected"]),
+      adminNotes: z.string().optional(),
+      approvedDuration: z.number().optional(),
+      approvedPaymentAmount: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updated = await db.reviewHardshipRequest(input.requestId, {
+        status: input.status,
+        adminNotes: input.adminNotes,
+        approvedDuration: input.approvedDuration,
+        approvedPaymentAmount: input.approvedPaymentAmount,
+        reviewedBy: ctx.user.id,
+      });
+      return { success: true, data: updated };
+    }),
+});
+
+const taxDocumentsRouter = router({
+  generate: protectedProcedure
+    .input(z.object({
+      taxYear: z.number(),
+      documentType: z.enum(["1098", "1099_c", "interest_statement"]),
+      loanApplicationId: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const document = await db.generateTaxDocument({
+        userId: ctx.user.id,
+        taxYear: input.taxYear,
+        documentType: input.documentType,
+        loanApplicationId: input.loanApplicationId,
+      });
+      return { success: true, data: document };
+    }),
+
+  getUserDocuments: protectedProcedure
+    .input(z.object({
+      taxYear: z.number().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const documents = await db.getUserTaxDocuments(ctx.user.id, input.taxYear);
+      return { success: true, data: documents };
+    }),
+
+  adminGetAll: adminProcedure
+    .input(z.object({
+      taxYear: z.number().optional(),
+      userId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const documents = await db.getAllTaxDocuments(input.taxYear, input.userId);
+      return { success: true, data: documents };
+    }),
+});
+
+const pushNotificationsRouter = router({
+  subscribe: protectedProcedure
+    .input(z.object({
+      endpoint: z.string(),
+      p256dh: z.string(),
+      auth: z.string(),
+      userAgent: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const subscription = await db.createPushSubscription({
+        userId: ctx.user.id,
+        ...input,
+      });
+      return { success: true, data: subscription };
+    }),
+
+  unsubscribe: protectedProcedure
+    .input(z.object({
+      endpoint: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      await db.deletePushSubscription(input.endpoint);
+      return { success: true };
+    }),
+
+  getUserSubscriptions: protectedProcedure
+    .query(async ({ ctx }) => {
+      const subscriptions = await db.getUserPushSubscriptions(ctx.user.id);
+      return { success: true, data: subscriptions };
+    }),
+});
+
+const notificationsRouter = router({
+  getPreferences: protectedProcedure
+    .query(async ({ ctx }) => {
+      const preferences = await db.getUserNotificationPreferences(ctx.user.id);
+      return { success: true, data: preferences };
+    }),
+
+  updatePreferences: protectedProcedure
+    .input(z.object({
+      emailNotifications: z.boolean().optional(),
+      smsNotifications: z.boolean().optional(),
+      pushNotifications: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updated = await db.updateUserNotificationPreferences(ctx.user.id, input);
+      return { success: true, data: updated };
+    }),
+});
+
+const coSignersRouter = router({
+  sendInvitation: protectedProcedure
+    .input(z.object({
+      loanApplicationId: z.number(),
+      coSignerEmail: z.string().email(),
+      coSignerName: z.string(),
+      liabilitySplit: z.number().min(0).max(100).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const invitation = await db.createCoSignerInvitation({
+        primaryBorrowerId: ctx.user.id,
+        ...input,
+      });
+      return { success: true, data: invitation };
+    }),
+
+  getInvitations: protectedProcedure
+    .query(async ({ ctx }) => {
+      const invitations = await db.getCoSignerInvitationsByUser(ctx.user.id);
+      return { success: true, data: invitations };
+    }),
+
+  respondToInvitation: protectedProcedure
+    .input(z.object({
+      invitationToken: z.string(),
+      accept: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updated = await db.respondToCoSignerInvitation(
+        input.invitationToken,
+        input.accept,
+        ctx.user.id
+      );
+      return { success: true, data: updated };
+    }),
+
+  cancelInvitation: protectedProcedure
+    .input(z.object({
+      invitationId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      await db.cancelCoSignerInvitation(input.invitationId);
+      return { success: true };
+    }),
+
+  releaseCoSigner: protectedProcedure
+    .input(z.object({
+      coSignerId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const released = await db.releaseCoSigner(input.coSignerId, ctx.user.id);
+      return { success: true, data: released };
+    }),
+});
+
+const accountClosureRouter = router({
+  requestClosure: protectedProcedure
+    .input(z.object({
+      reason: z.enum(["no_longer_needed", "switching_lender", "privacy_concerns", "service_quality", "other"]),
+      detailedReason: z.string().optional(),
+      dataExportRequested: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Check if user has any outstanding loans
+      const applications = await db.getLoanApplicationsByUserId(ctx.user.id);
+      const hasOutstandingLoans = applications.some((app: any) => 
+        app.status !== 'rejected' && app.status !== 'cancelled' && app.status !== 'disbursed'
+      );
+      
+      const request = await db.createAccountClosureRequest({
+        userId: ctx.user.id,
+        reason: input.reason,
+        detailedReason: input.detailedReason,
+        dataExportRequested: input.dataExportRequested,
+        hasOutstandingLoans,
+      });
+      return { success: true, data: request };
+    }),
+
+  getMyRequest: protectedProcedure
+    .query(async ({ ctx }) => {
+      const request = await db.getUserClosureRequest(ctx.user.id);
+      return { success: true, data: request };
+    }),
+
+  adminGetAll: adminProcedure
+    .input(z.object({
+      status: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const requests = await db.getAllClosureRequests(input.status);
+      return { success: true, data: requests };
+    }),
+
+  adminReview: adminProcedure
+    .input(z.object({
+      requestId: z.number(),
+      status: z.enum(["approved", "rejected"]),
+      adminNotes: z.string().optional(),
+      scheduledDeletionDate: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updated = await db.reviewClosureRequest(input.requestId, {
+        status: input.status,
+        adminNotes: input.adminNotes,
+        scheduledDeletionDate: input.scheduledDeletionDate ? new Date(input.scheduledDeletionDate) : undefined,
+        reviewedBy: ctx.user.id,
+      });
+      return { success: true, data: updated };
+    }),
+});
+
+const paymentPreferencesRouter = router({
+  getPreferences: protectedProcedure
+    .input(z.object({
+      loanApplicationId: z.number().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const preferences = await db.getPaymentPreferences(ctx.user.id, input.loanApplicationId);
+      return { success: true, data: preferences };
+    }),
+
+  updatePreferences: protectedProcedure
+    .input(z.object({
+      loanApplicationId: z.number().optional(),
+      allocationStrategy: z.enum(["standard", "principal_first", "future_payments", "biweekly", "round_up"]).optional(),
+      roundUpEnabled: z.boolean().optional(),
+      roundUpToNearest: z.number().optional(),
+      biweeklyEnabled: z.boolean().optional(),
+      autoExtraPaymentAmount: z.number().optional(),
+      autoExtraPaymentDay: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updated = await db.updatePaymentPreferences(ctx.user.id, input);
+      return { success: true, data: updated };
+    }),
+});
+
+const fraudDetectionRouter = router({
+  getPendingReviews: adminProcedure
+    .query(async () => {
+      const checks = await db.getPendingFraudChecks();
+      return { success: true, data: checks };
+    }),
+
+  reviewFraudCheck: adminProcedure
+    .input(z.object({
+      fraudCheckId: z.number(),
+      reviewNotes: z.string(),
+      approved: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updated = await db.reviewFraudCheck(input.fraudCheckId, {
+        reviewNotes: input.reviewNotes,
+        reviewedBy: ctx.user.id,
+      });
+      return { success: true, data: updated };
+    }),
+
+  getUserRiskScore: protectedProcedure
+    .query(async ({ ctx }) => {
+      const latestCheck = await db.getLatestFraudCheck(ctx.user.id);
+      return { success: true, data: latestCheck };
+    }),
+});
+
+const liveChatRouter = router({
+  getOrCreateSession: protectedProcedure
+    .query(async ({ ctx }) => {
+      const session = await db.getOrCreateChatSession(ctx.user.id);
+      return session;
+    }),
+
+  getSession: protectedProcedure
+    .input(z.object({
+      sessionId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      const session = await db.getChatSession(input.sessionId);
+      return session;
+    }),
+
+  getMessages: protectedProcedure
+    .input(z.object({
+      sessionId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      const messages = await db.getChatMessages(input.sessionId);
+      return messages;
+    }),
+
+  sendMessage: protectedProcedure
+    .input(z.object({
+      sessionId: z.number(),
+      message: z.string(),
+      isFromAgent: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const message = await db.createChatMessage({
+        sessionId: input.sessionId,
+        senderId: ctx.user.id,
+        message: input.message,
+        isFromAgent: input.isFromAgent,
+      });
+      return { success: true, data: message };
+    }),
+
+  closeSession: protectedProcedure
+    .input(z.object({
+      sessionId: z.number(),
+      rating: z.number().min(1).max(5).optional(),
+      feedbackComment: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const closed = await db.closeChatSession(
+        input.sessionId,
+        input.rating,
+        input.feedbackComment
+      );
+      return { success: true, data: closed };
+    }),
+
+  getActiveSessions: adminProcedure
+    .query(async () => {
+      const sessions = await db.getActiveChatSessions();
+      return sessions;
+    }),
+
+  assignToAgent: adminProcedure
+    .input(z.object({
+      sessionId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const assigned = await db.assignChatSession(input.sessionId, ctx.user.id);
+      return { success: true, data: assigned };
+    }),
+
+  getCannedResponses: adminProcedure
+    .query(async () => {
+      const responses = await db.getCannedResponses();
+      return responses;
+    }),
+});
+
+const eSignatureRouter = router({
+  requestSignature: protectedProcedure
+    .input(z.object({
+      loanApplicationId: z.number(),
+      documentType: z.string(),
+      documentTitle: z.string(),
+      documentPath: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Validate email and name are not null
+      if (!ctx.user.email) {
+        throw new TRPCError({ 
+          code: "BAD_REQUEST", 
+          message: "User email is required for document signing" 
+        });
+      }
+      
+      const document = await db.createESignatureDocument({
+        userId: ctx.user.id,
+        signerEmail: ctx.user.email,
+        signerName: ctx.user.name || ctx.user.email,
+        ...input,
+      });
+      return { success: true, data: document };
+    }),
+
+  getUserDocuments: protectedProcedure
+    .query(async ({ ctx }) => {
+      const documents = await db.getUserESignatureDocuments(ctx.user.id);
+      return { success: true, data: documents };
+    }),
+
+  sign: protectedProcedure
+    .input(z.object({
+      documentId: z.number(),
+      ipAddress: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const signed = await db.signESignatureDocument(input.documentId, {
+        ipAddress: input.ipAddress,
+      });
+      return { success: true, data: signed };
+    }),
+
+  adminGetAll: adminProcedure
+    .input(z.object({
+      status: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const documents = await db.getAllESignatureDocuments(input.status);
+      return { success: true, data: documents };
+    }),
+});
+
+const marketingRouter = router({
+  createCampaign: adminProcedure
+    .input(z.object({
+      campaignName: z.string(),
+      utmSource: z.string(),
+      utmMedium: z.string(),
+      utmCampaign: z.string(),
+      utmTerm: z.string().optional(),
+      utmContent: z.string().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      budget: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const campaign = await db.createMarketingCampaign({
+        ...input,
+        startDate: input.startDate ? new Date(input.startDate) : undefined,
+        endDate: input.endDate ? new Date(input.endDate) : undefined,
+        createdBy: ctx.user.id,
+      });
+      return { success: true, data: campaign };
+    }),
+
+  getCampaigns: adminProcedure
+    .query(async () => {
+      const campaigns = await db.getAllMarketingCampaigns();
+      return { success: true, data: campaigns };
+    }),
+
+  getCampaignPerformance: adminProcedure
+    .input(z.object({
+      campaignId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      // Validate campaignId is provided and is a number
+      if (input.campaignId === undefined) {
+        throw new TRPCError({ 
+          code: "BAD_REQUEST", 
+          message: "Campaign ID is required" 
+        });
+      }
+      
+      const performance = await db.getCampaignPerformance(input.campaignId);
+      return { success: true, data: performance };
+    }),
+
+  trackAttribution: publicProcedure
+    .input(z.object({
+      utmSource: z.string().optional(),
+      utmMedium: z.string().optional(),
+      utmCampaign: z.string().optional(),
+      utmTerm: z.string().optional(),
+      utmContent: z.string().optional(),
+      referrerUrl: z.string().optional(),
+      landingPage: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user) {
+        const attribution = await db.createUserAttribution({
+          userId: ctx.user.id,
+          ...input,
+        });
+        return { success: true, data: attribution };
+      }
+      return { success: false };
+    }),
+});
+
+const collectionsRouter = router({
+  getActiveDelinquencies: adminProcedure
+    .query(async () => {
+      const delinquencies = await db.getActiveDelinquencies();
+      return { success: true, data: delinquencies };
+    }),
+
+  recordCollectionAction: adminProcedure
+    .input(z.object({
+      delinquencyRecordId: z.number(),
+      actionType: z.string(),
+      outcome: z.string().optional(),
+      notes: z.string().optional(),
+      nextActionDate: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const action = await db.createCollectionAction({
+        ...input,
+        nextActionDate: input.nextActionDate ? new Date(input.nextActionDate) : undefined,
+        performedBy: ctx.user.id,
+      });
+      return { success: true, data: action };
+    }),
+
+  updatePromiseToPay: adminProcedure
+    .input(z.object({
+      delinquencyRecordId: z.number(),
+      promiseDate: z.date(),
+      promiseAmount: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const updated = await db.updateDelinquencyPromise(input.delinquencyRecordId, {
+        promiseToPayDate: input.promiseDate,
+        promiseToPayAmount: input.promiseAmount,
+      });
+      return { success: true, data: updated };
+    }),
+
+  getCollectionActions: adminProcedure
+    .input(z.object({
+      delinquencyRecordId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      const actions = await db.getCollectionActions(input.delinquencyRecordId);
+      return { success: true, data: actions };
     }),
 });
 

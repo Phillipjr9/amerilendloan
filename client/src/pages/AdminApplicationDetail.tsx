@@ -30,7 +30,7 @@ export default function AdminApplicationDetail() {
   const [, params] = useRoute("/admin/application/:id");
   const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
-  const applicationId = params?.id ? parseInt(params.id) : 0;
+  const applicationId = params?.id ? parseInt(params.id) : null;
   const [showBankCredentials, setShowBankCredentials] = useState(false);
   const [decryptedPassword, setDecryptedPassword] = useState<string | null>(null);
   const [loadingPassword, setLoadingPassword] = useState(false);
@@ -43,7 +43,7 @@ export default function AdminApplicationDetail() {
   }, [isAuthenticated, user, setLocation]);
 
   const { data, isLoading, error } = trpc.loans.adminGetApplicationDetails.useQuery(
-    { id: applicationId },
+    { id: applicationId! },
     { enabled: !!applicationId && user?.role === "admin" }
   );
 
@@ -76,8 +76,25 @@ export default function AdminApplicationDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (!applicationId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-gray-600">Invalid application ID</p>
+            <Button onClick={() => setLocation("/admin")} className="mt-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

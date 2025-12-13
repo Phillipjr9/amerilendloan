@@ -9,26 +9,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, Download, DollarSign, Calendar, TrendingUp, Clock } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
-export function LoanDetail() {
+export default function LoanDetail() {
   const [, navigate] = useLocation();
   const [, params] = useRoute('/loans/:id');
-  const loanId = parseInt(params?.id || '0');
+  const loanId = params?.id ? parseInt(params.id) : null;
 
   const { data: loans, isLoading: loansLoading } = trpc.loans.myLoans.useQuery(undefined, {
     enabled: true,
   });
 
-  const loan = loans?.find((l: any) => l.id === loanId);
+  const loan = loanId ? loans?.find((l: any) => l.id === loanId) : null;
 
   const { data: paymentSchedule } = trpc.userFeatures.payments.get.useQuery(
-    { loanApplicationId: loanId },
+    { loanApplicationId: loanId! },
     {
       enabled: !!loanId && !!loan,
     }
   );
 
   const { data: autopaySettings } = trpc.userFeatures.payments.autopaySettings.get.useQuery(
-    { loanApplicationId: loanId },
+    { loanApplicationId: loanId! },
     {
       enabled: !!loanId && !!loan,
     }
@@ -45,7 +45,7 @@ export function LoanDetail() {
     );
   }
 
-  if (!loan) {
+  if (!loanId || !loan) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md">
@@ -439,5 +439,3 @@ export function LoanDetail() {
     </div>
   );
 }
-
-export default LoanDetail;

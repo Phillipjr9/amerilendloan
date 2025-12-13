@@ -35,7 +35,7 @@ interface PaymentVerificationState {
 
 export default function EnhancedPaymentPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [, params] = useRoute("/payment/:id");
+  const [, params] = useRoute("/payment-enhanced/:id");
   const [, setLocation] = useLocation();
   const applicationId = params?.id ? parseInt(params.id) : null;
 
@@ -300,6 +300,24 @@ export default function EnhancedPaymentPage() {
           <CardContent>
             <Button className="w-full" asChild>
               <a href="/login">Sign In</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!applicationId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Invalid Application</CardTitle>
+            <CardDescription>No application ID provided</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => setLocation("/dashboard")}>
+              Return to Dashboard
             </Button>
           </CardContent>
         </Card>

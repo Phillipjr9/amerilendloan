@@ -71,6 +71,13 @@
       "when": 1764446751649,
       "tag": "0009_crazy_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1764460159736,
+      "tag": "0010_lucky_forge",
+      "breakpoints": true
     }
   ]
 }

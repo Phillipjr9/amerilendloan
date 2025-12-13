@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AISupport } from "@/components/AISupport";
 import AiSupportWidget from "@/components/AiSupportWidget";
@@ -29,6 +30,7 @@ import { trpc } from "@/lib/trpc";
 
 
 export default function Home() {
+  const { t } = useTranslation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
@@ -141,10 +143,10 @@ export default function Home() {
             {/* Desktop Navigation - Hidden on Mobile */}
             <nav className="hidden md:flex items-center gap-4 flex-1">
               <Link href="/apply">
-                <a className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">Loans</a>
+                <a className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">{t('home.nav.loans')}</a>
               </Link>
-              <a href="#about" className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">About Us</a>
-              <a href="#faq" className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">Help</a>
+              <a href="#about" className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">{t('home.nav.about')}</a>
+              <a href="#faq" className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">{t('home.nav.help')}</a>
               <a href="tel:+19452121609" className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium flex items-center gap-1">
                 <Phone className="w-4 h-4" />
                 +1 945 212-1609
@@ -159,12 +161,12 @@ export default function Home() {
                 <>
                   <Link href="/apply">
                     <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-3 py-1.5 text-xs whitespace-nowrap">
-                      Apply Now
+                      {t('home.hero.applyNow')}
                     </Button>
                   </Link>
                   <Link href="/dashboard">
                     <Button variant="outline" className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white px-3 py-1.5 text-xs whitespace-nowrap">
-                      Dashboard
+                      {t('nav.dashboard')}
                     </Button>
                   </Link>
                 </>
@@ -172,7 +174,7 @@ export default function Home() {
                 <>
                   <Link href="/apply">
                     <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-3 py-1.5 text-xs whitespace-nowrap">
-                      Apply Now
+                      {t('home.hero.applyNow')}
                     </Button>
                   </Link>
                   <Button
@@ -180,7 +182,7 @@ export default function Home() {
                     className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white px-3 py-1.5 text-xs whitespace-nowrap"
                     asChild
                   >
-                    <a href="/login">Log In</a>
+                    <a href="/login">{t('home.nav.login')}</a>
                   </Button>
                 </>
               )}
@@ -201,13 +203,13 @@ export default function Home() {
             <div className="md:hidden py-4 border-t mt-4">
               <nav className="flex flex-col gap-4">
                 <Link href="/apply">
-                  <a className="text-gray-700 hover:text-[#0033A0] text-base font-medium">Loans</a>
+                  <a className="text-gray-700 hover:text-[#0033A0] text-base font-medium">{t('home.nav.loans')}</a>
                 </Link>
                 <a href="#about" className="text-gray-700 hover:text-[#0033A0] text-base font-medium">
-                  About Us
+                  {t('home.nav.about')}
                 </a>
                 <a href="#faq" className="text-gray-700 hover:text-[#0033A0] text-base font-medium">
-                  Help
+                  {t('home.nav.help')}
                 </a>
                 <a href="tel:+19452121609" className="text-gray-700 hover:text-[#0033A0] text-base font-medium flex items-center gap-2">
                   <Phone className="w-5 h-5" />
@@ -1250,7 +1252,7 @@ export default function Home() {
       <section id="faq" className="bg-gray-50 py-16">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
-            FAQs
+            {t('home.faq.title')}
           </h2>
 
           <div className="space-y-4">
@@ -1387,22 +1389,6 @@ export default function Home() {
               <h4 className="font-semibold mb-3">Contact Us</h4>
               <p className="text-sm text-gray-400">Need help? Reach out to our team.</p>
               <div className="mt-3 space-y-2 text-sm">
-                <p className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  <a href="tel:+19452121609" className="hover:text-white">(945) 212-1609</a>
-                </p>
-                <p className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  <a href="mailto:support@amerilendloan.com" className="hover:text-white">support@amerilendloan.com</a>
-                </p>
-                <p className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  <a href="https://wa.me/19452121609" target="_blank" rel="noopener noreferrer" className="hover:text-white">WhatsApp</a>
-                </p>
-                <p className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  <a href="https://t.me/amerilendloans" target="_blank" rel="noopener noreferrer" className="hover:text-white">Telegram</a>
-                </p>
               </div>
             </div>
             <div>

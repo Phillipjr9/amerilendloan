@@ -1,4 +1,4 @@
-import { desc, eq, or, and, sql, ilike } from "drizzle-orm";
+import { desc, eq, or, and, sql, ilike, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import type postgres from "postgres";
 import { 
@@ -1853,23 +1853,6 @@ export async function updateAutopaySettings(loanApplicationId: number, data: any
 // PHASE 7: DELINQUENCY & COLLECTIONS
 // ============================================
 
-export async function createDelinquencyRecord(data: any) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const { delinquencyRecords } = await import("../drizzle/schema");
-  
-  const existing = await db.select().from(delinquencyRecords)
-    .where(eq(delinquencyRecords.loanApplicationId, data.loanApplicationId)).limit(1);
-  
-  if (existing.length > 0) {
-    return db.update(delinquencyRecords).set(data)
-      .where(eq(delinquencyRecords.loanApplicationId, data.loanApplicationId));
-  }
-  
-  return db.insert(delinquencyRecords).values(data);
-}
-
 export async function getDelinquencyRecord(loanApplicationId: number) {
   const db = await getDb();
   if (!db) return null;
@@ -3682,4 +3665,1345 @@ export async function updateDocumentStatus(
   }
 }
 
+// ============================================
+// ENHANCED FEATURES - DATABASE FUNCTIONS
+// ============================================
 
+// ========== Hardship Programs ==========
+
+export async function createHardshipRequest(data: {
+  loanApplicationId: number;
+  userId: number;
+  programType: string;
+  reason: string;
+  monthlyIncomeChange?: number;
+  proposedPaymentAmount?: number;
+  requestedDuration?: number;
+  supportingDocuments?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { hardshipRequests } = await import("../drizzle/schema");
+
+  const result = await db.insert(hardshipRequests).values({
+    loanApplicationId: data.loanApplicationId,
+    userId: data.userId,
+    programType: data.programType as any,
+    reason: data.reason,
+    monthlyIncomeChange: data.monthlyIncomeChange,
+    proposedPaymentAmount: data.proposedPaymentAmount,
+    requestedDuration: data.requestedDuration,
+    supportingDocuments: data.supportingDocuments,
+    status: "pending",
+  }).returning();
+
+  return result[0];
+}
+
+export async function getUserHardshipRequests(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { hardshipRequests, loanApplications } = await import("../drizzle/schema");
+
+  return await db
+    .select({
+      id: hardshipRequests.id,
+      loanApplicationId: hardshipRequests.loanApplicationId,
+      trackingNumber: loanApplications.trackingNumber,
+      programType: hardshipRequests.programType,
+      reason: hardshipRequests.reason,
+      status: hardshipRequests.status,
+      requestedDuration: hardshipRequests.requestedDuration,
+      approvedDuration: hardshipRequests.approvedDuration,
+      approvedPaymentAmount: hardshipRequests.approvedPaymentAmount,
+      startDate: hardshipRequests.startDate,
+      endDate: hardshipRequests.endDate,
+      createdAt: hardshipRequests.createdAt,
+    })
+    .from(hardshipRequests)
+    .leftJoin(loanApplications, eq(hardshipRequests.loanApplicationId, loanApplications.id))
+    .where(eq(hardshipRequests.userId, userId))
+    .orderBy(desc(hardshipRequests.createdAt));
+}
+
+export async function getAllHardshipRequests(status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const { hardshipRequests, loanApplications, users } = await import("../drizzle/schema");
+
+  let query = db
+    .select({
+      id: hardshipRequests.id,
+      loanApplicationId: hardshipRequests.loanApplicationId,
+      trackingNumber: loanApplications.trackingNumber,
+      userId: hardshipRequests.userId,
+      userName: users.name,
+      userEmail: users.email,
+      programType: hardshipRequests.programType,
+      reason: hardshipRequests.reason,
+      status: hardshipRequests.status,
+      requestedDuration: hardshipRequests.requestedDuration,
+      proposedPaymentAmount: hardshipRequests.proposedPaymentAmount,
+      monthlyIncomeChange: hardshipRequests.monthlyIncomeChange,
+      createdAt: hardshipRequests.createdAt,
+    })
+    .from(hardshipRequests)
+    .leftJoin(loanApplications, eq(hardshipRequests.loanApplicationId, loanApplications.id))
+    .leftJoin(users, eq(hardshipRequests.userId, users.id))
+    .$dynamic();
+
+  if (status) {
+    query = query.where(eq(hardshipRequests.status, status));
+  }
+
+  return await query.orderBy(desc(hardshipRequests.createdAt));
+}
+
+export async function updateHardshipRequest(
+  id: number,
+  data: {
+    status?: string;
+    approvedDuration?: number;
+    approvedPaymentAmount?: number;
+    startDate?: Date;
+    endDate?: Date;
+    adminNotes?: string;
+    reviewedBy?: number;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { hardshipRequests } = await import("../drizzle/schema");
+
+  const result = await db
+    .update(hardshipRequests)
+    .set({
+      ...data,
+      reviewedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(hardshipRequests.id, id))
+    .returning();
+
+  return result[0];
+}
+
+// ========== Tax Documents ==========
+
+export async function createTaxDocument(data: {
+  userId: number;
+  loanApplicationId?: number;
+  documentType: string;
+  taxYear: number;
+  totalInterestPaid?: number;
+  totalPrincipalPaid?: number;
+  debtCancelled?: number;
+  documentPath?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { taxDocuments } = await import("../drizzle/schema");
+
+  const result = await db.insert(taxDocuments).values({
+    userId: data.userId,
+    loanApplicationId: data.loanApplicationId,
+    documentType: data.documentType as any,
+    taxYear: data.taxYear,
+    totalInterestPaid: data.totalInterestPaid,
+    totalPrincipalPaid: data.totalPrincipalPaid,
+    debtCancelled: data.debtCancelled,
+    documentPath: data.documentPath,
+  }).returning();
+
+  return result[0];
+}
+
+export async function getUserTaxDocuments(userId: number, taxYear?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { taxDocuments } = await import("../drizzle/schema");
+
+  let query = db
+    .select()
+    .from(taxDocuments)
+    .where(eq(taxDocuments.userId, userId))
+    .$dynamic();
+
+  if (taxYear) {
+    query = query.where(eq(taxDocuments.taxYear, taxYear));
+  }
+
+  return await query.orderBy(desc(taxDocuments.taxYear));
+}
+
+export async function markTaxDocumentSent(documentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { taxDocuments } = await import("../drizzle/schema");
+
+  await db
+    .update(taxDocuments)
+    .set({ sentToUser: true, sentAt: new Date() })
+    .where(eq(taxDocuments.id, documentId));
+}
+
+// ========== Push Notifications ==========
+
+export async function createPushSubscription(data: {
+  userId: number;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  userAgent?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { pushSubscriptions } = await import("../drizzle/schema");
+
+  const result = await db.insert(pushSubscriptions).values(data).returning();
+  return result[0];
+}
+
+export async function getUserPushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { pushSubscriptions } = await import("../drizzle/schema");
+
+  return await db
+    .select()
+    .from(pushSubscriptions)
+    .where(eq(pushSubscriptions.userId, userId));
+}
+
+export async function deletePushSubscription(endpoint: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { pushSubscriptions } = await import("../drizzle/schema");
+
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+}
+
+export async function deleteAllUserPushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { pushSubscriptions } = await import("../drizzle/schema");
+
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+}
+
+export async function updatePushSubscriptionLastUsed(endpoint: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { pushSubscriptions } = await import("../drizzle/schema");
+
+  await db
+    .update(pushSubscriptions)
+    .set({ lastUsed: new Date() })
+    .where(eq(pushSubscriptions.endpoint, endpoint));
+}
+
+// ========== Co-Signers ==========
+
+export async function createCoSignerInvitation(data: {
+  loanApplicationId: number;
+  primaryBorrowerId: number;
+  coSignerEmail: string;
+  coSignerName?: string;
+  liabilitySplit?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { coSigners } = await import("../drizzle/schema");
+  const crypto = await import("crypto");
+
+  const invitationToken = crypto.randomBytes(32).toString("hex");
+
+  const result = await db.insert(coSigners).values({
+    loanApplicationId: data.loanApplicationId,
+    primaryBorrowerId: data.primaryBorrowerId,
+    coSignerEmail: data.coSignerEmail,
+    coSignerName: data.coSignerName,
+    invitationToken,
+    liabilitySplit: data.liabilitySplit || 50,
+    status: "invited",
+  }).returning();
+
+  return result[0];
+}
+
+export async function getCoSignerByToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const { coSigners } = await import("../drizzle/schema");
+
+  const results = await db
+    .select()
+    .from(coSigners)
+    .where(eq(coSigners.invitationToken, token))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function updateCoSignerStatus(
+  id: number,
+  status: string,
+  coSignerUserId?: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { coSigners } = await import("../drizzle/schema");
+
+  const result = await db
+    .update(coSigners)
+    .set({
+      status: status as any,
+      coSignerUserId,
+      respondedAt: new Date(),
+    })
+    .where(eq(coSigners.id, id))
+    .returning();
+
+  return result[0];
+}
+
+export async function getLoanCoSigners(loanApplicationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { coSigners } = await import("../drizzle/schema");
+
+  return await db
+    .select()
+    .from(coSigners)
+    .where(eq(coSigners.loanApplicationId, loanApplicationId));
+}
+
+// ========== Account Closure ==========
+
+export async function createAccountClosureRequest(data: {
+  userId: number;
+  reason: string;
+  detailedReason?: string;
+  hasOutstandingLoans: boolean;
+  dataExportRequested: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { accountClosureRequests } = await import("../drizzle/schema");
+
+  const result = await db.insert(accountClosureRequests).values({
+    userId: data.userId,
+    reason: data.reason as any,
+    detailedReason: data.detailedReason,
+    hasOutstandingLoans: data.hasOutstandingLoans,
+    dataExportRequested: data.dataExportRequested,
+    status: "pending",
+  }).returning();
+
+  return result[0];
+}
+
+export async function getUserAccountClosureRequest(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { accountClosureRequests } = await import("../drizzle/schema");
+
+  const results = await db
+    .select()
+    .from(accountClosureRequests)
+    .where(eq(accountClosureRequests.userId, userId))
+    .orderBy(desc(accountClosureRequests.createdAt))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function getAllAccountClosureRequests(status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const { accountClosureRequests, users } = await import("../drizzle/schema");
+
+  let query = db
+    .select({
+      id: accountClosureRequests.id,
+      userId: accountClosureRequests.userId,
+      userName: users.name,
+      userEmail: users.email,
+      reason: accountClosureRequests.reason,
+      detailedReason: accountClosureRequests.detailedReason,
+      hasOutstandingLoans: accountClosureRequests.hasOutstandingLoans,
+      dataExportRequested: accountClosureRequests.dataExportRequested,
+      status: accountClosureRequests.status,
+      createdAt: accountClosureRequests.createdAt,
+    })
+    .from(accountClosureRequests)
+    .leftJoin(users, eq(accountClosureRequests.userId, users.id))
+    .$dynamic();
+
+  if (status) {
+    query = query.where(eq(accountClosureRequests.status, status));
+  }
+
+  return await query.orderBy(desc(accountClosureRequests.createdAt));
+}
+
+export async function updateAccountClosureRequest(
+  id: number,
+  data: {
+    status?: string;
+    reviewedBy?: number;
+    adminNotes?: string;
+    scheduledDeletionDate?: Date;
+    dataExportedAt?: Date;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { accountClosureRequests } = await import("../drizzle/schema");
+
+  const result = await db
+    .update(accountClosureRequests)
+    .set({
+      ...data,
+      reviewedAt: new Date(),
+    })
+    .where(eq(accountClosureRequests.id, id))
+    .returning();
+
+  return result[0];
+}
+
+// ========== Payment Preferences ==========
+
+export async function createOrUpdatePaymentPreference(data: {
+  userId: number;
+  loanApplicationId?: number;
+  allocationStrategy?: string;
+  roundUpEnabled?: boolean;
+  roundUpToNearest?: number;
+  biweeklyEnabled?: boolean;
+  autoExtraPaymentAmount?: number;
+  autoExtraPaymentDay?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { paymentPreferences } = await import("../drizzle/schema");
+
+  // Check if preference exists
+  const existing = await db
+    .select()
+    .from(paymentPreferences)
+    .where(eq(paymentPreferences.userId, data.userId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    // Update
+    const result = await db
+      .update(paymentPreferences)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(paymentPreferences.userId, data.userId))
+      .returning();
+    return result[0];
+  } else {
+    // Insert
+    const result = await db.insert(paymentPreferences).values(data).returning();
+    return result[0];
+  }
+}
+
+export async function getUserPaymentPreference(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { paymentPreferences } = await import("../drizzle/schema");
+
+  const results = await db
+    .select()
+    .from(paymentPreferences)
+    .where(eq(paymentPreferences.userId, userId))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+// ========== Fraud Detection ==========
+
+export async function createFraudCheck(data: {
+  userId?: number;
+  loanApplicationId?: number;
+  sessionId?: string;
+  deviceFingerprint?: string;
+  ipAddress: string;
+  ipCountry?: string;
+  ipCity?: string;
+  ipRiskScore?: number;
+  velocityScore?: number;
+  riskScore: number;
+  riskLevel: string;
+  flaggedReasons?: string;
+  requiresManualReview?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { fraudChecks } = await import("../drizzle/schema");
+
+  const result = await db.insert(fraudChecks).values(data).returning();
+  return result[0];
+}
+
+export async function getFraudChecksByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { fraudChecks } = await import("../drizzle/schema");
+
+  return await db
+    .select()
+    .from(fraudChecks)
+    .where(eq(fraudChecks.userId, userId))
+    .orderBy(desc(fraudChecks.createdAt));
+}
+
+export async function getPendingFraudReviews() {
+  const db = await getDb();
+  if (!db) return [];
+  const { fraudChecks } = await import("../drizzle/schema");
+
+  return await db
+    .select()
+    .from(fraudChecks)
+    .where(eq(fraudChecks.requiresManualReview, true))
+    .orderBy(desc(fraudChecks.createdAt));
+}
+
+export async function updateFraudCheckReview(
+  id: number,
+  reviewedBy: number,
+  reviewNotes: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { fraudChecks } = await import("../drizzle/schema");
+
+  await db
+    .update(fraudChecks)
+    .set({
+      reviewedBy,
+      reviewedAt: new Date(),
+      reviewNotes,
+    })
+    .where(eq(fraudChecks.id, id));
+}
+
+// ========== Live Chat ==========
+
+export async function createChatSession(userId: number, subject?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { chatSessions } = await import("../drizzle/schema");
+
+  const result = await db.insert(chatSessions).values({
+    userId,
+    subject,
+    status: "active",
+  }).returning();
+
+  return result[0];
+}
+
+export async function getChatSession(sessionId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { chatSessions } = await import("../drizzle/schema");
+
+  const results = await db
+    .select()
+    .from(chatSessions)
+    .where(eq(chatSessions.id, sessionId))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function getUserActiveChatSession(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { chatSessions } = await import("../drizzle/schema");
+
+  const results = await db
+    .select()
+    .from(chatSessions)
+    .where(and(
+      eq(chatSessions.userId, userId),
+      eq(chatSessions.status, "active")
+    ))
+    .orderBy(desc(chatSessions.startedAt))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function assignChatToAgent(sessionId: number, agentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { chatSessions } = await import("../drizzle/schema");
+
+  await db
+    .update(chatSessions)
+    .set({ assignedToAgentId: agentId })
+    .where(eq(chatSessions.id, sessionId));
+}
+
+export async function closeChatSession(
+  sessionId: number,
+  rating?: number,
+  feedbackComment?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { chatSessions } = await import("../drizzle/schema");
+
+  await db
+    .update(chatSessions)
+    .set({
+      status: "closed",
+      closedAt: new Date(),
+      rating,
+      feedbackComment,
+    })
+    .where(eq(chatSessions.id, sessionId));
+}
+
+export async function createChatMessage(data: {
+  sessionId: number;
+  senderId: number;
+  message: string;
+  isFromAgent: boolean;
+  attachmentUrl?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { chatMessages } = await import("../drizzle/schema");
+
+  const result = await db.insert(chatMessages).values(data).returning();
+  return result[0];
+}
+
+export async function getChatMessages(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { chatMessages, users } = await import("../drizzle/schema");
+
+  return await db
+    .select({
+      id: chatMessages.id,
+      sessionId: chatMessages.sessionId,
+      senderId: chatMessages.senderId,
+      senderName: users.name,
+      message: chatMessages.message,
+      isFromAgent: chatMessages.isFromAgent,
+      status: chatMessages.status,
+      attachmentUrl: chatMessages.attachmentUrl,
+      createdAt: chatMessages.createdAt,
+      readAt: chatMessages.readAt,
+    })
+    .from(chatMessages)
+    .leftJoin(users, eq(chatMessages.senderId, users.id))
+    .where(eq(chatMessages.sessionId, sessionId))
+    .orderBy(chatMessages.createdAt);
+}
+
+export async function markChatMessageAsRead(messageId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { chatMessages } = await import("../drizzle/schema");
+
+  await db
+    .update(chatMessages)
+    .set({ status: "read", readAt: new Date() })
+    .where(eq(chatMessages.id, messageId));
+}
+
+export async function getActiveChatSessions() {
+  const db = await getDb();
+  if (!db) return [];
+  const { chatSessions, users } = await import("../drizzle/schema");
+
+  return await db
+    .select({
+      id: chatSessions.id,
+      userId: chatSessions.userId,
+      userName: users.name,
+      userEmail: users.email,
+      assignedToAgentId: chatSessions.assignedToAgentId,
+      subject: chatSessions.subject,
+      startedAt: chatSessions.startedAt,
+    })
+    .from(chatSessions)
+    .leftJoin(users, eq(chatSessions.userId, users.id))
+    .where(eq(chatSessions.status, "active"))
+    .orderBy(desc(chatSessions.startedAt));
+}
+
+// ========== Canned Responses ==========
+
+export async function createCannedResponse(data: {
+  category: string;
+  shortcut: string;
+  title: string;
+  message: string;
+  createdBy: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { cannedResponses } = await import("../drizzle/schema");
+
+  const result = await db.insert(cannedResponses).values(data).returning();
+  return result[0];
+}
+
+export async function getAllCannedResponses(category?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const { cannedResponses } = await import("../drizzle/schema");
+
+  let query = db
+    .select()
+    .from(cannedResponses)
+    .where(eq(cannedResponses.isActive, true))
+    .$dynamic();
+
+  if (category) {
+    query = query.where(eq(cannedResponses.category, category));
+  }
+
+  return await query.orderBy(cannedResponses.category, cannedResponses.title);
+}
+
+export async function getCannedResponseByShortcut(shortcut: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const { cannedResponses } = await import("../drizzle/schema");
+
+  const results = await db
+    .select()
+    .from(cannedResponses)
+    .where(and(
+      eq(cannedResponses.shortcut, shortcut),
+      eq(cannedResponses.isActive, true)
+    ))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+// ========== E-Signatures ==========
+
+export async function createESignatureDocument(data: {
+  loanApplicationId: number;
+  userId: number;
+  documentType: string;
+  documentTitle: string;
+  documentPath: string;
+  signerEmail: string;
+  signerName: string;
+  expiresAt?: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { eSignatureDocuments } = await import("../drizzle/schema");
+
+  const result = await db.insert(eSignatureDocuments).values({
+    ...data,
+    status: "pending",
+  }).returning();
+
+  return result[0];
+}
+
+export async function getESignatureDocument(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { eSignatureDocuments } = await import("../drizzle/schema");
+
+  const results = await db
+    .select()
+    .from(eSignatureDocuments)
+    .where(eq(eSignatureDocuments.id, id))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function updateESignatureStatus(
+  id: number,
+  status: string,
+  signedDocumentPath?: string,
+  ipAddress?: string,
+  auditTrail?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { eSignatureDocuments } = await import("../drizzle/schema");
+
+  const updateData: any = {
+    status: status as any,
+  };
+
+  if (status === "signed") {
+    updateData.signedAt = new Date();
+    updateData.signedDocumentPath = signedDocumentPath;
+    updateData.ipAddress = ipAddress;
+    updateData.auditTrail = auditTrail;
+  }
+
+  await db
+    .update(eSignatureDocuments)
+    .set(updateData)
+    .where(eq(eSignatureDocuments.id, id));
+}
+
+export async function getLoanESignatureDocuments(loanApplicationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { eSignatureDocuments } = await import("../drizzle/schema");
+
+  return await db
+    .select()
+    .from(eSignatureDocuments)
+    .where(eq(eSignatureDocuments.loanApplicationId, loanApplicationId))
+    .orderBy(desc(eSignatureDocuments.createdAt));
+}
+
+// ========== Marketing & Attribution ==========
+
+export async function createMarketingCampaign(data: {
+  campaignName: string;
+  source?: string;
+  medium?: string;
+  campaignCode?: string;
+  startDate?: Date;
+  endDate?: Date;
+  budget?: number;
+  createdBy: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { marketingCampaigns } = await import("../drizzle/schema");
+
+  const result = await db.insert(marketingCampaigns).values(data).returning();
+  return result[0];
+}
+
+export async function createUserAttribution(data: {
+  userId: number;
+  campaignId?: number;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+  referrerUrl?: string;
+  landingPage?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { userAttribution } = await import("../drizzle/schema");
+
+  const result = await db.insert(userAttribution).values(data).returning();
+  return result[0];
+}
+
+export async function getUserAttribution(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { userAttribution } = await import("../drizzle/schema");
+
+  const results = await db
+    .select()
+    .from(userAttribution)
+    .where(eq(userAttribution.userId, userId))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function getCampaignPerformance(campaignId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { userAttribution, users, loanApplications } = await import("../drizzle/schema");
+
+  const attributions = await db
+    .select({
+      userId: userAttribution.userId,
+      createdAt: userAttribution.createdAt,
+    })
+    .from(userAttribution)
+    .where(eq(userAttribution.campaignId, campaignId));
+
+  const userIds = attributions.map(a => a.userId);
+  
+  if (userIds.length === 0) {
+    return {
+      totalUsers: 0,
+      totalApplications: 0,
+      totalApproved: 0,
+      conversionRate: 0,
+    };
+  }
+
+  const applications = await db
+    .select()
+    .from(loanApplications)
+    .where(inArray(loanApplications.userId, userIds));
+
+  return {
+    totalUsers: attributions.length,
+    totalApplications: applications.length,
+    totalApproved: applications.filter(a => a.status === "approved" || a.status === "disbursed").length,
+    conversionRate: applications.length / attributions.length,
+  };
+}
+
+// ========== Delinquency & Collections ==========
+
+export async function createDelinquencyRecord(data: {
+  loanApplicationId: number;
+  userId: number;
+  status: string;
+  daysDelinquent: number;
+  totalAmountDue: number;
+  lastPaymentDate?: Date;
+  nextActionDate?: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { delinquencyRecords } = await import("../drizzle/schema");
+
+  const result = await db.insert(delinquencyRecords).values({
+    ...data,
+    status: data.status as any,
+  }).returning();
+
+  return result[0];
+}
+
+export async function updateDelinquencyRecord(
+  id: number,
+  data: {
+    status?: string;
+    daysDelinquent?: number;
+    totalAmountDue?: number;
+    assignedCollectorId?: number;
+    collectionAttempts?: number;
+    lastContactDate?: Date;
+    lastContactMethod?: string;
+    promiseToPayDate?: Date;
+    promiseToPayAmount?: number;
+    settlementOffered?: boolean;
+    settlementAmount?: number;
+    notes?: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { delinquencyRecords } = await import("../drizzle/schema");
+
+  const updateData: any = { ...data };
+  if (data.status) {
+    updateData.status = data.status as any;
+  }
+
+  const result = await db
+    .update(delinquencyRecords)
+    .set({
+      ...updateData,
+      updatedAt: new Date(),
+    })
+    .where(eq(delinquencyRecords.id, id))
+    .returning();
+
+  return result[0];
+}
+
+export async function getActiveDelinquencies() {
+  const db = await getDb();
+  if (!db) return [];
+  const { delinquencyRecords, loanApplications, users } = await import("../drizzle/schema");
+
+  return await db
+    .select({
+      id: delinquencyRecords.id,
+      loanApplicationId: delinquencyRecords.loanApplicationId,
+      trackingNumber: loanApplications.trackingNumber,
+      userId: delinquencyRecords.userId,
+      userName: users.name,
+      userEmail: users.email,
+      status: delinquencyRecords.status,
+      daysDelinquent: delinquencyRecords.daysDelinquent,
+      totalAmountDue: delinquencyRecords.totalAmountDue,
+      lastContactDate: delinquencyRecords.lastContactDate,
+      nextActionDate: delinquencyRecords.nextActionDate,
+      assignedCollectorId: delinquencyRecords.assignedCollectorId,
+    })
+    .from(delinquencyRecords)
+    .leftJoin(loanApplications, eq(delinquencyRecords.loanApplicationId, loanApplications.id))
+    .leftJoin(users, eq(delinquencyRecords.userId, users.id))
+    .orderBy(desc(delinquencyRecords.daysDelinquent));
+}
+
+export async function createCollectionAction(data: {
+  delinquencyRecordId: number;
+  actionType: string;
+  performedBy?: number;
+  outcome?: string;
+  notes?: string;
+  nextActionDate?: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { collectionActions } = await import("../drizzle/schema");
+
+  const result = await db.insert(collectionActions).values(data).returning();
+  return result[0];
+}
+
+export async function getCollectionActions(delinquencyRecordId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { collectionActions } = await import("../drizzle/schema");
+
+  return await db
+    .select()
+    .from(collectionActions)
+    .where(eq(collectionActions.delinquencyRecordId, delinquencyRecordId))
+    .orderBy(desc(collectionActions.actionDate));
+}
+
+// ============= Notification Preferences =============
+
+export async function getOrCreateNotificationPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { notificationPreferences } = await import("../drizzle/schema");
+
+  // Try to get existing preferences
+  const existing = await db
+    .select()
+    .from(notificationPreferences)
+    .where(eq(notificationPreferences.userId, userId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    return existing[0];
+  }
+
+  // Create default preferences
+  const result = await db
+    .insert(notificationPreferences)
+    .values({
+      userId,
+      paymentReminders: true,
+      paymentConfirmations: true,
+      loanStatusUpdates: true,
+      documentNotifications: true,
+      promotionalNotifications: false,
+      emailEnabled: true,
+      smsEnabled: false,
+      emailDigest: false,
+    })
+    .returning();
+
+  return result[0];
+}
+
+export async function updateNotificationPreferences(
+  userId: number,
+  updates: Partial<{
+    paymentReminders: boolean;
+    paymentConfirmations: boolean;
+    loanStatusUpdates: boolean;
+    documentNotifications: boolean;
+    promotionalNotifications: boolean;
+    emailEnabled: boolean;
+    smsEnabled: boolean;
+    emailDigest: boolean;
+  }>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { notificationPreferences } = await import("../drizzle/schema");
+
+  // Ensure preferences exist first
+  await getOrCreateNotificationPreferences(userId);
+
+  const result = await db
+    .update(notificationPreferences)
+    .set(updates)
+    .where(eq(notificationPreferences.userId, userId))
+    .returning();
+
+  return result[0];
+}
+
+// ========== Missing Router Functions ==========
+
+export async function reviewHardshipRequest(
+  requestId: number,
+  data: {
+    status: string;
+    approvedDuration?: number;
+    approvedPaymentAmount?: number;
+    startDate?: Date;
+    endDate?: Date;
+    adminNotes?: string;
+    reviewedBy: number;
+  }
+) {
+  return updateHardshipRequest(requestId, data);
+}
+
+export async function generateTaxDocument(data: {
+  userId: number;
+  taxYear: number;
+  documentType: string;
+  loanApplicationId?: number;
+}) {
+  return createTaxDocument(data);
+}
+
+export async function getAllTaxDocuments(taxYear?: number, userId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { taxDocuments } = await import("../drizzle/schema");
+  const { and } = await import("drizzle-orm");
+
+  let conditions: any[] = [];
+  if (taxYear) conditions.push(eq(taxDocuments.taxYear, taxYear));
+  if (userId) conditions.push(eq(taxDocuments.userId, userId));
+
+  if (conditions.length > 0) {
+    return db.select().from(taxDocuments).where(and(...conditions));
+  }
+  return db.select().from(taxDocuments);
+}
+
+export async function updateUserNotificationPreferences(
+  userId: number,
+  updates: { emailNotifications?: boolean; smsNotifications?: boolean; pushNotifications?: boolean }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { users } = await import("../drizzle/schema");
+
+  const result = await db
+    .update(users)
+    .set({
+      receiveEmailNotifications: updates.emailNotifications,
+      receiveSmsNotifications: updates.smsNotifications,
+      receivePushNotifications: updates.pushNotifications,
+    })
+    .where(eq(users.id, userId))
+    .returning();
+
+  return result[0];
+}
+
+export async function getCoSignerInvitationsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { coSigners } = await import("../drizzle/schema");
+  const { or } = await import("drizzle-orm");
+
+  return db.select().from(coSigners).where(
+    or(
+      eq(coSigners.primaryBorrowerId, userId),
+      eq(coSigners.coSignerUserId, userId)
+    )
+  );
+}
+
+export async function respondToCoSignerInvitation(
+  invitationToken: string,
+  accept: boolean,
+  userId: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { coSigners } = await import("../drizzle/schema");
+
+  const result = await db
+    .update(coSigners)
+    .set({
+      status: accept ? ("accepted" as any) : ("declined" as any),
+      coSignerUserId: userId,
+      respondedAt: new Date(),
+    })
+    .where(eq(coSigners.invitationToken, invitationToken))
+    .returning();
+
+  return result[0];
+}
+
+export async function cancelCoSignerInvitation(invitationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { coSigners } = await import("../drizzle/schema");
+
+  await db.delete(coSigners).where(eq(coSigners.id, invitationId));
+}
+
+export async function releaseCoSigner(coSignerId: number, releasedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { coSigners } = await import("../drizzle/schema");
+
+  const result = await db
+    .update(coSigners)
+    .set({
+      status: "released" as any,
+      releasedAt: new Date(),
+      releasedBy,
+    })
+    .where(eq(coSigners.id, coSignerId))
+    .returning();
+
+  return result[0];
+}
+
+export async function getUserClosureRequest(userId: number) {
+  return getUserAccountClosureRequest(userId);
+}
+
+export async function getAllClosureRequests(status?: string) {
+  return getAllAccountClosureRequests(status);
+}
+
+export async function reviewClosureRequest(
+  requestId: number,
+  data: {
+    status: string;
+    adminNotes?: string;
+    scheduledDeletionDate?: Date;
+    reviewedBy: number;
+  }
+) {
+  return updateAccountClosureRequest(requestId, data);
+}
+
+export async function getPaymentPreferences(userId: number, loanApplicationId?: number) {
+  return getUserPaymentPreference(userId);
+}
+
+export async function updatePaymentPreferences(userId: number, data: any) {
+  return createOrUpdatePaymentPreference({ ...data, userId });
+}
+
+export async function getPendingFraudChecks() {
+  return getPendingFraudReviews();
+}
+
+export async function reviewFraudCheck(
+  fraudCheckId: number,
+  data: { reviewNotes: string; reviewedBy: number }
+) {
+  return updateFraudCheckReview(fraudCheckId, data.reviewedBy, data.reviewNotes);
+}
+
+export async function getLatestFraudCheck(userId: number) {
+  const checks = await getFraudChecksByUser(userId);
+  return checks.length > 0 ? checks[0] : null;
+}
+
+export async function getOrCreateChatSession(userId: number) {
+  const existing = await getUserActiveChatSession(userId);
+  if (existing) return existing;
+  return createChatSession(userId);
+}
+
+export async function assignChatSession(sessionId: number, agentId: number) {
+  return assignChatToAgent(sessionId, agentId);
+}
+
+export async function getCannedResponses() {
+  const db = await getDb();
+  if (!db) return [];
+  const { cannedResponses } = await import("../drizzle/schema");
+
+  return db.select().from(cannedResponses).where(eq(cannedResponses.isActive, true));
+}
+
+export async function getUserESignatureDocuments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { eSignatureDocuments } = await import("../drizzle/schema");
+
+  return db.select().from(eSignatureDocuments).where(eq(eSignatureDocuments.userId, userId));
+}
+
+export async function signESignatureDocument(
+  documentId: number,
+  data: { ipAddress?: string }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { eSignatureDocuments } = await import("../drizzle/schema");
+
+  const result = await db
+    .update(eSignatureDocuments)
+    .set({
+      status: "signed" as any,
+      signedAt: new Date(),
+      ipAddress: data.ipAddress,
+    })
+    .where(eq(eSignatureDocuments.id, documentId))
+    .returning();
+
+  return result[0];
+}
+
+export async function getAllESignatureDocuments(status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const { eSignatureDocuments } = await import("../drizzle/schema");
+
+  if (status) {
+    return db
+      .select()
+      .from(eSignatureDocuments)
+      .where(eq(eSignatureDocuments.status, status as any));
+  }
+  return db.select().from(eSignatureDocuments);
+}
+
+export async function getAllMarketingCampaigns() {
+  const db = await getDb();
+  if (!db) return [];
+  const { marketingCampaigns } = await import("../drizzle/schema");
+
+  return db.select().from(marketingCampaigns);
+}
+
+export async function updateDelinquencyPromise(
+  delinquencyRecordId: number,
+  data: { promiseToPayDate: Date; promiseToPayAmount: number }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  const { delinquencyRecords } = await import("../drizzle/schema");
+
+  const result = await db
+    .update(delinquencyRecords)
+    .set({
+      promiseToPayDate: data.promiseToPayDate,
+      promiseToPayAmount: data.promiseToPayAmount,
+      updatedAt: new Date(),
+    })
+    .where(eq(delinquencyRecords.id, delinquencyRecordId))
+    .returning();
+
+  return result[0];
+}

@@ -18,6 +18,7 @@ import VerificationDocumentsAdmin from "@/components/VerificationDocumentsAdmin"
 import CryptoWalletSettings from "@/components/CryptoWalletSettings";
 import AdminAnalyticsDashboard from "@/components/AdminAnalyticsDashboard";
 import { PaymentReminderAdmin } from "@/components/PaymentReminderAdmin";
+import { SkeletonAdminTable, SkeletonStats } from "@/components/SkeletonCard";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
@@ -52,9 +53,9 @@ export default function AdminDashboard() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
+        <div className="space-y-6 w-full max-w-4xl px-4">
+          <SkeletonStats />
+          <SkeletonAdminTable />
         </div>
       </div>
     );
@@ -970,11 +971,7 @@ export default function AdminDashboard() {
 
             <div className="space-y-4">
               {isLoading ? (
-                <Card>
-                  <CardContent className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                  </CardContent>
-                </Card>
+                <SkeletonAdminTable />
               ) : !applications || applications.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">

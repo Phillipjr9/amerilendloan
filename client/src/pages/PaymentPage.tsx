@@ -10,6 +10,8 @@ import { CheckCircle2, Loader2, CreditCard, Bitcoin, Wallet, Copy, Check } from 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { SkeletonPaymentCard, SkeletonDetailSection } from "@/components/SkeletonCard";
 
 // Declare Accept.js types
 declare global {
@@ -21,6 +23,7 @@ declare global {
 }
 
 export default function PaymentPage() {
+  const { t } = useTranslation();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/payment/:id");
@@ -195,8 +198,20 @@ export default function PaymentPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-8">
+            <div className="h-8 bg-gray-300 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <SkeletonPaymentCard />
+              <SkeletonPaymentCard className="mt-4" />
+            </div>
+            <SkeletonDetailSection />
+          </div>
+        </div>
       </div>
     );
   }
@@ -212,6 +227,24 @@ export default function PaymentPage() {
           <CardContent>
             <Button className="w-full" asChild>
               <a href="/login">Sign In</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!applicationId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Invalid Application</CardTitle>
+            <CardDescription>No application ID provided</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => setLocation("/dashboard")}>
+              Return to Dashboard
             </Button>
           </CardContent>
         </Card>

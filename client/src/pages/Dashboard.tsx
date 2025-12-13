@@ -17,8 +17,10 @@ import { trpc } from "@/lib/trpc";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import AiSupportWidget from "@/components/AiSupportWidget";
 import UserNotificationBell from "@/components/UserNotificationBell";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   CheckCircle2,
   Clock,
@@ -56,6 +58,8 @@ import LoanApplicationProgress from "@/components/LoanApplicationProgress";
 import NotificationCenter from "@/components/NotificationCenter";
 import DocumentDownload from "@/components/DocumentDownload";
 import QuickApply from "@/components/QuickApply";
+import LoanStatusTimeline from "@/components/LoanStatusTimeline";
+import { SkeletonCard, SkeletonPaymentCard, SkeletonStats } from "@/components/SkeletonCard";
 import TwoFactorAuth from "@/components/TwoFactorAuth";
 import PaymentHistoryAnalytics from "@/components/PaymentHistoryAnalytics";
 import AutoPaySettings from "@/components/AutoPaySettings";
@@ -63,6 +67,7 @@ import PaymentMethodManager from "@/components/PaymentMethodManager";
 import { PaymentAnalyticsCharts } from "@/components/PaymentAnalyticsCharts";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
   
@@ -656,6 +661,9 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-6 pt-6 border-t">
+              <div className="px-4 py-3">
+                <LanguageSwitcher />
+              </div>
               <Link href="/settings">
                 <a className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100">
                   <Settings className="w-5 h-5" />
@@ -959,9 +967,10 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <div className="text-center py-12">
-                      <div className="inline-block w-8 h-8 border-4 border-[#0033A0] border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-gray-600 mt-4">Loading your applications...</p>
+                    <div className="space-y-4">
+                      <SkeletonCard />
+                      <SkeletonCard />
+                      <SkeletonCard />
                     </div>
                   ) : filteredLoans && filteredLoans.length > 0 ? (
                     <div className="space-y-4">
@@ -1054,6 +1063,15 @@ export default function Dashboard() {
                             {/* Expanded Details */}
                             {expandedLoan === loan.id && (
                               <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
+                                {/* Loan Status Timeline */}
+                                <LoanStatusTimeline
+                                  currentStatus={loan.status}
+                                  createdAt={loan.createdAt}
+                                  approvedAt={(loan as any).approvedAt}
+                                  feePaidAt={(loan as any).feePaidAt}
+                                  disbursedAt={(loan as any).disbursedAt}
+                                />
+
                                 {/* Loan Terms Section - Only show for approved/fee_paid/disbursed loans */}
                                 {(loan.status === "approved" || loan.status === "fee_paid" || loan.status === "disbursed") && loan.approvedAmount && (
                                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -1581,7 +1599,20 @@ export default function Dashboard() {
 
                     {/* Tickets List */}
                     {ticketsLoading ? (
-                      <div className="text-center py-8 text-gray-500">Loading tickets...</div>
+                      <div className="space-y-3">
+                        <div className="animate-pulse p-4 border border-gray-200 rounded-lg">
+                          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                          <div className="h-3 bg-gray-100 rounded w-3/4"></div>
+                        </div>
+                        <div className="animate-pulse p-4 border border-gray-200 rounded-lg">
+                          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                          <div className="h-3 bg-gray-100 rounded w-3/4"></div>
+                        </div>
+                        <div className="animate-pulse p-4 border border-gray-200 rounded-lg">
+                          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                          <div className="h-3 bg-gray-100 rounded w-3/4"></div>
+                        </div>
+                      </div>
                     ) : supportTickets.length === 0 ? (
                       <div className="text-center py-12 text-gray-500">
                         <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />

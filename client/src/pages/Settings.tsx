@@ -1,11 +1,13 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Lock, Bell, Shield, Eye, EyeOff, AlertTriangle, User, Smartphone, Trash2, LogOut, Download } from "lucide-react";
+import { ArrowLeft, Lock, Bell, Shield, Eye, EyeOff, AlertTriangle, User, Smartphone, Trash2, LogOut, Download, Globe } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 // Format phone number as (XXX) XXX-XXXX
 const formatPhoneNumber = (value: string): string => {
@@ -28,6 +30,7 @@ const formatSSN = (value: string): string => {
 export default function Settings() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   
   // Redirect to login if not authenticated
@@ -43,7 +46,7 @@ export default function Settings() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading settings...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -89,7 +92,7 @@ export default function Settings() {
   });
   // 2FA state removed - now managed in Dashboard > Security tab
   const [deleteReason, setDeleteReason] = useState("");
-  const [activeTab, setActiveTab] = useState<"password" | "email" | "bank" | "notifications" | "profile" | "2fa" | "devices" | "activity" | "privacy">("password");
+  const [activeTab, setActiveTab] = useState<"password" | "email" | "bank" | "notifications" | "profile" | "language" | "2fa" | "devices" | "activity" | "privacy">("password");
   const [activityLog, setActivityLog] = useState<any[]>([]);
   const [trustedDevices, setTrustedDevices] = useState<any[]>([]);
 
@@ -150,13 +153,8 @@ export default function Settings() {
   // These mutations are kept for backwards compatibility but not actively used
 
   const getTrustedDevicesQuery = trpc.auth.getTrustedDevices.useQuery(undefined, {
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && activeTab === "devices",
   });
-
-  // Update trusted devices when query succeeds
-  if (getTrustedDevicesQuery.data) {
-    setTrustedDevices(getTrustedDevicesQuery.data);
-  }
 
   const removeTrustedDeviceMutation = trpc.auth.removeTrustedDevice.useMutation({
     onSuccess: () => {
@@ -182,6 +180,14 @@ export default function Settings() {
     enabled: isAuthenticated && activeTab === "activity",
   });
 
+  const getUserBankInfoQuery = trpc.auth.getUserBankInfo.useQuery(undefined, {
+    enabled: isAuthenticated && activeTab === "bank",
+  });
+
+  const getUserEmailQuery = trpc.auth.getUserEmail.useQuery(undefined, {
+    enabled: isAuthenticated && activeTab === "email",
+  });
+
   const getNotificationPreferencesQuery = trpc.auth.getNotificationPreferences.useQuery(undefined, {
     enabled: isAuthenticated && activeTab === "notifications",
   });
@@ -194,19 +200,53 @@ export default function Settings() {
     enabled: isAuthenticated && activeTab === "2fa",
   });
 
-  // Update forms when queries succeed
-  if (getNotificationPreferencesQuery.data && activeTab === "notifications") {
-    setNotifications(getNotificationPreferencesQuery.data);
-  }
+  // Update forms when queries succeed - using useEffect to avoid render loops
+  useEffect(() => {
+    if (getTrustedDevicesQuery.data) {
+      setTrustedDevices(getTrustedDevicesQuery.data);
+    }
+  }, [getTrustedDevicesQuery.data]);
 
-  if (getUserProfileQuery.data && activeTab === "profile") {
-    setProfileForm(prev => ({
-      ...prev,
-      ...Object.fromEntries(
-        Object.entries(getUserProfileQuery.data || {}).filter(([key]) => key in prev)
-      ),
-    } as typeof profileForm));
-  }
+  useEffect(() => {
+    if (getNotificationPreferencesQuery.data && activeTab === "notifications") {
+      setNotifications(getNotificationPreferencesQuery.data);
+    }
+  }, [getNotificationPreferencesQuery.data, activeTab]);
+
+  useEffect(() => {
+    if (getUserProfileQuery.data && activeTab === "profile") {
+      setProfileForm(prev => ({
+        ...prev,
+        ...Object.fromEntries(
+          Object.entries(getUserProfileQuery.data || {}).filter(([key]) => key in prev)
+        ),
+      } as typeof profileForm));
+    }
+  }, [getUserProfileQuery.data, activeTab]);
+
+  useEffect(() => {
+    if (getUserBankInfoQuery.data && activeTab === "bank") {
+      setBankForm(prev => ({
+        ...prev,
+        ...Object.fromEntries(
+          Object.entries(getUserBankInfoQuery.data || {}).filter(([key]) => key in prev)
+        ),
+      } as typeof bankForm));
+    }
+  }, [getUserBankInfoQuery.data, activeTab]);
+
+  useEffect(() => {
+    if (getUserEmailQuery.data && activeTab === "email") {
+      setEmailForm({ newEmail: getUserEmailQuery.data.email || user?.email || "" });
+    }
+  }, [getUserEmailQuery.data, activeTab, user?.email]);
+
+  // Auto-load devices when tab is opened
+  useEffect(() => {
+    if (activeTab === "devices" && !trustedDevices.length) {
+      getTrustedDevicesQuery.refetch();
+    }
+  }, [activeTab]);
 
   // 2FA query removed - now managed in Dashboard
 
@@ -216,11 +256,12 @@ export default function Settings() {
         <Card className="max-w-md w-full mx-4">
           <CardContent className="p-8 text-center">
             <p className="text-gray-600 mb-4">Please log in to access settings.</p>
-            <Link href="/login">
-              <Button className="bg-[#0033A0] hover:bg-[#002080] text-white w-full">
-                Go to Login
-              </Button>
-            </Link>
+            <Button
+              onClick={() => setLocation("/login")}
+              className="bg-[#0033A0] hover:bg-[#002080] text-white w-full"
+            >
+              Go to Login
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -334,19 +375,36 @@ export default function Settings() {
     window.location.href = "/";
   };
 
+  const handleRemoveDeviceClick = (deviceId: string, deviceName: string) => {
+    if (window.confirm(`Are you sure you want to remove "${deviceName}" from trusted devices? You'll need to verify your identity again when logging in from this device.`)) {
+      removeTrustedDeviceMutation.mutate({ deviceId });
+    }
+  };
+
+  const handleRequestAccountDeletion = () => {
+    if (!deleteReason.trim()) {
+      toast.error("Please provide a reason for account deletion");
+      return;
+    }
+    if (window.confirm("WARNING: Account deletion is permanent and cannot be undone. All your data, loans, and payment history will be deleted. Are you sure?")) {
+      requestDeleteMutation.mutate({ reason: deleteReason });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link href="/dashboard">
-              <a className="flex items-center gap-2 text-[#0033A0] hover:opacity-75">
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to Dashboard</span>
-              </a>
-            </Link>
-            <h1 className="text-xl font-bold text-[#0033A0]">Settings & Security</h1>
+            <button
+              onClick={() => setLocation("/dashboard")}
+              className="flex items-center gap-2 text-[#0033A0] hover:opacity-75"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Dashboard</span>
+            </button>
+            <h1 className="text-xl font-bold text-[#0033A0]">{t('settings.title')}</h1>
             <div className="w-24" />
           </div>
         </div>
@@ -356,7 +414,7 @@ export default function Settings() {
         <div className="container mx-auto px-4 max-w-4xl">
           {/* Tabs */}
           <div className="flex gap-2 mb-6 border-b flex-wrap">
-            {["password", "email", "bank", "profile", "2fa", "devices", "activity", "notifications", "privacy"].map((tab) => (
+            {["password", "email", "bank", "profile", "language", "notifications"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -370,11 +428,8 @@ export default function Settings() {
                 {tab === "email" && <Bell className="w-4 h-4 inline mr-2" />}
                 {tab === "bank" && <Shield className="w-4 h-4 inline mr-2" />}
                 {tab === "profile" && <User className="w-4 h-4 inline mr-2" />}
-                {tab === "2fa" && <Smartphone className="w-4 h-4 inline mr-2" />}
-                {tab === "devices" && <Shield className="w-4 h-4 inline mr-2" />}
-                {tab === "activity" && <Shield className="w-4 h-4 inline mr-2" />}
+                {tab === "language" && <Globe className="w-4 h-4 inline mr-2" />}
                 {tab === "notifications" && <Bell className="w-4 h-4 inline mr-2" />}
-                {tab === "privacy" && <Download className="w-4 h-4 inline mr-2" />}
                 {tab === "2fa" ? "2FA" : tab === "privacy" ? "Privacy & Data" : tab}
               </button>
             ))}
@@ -835,25 +890,6 @@ export default function Settings() {
             </Card>
           )}
 
-          {/* Two-Factor Authentication Tab */}
-          {activeTab === "2fa" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">Two-Factor Authentication</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <strong>Enhanced Security:</strong> Two-factor authentication adds an extra layer of security to your account.
-                  </p>
-                  <p className="text-sm text-blue-700 mt-2">
-                    Please use the <strong>Security tab</strong> in your Dashboard to manage two-factor authentication settings.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Trusted Devices Tab */}
           {activeTab === "devices" && (
             <Card>
@@ -891,7 +927,7 @@ export default function Settings() {
                             </p>
                           </div>
                           <Button
-                            onClick={() => removeTrustedDeviceMutation.mutate({ deviceId: device.id })}
+                            onClick={() => handleRemoveDeviceClick(device.id, device.deviceName || "Device")}
                             variant="outline"
                             size="sm"
                             className="text-red-600 border-red-300"
@@ -909,145 +945,45 @@ export default function Settings() {
             </Card>
           )}
 
-          {/* Activity Log Tab */}
-          {activeTab === "activity" && (
+          {/* Language Tab */}
+          {activeTab === "language" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">Account Activity Log</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {getActivityLogQuery.isLoading ? (
-                  <p className="text-gray-600">Loading activity log...</p>
-                ) : getActivityLogQuery.data && getActivityLogQuery.data.length > 0 ? (
-                  <div className="space-y-3">
-                    {getActivityLogQuery.data.map((activity: any) => (
-                      <div
-                        key={activity.id}
-                        className={`border rounded-lg p-4 ${
-                          activity.suspicious
-                            ? "border-red-300 bg-red-50"
-                            : "border-gray-200 bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-gray-800 capitalize">
-                              {activity.activityType.replace(/_/g, " ")}
-                            </p>
-                            <p className="text-sm text-gray-600">{activity.description}</p>
-                            {activity.ipAddress && (
-                              <p className="text-xs text-gray-500 mt-1">IP: {activity.ipAddress}</p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500">
-                              {new Date(activity.createdAt).toLocaleDateString()} {new Date(activity.createdAt).toLocaleTimeString()}
-                            </p>
-                            {activity.suspicious && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
-                                <AlertTriangle className="w-3 h-3 mr-1" />
-                                Suspicious
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-600 text-center py-8">No activity recorded yet</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Privacy & Data Tab */}
-          {activeTab === "privacy" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0] flex items-center gap-2">
-                  <Download className="h-6 w-6" />
-                  Privacy & Data Export
-                </CardTitle>
+                <CardTitle className="text-2xl text-[#0033A0]">{t('settings.language')}</CardTitle>
                 <CardDescription>
-                  Download all your personal data in compliance with GDPR regulations
+                  Choose your preferred language for the application
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="font-semibold text-[#0033A0] mb-2">What's included in your data export?</h3>
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 mt-0.5">•</span>
-                      <span>Personal information (name, email, phone, profile)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 mt-0.5">•</span>
-                      <span>Loan applications and disbursement history</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 mt-0.5">•</span>
-                      <span>Payment records and transaction history</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 mt-0.5">•</span>
-                      <span>Rewards balance and referral activity</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 mt-0.5">•</span>
-                      <span>All timestamps and activity logs</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Shield className="h-5 w-5 text-green-600 mt-1 shrink-0" />
+                <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">Your Privacy Rights</h4>
+                    <label className="text-sm font-semibold text-gray-800 mb-3 block">
+                      Select Language / Seleccionar Idioma
+                    </label>
+                    <LanguageSwitcher />
+                  </div>
+                  
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-6">
+                    <h3 className="font-semibold text-[#0033A0] mb-2">Available Languages</h3>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600">🇺🇸</span>
+                        <span><strong>English</strong> - Full support</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600">🇪🇸</span>
+                        <span><strong>Español (Spanish)</strong> - Full support</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <p className="text-sm text-gray-600">
-                      Under GDPR and other privacy regulations, you have the right to access, download, and request deletion of your personal data. The export will be provided in machine-readable JSON format.
+                      <strong>Note:</strong> Your language preference is saved automatically and will be applied across all pages. 
+                      Some legal documents may only be available in English.
                     </p>
                   </div>
                 </div>
-
-                <Button
-                  onClick={async () => {
-                    try {
-                      // Fetch data via direct HTTP call since we're in an onClick handler
-                      const response = await fetch('/api/trpc/dataExport.exportMyData');
-                      const data = await response.json();
-                      const exportData = data.result?.data;
-                      
-                      if (!exportData) {
-                        throw new Error('No data received');
-                      }
-                      
-                      // Create downloadable JSON file
-                      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const link = document.createElement('a');
-                      link.href = url;
-                      link.download = `amerilend-data-export-${new Date().toISOString().split('T')[0]}.json`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      URL.revokeObjectURL(url);
-                      
-                      toast.success("Your data has been exported successfully!");
-                    } catch (error) {
-                      toast.error("Failed to export data. Please try again.");
-                    }
-                  }}
-                  className="w-full bg-[#0033A0] hover:bg-[#003366]"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download My Data (JSON)
-                </Button>
-
-                <p className="text-xs text-gray-500 text-center">
-                  The export process is secure and only includes data associated with your account.
-                  No sensitive payment information (like full card numbers) is included.
-                </p>
               </CardContent>
             </Card>
           )}
