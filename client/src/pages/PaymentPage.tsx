@@ -681,30 +681,30 @@ export default function PaymentPage() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-[#0033A0] to-[#003366] text-white py-8 mt-12">
+      <footer className="bg-gradient-to-r from-[#0A2540] to-[#003366] text-white py-8 mt-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
             <div>
               <h4 className="font-semibold mb-3">Need Help?</h4>
               <div className="space-y-2 text-sm text-white/80">
-                <p>📞 <a href="tel:+19452121609" className="hover:text-[#FFA500] transition-colors">(945) 212-1609</a></p>
-                <p>📧 <a href="mailto:support@amerilendloan.com" className="hover:text-[#FFA500] transition-colors">support@amerilendloan.com</a></p>
+                <p>📞 <a href="tel:+19452121609" className="hover:text-[#C9A227] transition-colors">(945) 212-1609</a></p>
+                <p>📧 <a href="mailto:support@amerilendloan.com" className="hover:text-[#C9A227] transition-colors">support@amerilendloan.com</a></p>
               </div>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Quick Links</h4>
               <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="/" className="hover:text-[#FFA500] transition-colors">Home</a></li>
-                <li><a href="/dashboard" className="hover:text-[#FFA500] transition-colors">Dashboard</a></li>
-                <li><a href="/#faq" className="hover:text-[#FFA500] transition-colors">FAQ</a></li>
+                <li><a href="/" className="hover:text-[#C9A227] transition-colors">Home</a></li>
+                <li><a href="/dashboard" className="hover:text-[#C9A227] transition-colors">Dashboard</a></li>
+                <li><a href="/#faq" className="hover:text-[#C9A227] transition-colors">FAQ</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Legal</h4>
               <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="/public/legal/privacy-policy" className="hover:text-[#FFA500] transition-colors">Privacy Policy</a></li>
-                <li><a href="/public/legal/terms-of-service" className="hover:text-[#FFA500] transition-colors">Terms of Service</a></li>
-                <li><a href="/public/legal/loan-agreement" className="hover:text-[#FFA500] transition-colors">Loan Agreement</a></li>
+                <li><a href="/legal/privacy-policy" className="hover:text-[#C9A227] transition-colors">Privacy Policy</a></li>
+                <li><a href="/legal/terms-of-service" className="hover:text-[#C9A227] transition-colors">Terms of Service</a></li>
+                <li><a href="/legal/loan-agreement" className="hover:text-[#C9A227] transition-colors">Loan Agreement</a></li>
               </ul>
             </div>
           </div>

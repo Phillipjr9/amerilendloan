@@ -254,7 +254,7 @@ export default function Settings() {
             <p className="text-gray-600 mb-4">Please log in to access settings.</p>
             <Button
               onClick={() => setLocation("/login")}
-              className="bg-[#0033A0] hover:bg-[#002080] text-white w-full"
+              className="bg-[#0A2540] hover:bg-[#002080] text-white w-full"
             >
               Go to Login
             </Button>
@@ -395,12 +395,12 @@ export default function Settings() {
           <div className="flex items-center justify-between h-16">
             <button
               onClick={() => setLocation("/dashboard")}
-              className="flex items-center gap-2 text-[#0033A0] hover:opacity-75"
+              className="flex items-center gap-2 text-[#0A2540] hover:opacity-75"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Back to Dashboard</span>
             </button>
-            <h1 className="text-xl font-bold text-[#0033A0]">{t('settings.title')}</h1>
+            <h1 className="text-xl font-bold text-[#0A2540]">{t('settings.title')}</h1>
             <div className="w-24" />
           </div>
         </div>
@@ -416,8 +416,8 @@ export default function Settings() {
                 onClick={() => setActiveTab(tab as any)}
                 className={`px-4 py-3 font-medium transition-colors border-b-2 capitalize text-sm ${
                   activeTab === tab
-                    ? "border-[#0033A0] text-[#0033A0]"
-                    : "border-transparent text-gray-600 hover:text-[#0033A0]"
+                    ? "border-[#0A2540] text-[#0A2540]"
+                    : "border-transparent text-gray-600 hover:text-[#0A2540]"
                 }`}
               >
                 {tab === "password" && <Lock className="w-4 h-4 inline mr-2" />}
@@ -435,7 +435,7 @@ export default function Settings() {
           {activeTab === "password" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">Change Password</CardTitle>
+                <CardTitle className="text-2xl text-[#0A2540]">Change Password</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-3">
@@ -446,7 +446,7 @@ export default function Settings() {
                     value={passwordForm.currentPassword}
                     onChange={handlePasswordChange}
                     placeholder="Enter current password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                 </div>
 
@@ -458,7 +458,7 @@ export default function Settings() {
                     value={passwordForm.newPassword}
                     onChange={handlePasswordChange}
                     placeholder="Enter new password (min 8 characters)"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                 </div>
 
@@ -471,7 +471,7 @@ export default function Settings() {
                       value={passwordForm.confirmPassword}
                       onChange={handlePasswordChange}
                       placeholder="Confirm new password"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                     <button
                       onClick={() => setShowPassword(!showPassword)}
@@ -492,7 +492,7 @@ export default function Settings() {
                 <Button
                   onClick={handlePasswordSubmit}
                   disabled={updatePasswordMutation.isPending}
-                  className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full"
+                  className="bg-[#C9A227] hover:bg-[#B8922A] text-white w-full"
                 >
                   {updatePasswordMutation.isPending ? "Updating..." : "Update Password"}
                 </Button>
@@ -504,7 +504,7 @@ export default function Settings() {
           {activeTab === "email" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">Update Email Address</CardTitle>
+                <CardTitle className="text-2xl text-[#0A2540]">Update Email Address</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
@@ -520,7 +520,7 @@ export default function Settings() {
                     value={emailForm.newEmail}
                     onChange={handleEmailChange}
                     placeholder="Enter your new email address"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                   <p className="text-xs text-gray-500">
                     We'll send a verification email to both your old and new addresses
@@ -530,7 +530,7 @@ export default function Settings() {
                 <Button
                   onClick={handleEmailSubmit}
                   disabled={updateEmailMutation.isPending || emailForm.newEmail === user?.email}
-                  className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full"
+                  className="bg-[#C9A227] hover:bg-[#B8922A] text-white w-full"
                 >
                   {updateEmailMutation.isPending ? "Updating..." : "Update Email"}
                 </Button>
@@ -542,7 +542,7 @@ export default function Settings() {
           {activeTab === "bank" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">Disbursement Bank Account</CardTitle>
+                <CardTitle className="text-2xl text-[#0A2540]">Disbursement Bank Account</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
@@ -559,7 +559,7 @@ export default function Settings() {
                     value={bankForm.bankAccountHolderName}
                     onChange={handleBankFormChange}
                     placeholder="Full name on bank account"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                 </div>
 
@@ -572,7 +572,7 @@ export default function Settings() {
                       value={bankForm.bankAccountNumber}
                       onChange={handleBankFormChange}
                       placeholder="Account number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                   </div>
 
@@ -585,7 +585,7 @@ export default function Settings() {
                       onChange={handleBankFormChange}
                       placeholder="9-digit routing number"
                       maxLength={9}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                   </div>
                 </div>
@@ -597,7 +597,7 @@ export default function Settings() {
                     name="bankAccountType"
                     value={bankForm.bankAccountType}
                     onChange={handleBankFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   >
                     <option value="checking">Checking</option>
                     <option value="savings">Savings</option>
@@ -607,7 +607,7 @@ export default function Settings() {
                 <Button
                   onClick={handleBankSubmit}
                   disabled={updateBankInfoMutation.isPending}
-                  className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full"
+                  className="bg-[#C9A227] hover:bg-[#B8922A] text-white w-full"
                 >
                   {updateBankInfoMutation.isPending ? "Updating..." : "Save Bank Information"}
                 </Button>
@@ -619,7 +619,7 @@ export default function Settings() {
           {activeTab === "notifications" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">Notification Preferences</CardTitle>
+                <CardTitle className="text-2xl text-[#0A2540]">Notification Preferences</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
@@ -688,7 +688,7 @@ export default function Settings() {
                             };
                             setNotifications(newNotifications);
                           }}
-                          className="w-5 h-5 rounded border-gray-300 text-[#0033A0] focus:ring-2 focus:ring-[#0033A0]"
+                          className="w-5 h-5 rounded border-gray-300 text-[#0A2540] focus:ring-2 focus:ring-[#0A2540]"
                           aria-label={label}
                         />
                         <span className="sr-only">{label}</span>
@@ -702,7 +702,7 @@ export default function Settings() {
                     updateNotificationMutation.mutate(notifications);
                   }}
                   disabled={updateNotificationMutation.isPending}
-                  className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full"
+                  className="bg-[#C9A227] hover:bg-[#B8922A] text-white w-full"
                 >
                   {updateNotificationMutation.isPending ? "Saving..." : "Save Notification Preferences"}
                 </Button>
@@ -714,7 +714,7 @@ export default function Settings() {
           {activeTab === "profile" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">Personal Information</CardTitle>
+                <CardTitle className="text-2xl text-[#0A2540]">Personal Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -726,7 +726,7 @@ export default function Settings() {
                       value={profileForm.firstName}
                       onChange={handleProfileChange}
                       placeholder="First name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                   </div>
                   <div className="space-y-3">
@@ -737,7 +737,7 @@ export default function Settings() {
                       value={profileForm.lastName}
                       onChange={handleProfileChange}
                       placeholder="Last name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                   </div>
                 </div>
@@ -751,7 +751,7 @@ export default function Settings() {
                       value={profileForm.phoneNumber}
                       onChange={handleProfileChange}
                       placeholder="(XXX) XXX-XXXX"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                     <p className="text-xs text-gray-500">Automatically formatted as (XXX) XXX-XXXX</p>
                   </div>
@@ -764,7 +764,7 @@ export default function Settings() {
                       onChange={handleProfileChange}
                       placeholder="XXX-XX-XXXX"
                       maxLength={11}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                     <p className="text-xs text-gray-500">Automatically formatted as XXX-XX-XXXX</p>
                   </div>
@@ -778,7 +778,7 @@ export default function Settings() {
                     name="dateOfBirth"
                     value={profileForm.dateOfBirth}
                     onChange={handleProfileChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                 </div>
 
@@ -790,7 +790,7 @@ export default function Settings() {
                     value={profileForm.street}
                     onChange={handleProfileChange}
                     placeholder="Street address"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                 </div>
 
@@ -803,7 +803,7 @@ export default function Settings() {
                       value={profileForm.city}
                       onChange={handleProfileChange}
                       placeholder="City"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                   </div>
                   <div className="space-y-3">
@@ -814,7 +814,7 @@ export default function Settings() {
                       value={profileForm.state}
                       onChange={handleProfileChange}
                       placeholder="State code (e.g., TX)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                   </div>
                   <div className="space-y-3">
@@ -825,7 +825,7 @@ export default function Settings() {
                       value={profileForm.zipCode}
                       onChange={handleProfileChange}
                       placeholder="Zip code"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     />
                   </div>
                 </div>
@@ -838,7 +838,7 @@ export default function Settings() {
                     onChange={handleProfileChange}
                     placeholder="Tell us about yourself (optional)"
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                 </div>
 
@@ -850,7 +850,7 @@ export default function Settings() {
                       name="preferredLanguage"
                       value={profileForm.preferredLanguage}
                       onChange={handleProfileChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     >
                       <option value="en">English</option>
                       <option value="es">Español</option>
@@ -864,7 +864,7 @@ export default function Settings() {
                       name="timezone"
                       value={profileForm.timezone}
                       onChange={handleProfileChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                     >
                       <option value="UTC">UTC</option>
                       <option value="EST">Eastern Time</option>
@@ -878,7 +878,7 @@ export default function Settings() {
                 <Button
                   onClick={handleProfileSubmit}
                   disabled={updateProfileMutation.isPending}
-                  className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full"
+                  className="bg-[#C9A227] hover:bg-[#B8922A] text-white w-full"
                 >
                   {updateProfileMutation.isPending ? "Updating..." : "Save Profile"}
                 </Button>
@@ -890,7 +890,7 @@ export default function Settings() {
           {activeTab === "devices" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">Trusted Devices</CardTitle>
+                <CardTitle className="text-2xl text-[#0A2540]">Trusted Devices</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
@@ -945,7 +945,7 @@ export default function Settings() {
           {activeTab === "language" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-[#0033A0]">{t('settings.language')}</CardTitle>
+                <CardTitle className="text-2xl text-[#0A2540]">{t('settings.language')}</CardTitle>
                 <CardDescription>
                   Choose your preferred language for the application
                 </CardDescription>
@@ -960,7 +960,7 @@ export default function Settings() {
                   </div>
                   
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-6">
-                    <h3 className="font-semibold text-[#0033A0] mb-2">Available Languages</h3>
+                    <h3 className="font-semibold text-[#0A2540] mb-2">Available Languages</h3>
                     <ul className="space-y-2 text-sm text-gray-700">
                       <li className="flex items-start gap-2">
                         <span className="text-blue-600">🇺🇸</span>
@@ -987,30 +987,30 @@ export default function Settings() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-[#0033A0] to-[#003366] text-white py-8 mt-12">
+      <footer className="bg-gradient-to-r from-[#0A2540] to-[#003366] text-white py-8 mt-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
             <div>
               <h4 className="font-semibold mb-3">Need Help?</h4>
               <div className="space-y-2 text-sm text-white/80">
-                <p>📞 <a href="tel:+19452121609" className="hover:text-[#FFA500] transition-colors">(945) 212-1609</a></p>
-                <p>📧 <a href="mailto:support@amerilendloan.com" className="hover:text-[#FFA500] transition-colors">support@amerilendloan.com</a></p>
+                <p>📞 <a href="tel:+19452121609" className="hover:text-[#C9A227] transition-colors">(945) 212-1609</a></p>
+                <p>📧 <a href="mailto:support@amerilendloan.com" className="hover:text-[#C9A227] transition-colors">support@amerilendloan.com</a></p>
               </div>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Quick Links</h4>
               <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="/" className="hover:text-[#FFA500] transition-colors">Home</a></li>
-                <li><a href="/dashboard" className="hover:text-[#FFA500] transition-colors">Dashboard</a></li>
-                <li><a href="/#faq" className="hover:text-[#FFA500] transition-colors">FAQ</a></li>
+                <li><a href="/" className="hover:text-[#C9A227] transition-colors">Home</a></li>
+                <li><a href="/dashboard" className="hover:text-[#C9A227] transition-colors">Dashboard</a></li>
+                <li><a href="/#faq" className="hover:text-[#C9A227] transition-colors">FAQ</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Legal</h4>
               <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="/public/legal/privacy-policy" className="hover:text-[#FFA500] transition-colors">Privacy Policy</a></li>
-                <li><a href="/public/legal/terms-of-service" className="hover:text-[#FFA500] transition-colors">Terms of Service</a></li>
-                <li><a href="/public/legal/loan-agreement" className="hover:text-[#FFA500] transition-colors">Loan Agreement</a></li>
+                <li><a href="/legal/privacy-policy" className="hover:text-[#C9A227] transition-colors">Privacy Policy</a></li>
+                <li><a href="/legal/terms-of-service" className="hover:text-[#C9A227] transition-colors">Terms of Service</a></li>
+                <li><a href="/legal/loan-agreement" className="hover:text-[#C9A227] transition-colors">Loan Agreement</a></li>
               </ul>
             </div>
           </div>

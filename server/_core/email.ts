@@ -564,13 +564,6 @@ export async function sendLoginNotificationEmail(
             <li>Log out after each session on shared devices</li>
             <li>Contact us immediately if you notice suspicious activity</li>
           </ul>
-
-          <div style="text-align: center; margin: 30px 0;">
-            <p style="margin-bottom: 10px;">Need help? Contact our security team:</p>
-            <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0; text-decoration: none; font-weight: bold;">${COMPANY_INFO.contact.email}</a>
-            <br>
-            <span style="color: #0033A0; font-weight: bold;">${COMPANY_INFO.contact.phone}</span>
-          </div>
         </div>
         ${getEmailFooter()}
       </body>

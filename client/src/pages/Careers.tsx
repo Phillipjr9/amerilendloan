@@ -134,7 +134,7 @@ export default function Careers() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       {/* Header */}
-      <div className="bg-[#0033A0] text-white py-12">
+      <div className="bg-[#0A2540] text-white py-12">
         <div className="container mx-auto px-4">
           <Link href="/">
             <a className="inline-flex items-center gap-2 text-white hover:text-blue-200 mb-6">
@@ -155,32 +155,32 @@ export default function Careers() {
           {/* Job Positions */}
           <div className="md:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-8 sticky top-20">
-              <h2 className="text-2xl font-bold text-[#0033A0] mb-6">Open Positions</h2>
+              <h2 className="text-2xl font-bold text-[#0A2540] mb-6">Open Positions</h2>
 
               <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-[#0033A0]">
-                  <h3 className="font-semibold text-[#0033A0] mb-2">Loan Advocate</h3>
+                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-[#0A2540]">
+                  <h3 className="font-semibold text-[#0A2540] mb-2">Loan Advocate</h3>
                   <p className="text-sm text-gray-600">
                     Help customers navigate their loan applications and provide exceptional support.
                   </p>
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-[#0033A0]">
-                  <h3 className="font-semibold text-[#0033A0] mb-2">Risk Analyst</h3>
+                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-[#0A2540]">
+                  <h3 className="font-semibold text-[#0A2540] mb-2">Risk Analyst</h3>
                   <p className="text-sm text-gray-600">
                     Analyze applications and ensure responsible lending practices.
                   </p>
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-[#0033A0]">
-                  <h3 className="font-semibold text-[#0033A0] mb-2">Marketing Specialist</h3>
+                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-[#0A2540]">
+                  <h3 className="font-semibold text-[#0A2540] mb-2">Marketing Specialist</h3>
                   <p className="text-sm text-gray-600">
                     Develop strategies to reach customers and educate them about borrowing options.
                   </p>
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-[#FFA500]">
-                  <h3 className="font-semibold text-[#FFA500] mb-2">Other Positions</h3>
+                <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-[#C9A227]">
+                  <h3 className="font-semibold text-[#C9A227] mb-2">Other Positions</h3>
                   <p className="text-sm text-gray-600">
                     Don't see your fit? Apply for other roles below.
                   </p>
@@ -198,7 +198,7 @@ export default function Careers() {
           {/* Application Form */}
           <div className="md:col-span-2">
             <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-[#0033A0] mb-2">Submit Your Application</h2>
+              <h2 className="text-2xl font-bold text-[#0A2540] mb-2">Submit Your Application</h2>
               <p className="text-gray-600 mb-6">
                 Tell us about yourself and why you'd be a great fit for AmeriLend. We review all applications and will be in touch within 5-7 business days.
               </p>
@@ -215,7 +215,7 @@ export default function Careers() {
                     value={formData.fullName}
                     onChange={handleInputChange}
                     placeholder="John Doe"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A2540] focus:border-transparent"
                     required
                   />
                 </div>
@@ -231,7 +231,7 @@ export default function Careers() {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="john@example.com"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A2540] focus:border-transparent"
                     required
                   />
                 </div>
@@ -247,7 +247,7 @@ export default function Careers() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     placeholder="(555) 123-4567"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A2540] focus:border-transparent"
                     required
                   />
                 </div>
@@ -262,7 +262,7 @@ export default function Careers() {
                     value={formData.position}
                     onChange={handleInputChange}
                     title="Select a job position"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A2540] focus:border-transparent bg-white"
                     required
                   >
                     <option value="Not Specified">Select a position...</option>
@@ -285,7 +285,7 @@ export default function Careers() {
                       onChange={handleFileChange}
                       accept=".pdf,.doc,.docx"
                       title="Upload your resume (PDF or Word document, max 5MB)"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#0033A0] file:text-white hover:file:bg-blue-700"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A2540] focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#0A2540] file:text-white hover:file:bg-blue-700"
                     />
                   </div>
                   {formData.resume && (
@@ -306,7 +306,7 @@ export default function Careers() {
                     onChange={handleInputChange}
                     placeholder="Tell us about your experience, skills, and why you're interested in joining AmeriLend..."
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A2540] focus:border-transparent resize-none"
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -325,7 +325,7 @@ export default function Careers() {
                 <Button
                   type="submit"
                   disabled={isSubmitting || sendJobApplicationMutation.isPending}
-                  className="w-full bg-[#0033A0] hover:bg-blue-800 text-white py-3 rounded-lg font-semibold text-lg transition-all"
+                  className="w-full bg-[#0A2540] hover:bg-blue-800 text-white py-3 rounded-lg font-semibold text-lg transition-all"
                 >
                   {isSubmitting || sendJobApplicationMutation.isPending ? (
                     <>
@@ -340,10 +340,10 @@ export default function Careers() {
 
               {/* Contact Info */}
               <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-[#0033A0] mb-3">Questions?</h3>
+                <h3 className="font-semibold text-[#0A2540] mb-3">Questions?</h3>
                 <p className="text-gray-700">
                   Email us at{" "}
-                  <a href="mailto:admin@amerilendloan.com" className="text-[#0033A0] hover:underline font-semibold">
+                  <a href="mailto:admin@amerilendloan.com" className="text-[#0A2540] hover:underline font-semibold">
                     admin@amerilendloan.com
                   </a>
                 </p>
@@ -354,10 +354,10 @@ export default function Careers() {
 
         {/* Additional Info */}
         <div className="bg-white rounded-xl shadow-lg p-8 mt-12">
-          <h2 className="text-2xl font-bold text-[#0033A0] mb-6">Why Work at AmeriLend?</h2>
+          <h2 className="text-2xl font-bold text-[#0A2540] mb-6">Why Work at AmeriLend?</h2>
           <div className="grid md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-[#FFA500] text-white flex items-center justify-center mx-auto mb-4 font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-[#C9A227] text-white flex items-center justify-center mx-auto mb-4 font-bold text-lg">
                 💼
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Meaningful Work</h3>
@@ -367,7 +367,7 @@ export default function Careers() {
             </div>
 
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-[#FFA500] text-white flex items-center justify-center mx-auto mb-4 font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-[#C9A227] text-white flex items-center justify-center mx-auto mb-4 font-bold text-lg">
                 🚀
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Growth Opportunities</h3>
@@ -377,7 +377,7 @@ export default function Careers() {
             </div>
 
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-[#FFA500] text-white flex items-center justify-center mx-auto mb-4 font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-[#C9A227] text-white flex items-center justify-center mx-auto mb-4 font-bold text-lg">
                 🤝
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Great Team</h3>
@@ -387,7 +387,7 @@ export default function Careers() {
             </div>
 
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-[#FFA500] text-white flex items-center justify-center mx-auto mb-4 font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-[#C9A227] text-white flex items-center justify-center mx-auto mb-4 font-bold text-lg">
                 ⚡
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Competitive Benefits</h3>

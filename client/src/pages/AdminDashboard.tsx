@@ -52,10 +52,10 @@ export default function AdminDashboard() {
   // Show loading state while checking authentication
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-white">
-        <div className="space-y-6 w-full max-w-4xl px-4">
-          <SkeletonStats />
-          <SkeletonAdminTable />
+      <div className="flex items-center justify-center min-h-screen bg-[#FAFBFC]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-[#0A2540] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -342,20 +342,20 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] text-white transition-all duration-300 z-50 ${sidebarOpen ? 'w-64' : 'w-20'} ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+    <div className="min-h-screen bg-[#FAFBFC] flex">
+      {/* Sidebar - Premium Design */}
+      <aside className={`fixed left-0 top-0 h-full bg-[#0A2540] text-white transition-all duration-300 z-50 ${sidebarOpen ? 'w-64' : 'w-20'} ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         {/* Logo Section */}
-        <div className="p-4 border-b border-blue-600">
+        <div className="p-4 border-b border-white/10">
           <div className="flex items-center justify-between">
             <Link href="/">
-              <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition">
+              <div className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition">
                 {sidebarOpen ? (
                   <>
                     <img src={APP_LOGO || "/logo.jpg"} alt="AmeriLend" className="h-10 w-auto" />
                     <div>
-                      <h1 className="text-lg font-bold">AmeriLend</h1>
-                      <p className="text-xs text-blue-200">Admin Panel</p>
+                      <h1 className="text-base font-semibold tracking-tight">AmeriLend</h1>
+                      <p className="text-xs text-slate-400">Admin Panel</p>
                     </div>
                   </>
                 ) : (
@@ -367,109 +367,109 @@ export default function AdminDashboard() {
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-2">
+        <nav className="p-3 space-y-1">
           <button
             onClick={() => setCurrentView("dashboard")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
               currentView === "dashboard" 
-                ? "bg-white/20 text-white shadow-lg" 
-                : "text-blue-100 hover:bg-white/10"
+                ? "bg-white text-[#0A2540] font-medium shadow-sm" 
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             <Home className="h-5 w-5 flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Dashboard</span>}
+            {sidebarOpen && <span className="text-sm">Dashboard</span>}
           </button>
 
           <button
             onClick={() => setCurrentView("applications")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
               currentView === "applications" 
-                ? "bg-white/20 text-white shadow-lg" 
-                : "text-blue-100 hover:bg-white/10"
+                ? "bg-white text-[#0A2540] font-medium shadow-sm" 
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             <FileText className="h-5 w-5 flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Applications</span>}
+            {sidebarOpen && <span className="text-sm">Applications</span>}
           </button>
 
           <button
             onClick={() => setCurrentView("tracking")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
               currentView === "tracking" 
-                ? "bg-white/20 text-white shadow-lg" 
-                : "text-blue-100 hover:bg-white/10"
+                ? "bg-white text-[#0A2540] font-medium shadow-sm" 
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             <Package className="h-5 w-5 flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Tracking</span>}
+            {sidebarOpen && <span className="text-sm">Tracking</span>}
           </button>
 
           <button
             onClick={() => setCurrentView("verification")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
               currentView === "verification" 
-                ? "bg-white/20 text-white shadow-lg" 
-                : "text-blue-100 hover:bg-white/10"
+                ? "bg-white text-[#0A2540] font-medium shadow-sm" 
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             <ShieldCheck className="h-5 w-5 flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Verification</span>}
+            {sidebarOpen && <span className="text-sm">Verification</span>}
           </button>
 
           <button
             onClick={() => setCurrentView("support")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
               currentView === "support" 
-                ? "bg-white/20 text-white shadow-lg" 
-                : "text-blue-100 hover:bg-white/10"
+                ? "bg-white text-[#0A2540] font-medium shadow-sm" 
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             <MessageSquare className="h-5 w-5 flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Support</span>}
+            {sidebarOpen && <span className="text-sm">Support</span>}
           </button>
 
           <button
             onClick={() => setCurrentView("audit")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
               currentView === "audit" 
-                ? "bg-white/20 text-white shadow-lg" 
-                : "text-blue-100 hover:bg-white/10"
+                ? "bg-white text-[#0A2540] font-medium shadow-sm" 
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             <Activity className="h-5 w-5 flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Audit Log</span>}
+            {sidebarOpen && <span className="text-sm">Audit Log</span>}
           </button>
 
           <button
             onClick={() => setCurrentView("fees")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
               currentView === "fees" 
-                ? "bg-white/20 text-white shadow-lg" 
-                : "text-blue-100 hover:bg-white/10"
+                ? "bg-white text-[#0A2540] font-medium shadow-sm" 
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             <DollarSign className="h-5 w-5 flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Fee Settings</span>}
+            {sidebarOpen && <span className="text-sm">Fee Settings</span>}
           </button>
 
           <button
             onClick={() => setCurrentView("crypto")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
               currentView === "crypto" 
-                ? "bg-white/20 text-white shadow-lg" 
-                : "text-blue-100 hover:bg-white/10"
+                ? "bg-white text-[#0A2540] font-medium shadow-sm" 
+                : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
           >
             <Wallet className="h-5 w-5 flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Crypto Wallet</span>}
+            {sidebarOpen && <span className="text-sm">Crypto Wallet</span>}
           </button>
         </nav>
 
         {/* Sidebar Toggle Button (Desktop) */}
-        <div className="absolute bottom-4 left-0 right-0 px-4 hidden md:block">
+        <div className="absolute bottom-4 left-0 right-0 px-3 hidden md:block">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all text-sm"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 transition-all text-sm text-slate-300"
           >
             {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             {sidebarOpen && <span>Collapse</span>}
@@ -480,34 +480,34 @@ export default function AdminDashboard() {
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       {/* Main Content Area */}
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
-        {/* Top Header */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        {/* Top Header - Premium Design */}
+        <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200/60 sticky top-0 z-30">
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+                className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
                 aria-label="Toggle mobile menu"
               >
-                <Menu className="h-6 w-6 text-gray-600" />
+                <Menu className="h-6 w-6 text-slate-600" />
               </button>
 
               {/* Search Bar */}
-              <div className="flex-1 max-w-2xl mx-4">
+              <div className="flex-1 max-w-xl mx-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     type="text"
                     placeholder="Search applications..."
-                    className="pl-10 bg-gray-50 border-gray-200"
+                    className="pl-10 bg-slate-50/50 border-slate-200 focus:ring-2 focus:ring-[#0A2540]/10 focus:border-[#0A2540] rounded-lg"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -515,23 +515,28 @@ export default function AdminDashboard() {
               </div>
 
               {/* Right Side Icons */}
-              <div className="flex items-center gap-3">
-                <button className="p-2 rounded-lg hover:bg-gray-100 relative" aria-label="View notifications">
-                  <Bell className="h-5 w-5 text-gray-600" />
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+              <div className="flex items-center gap-2">
+                <button className="p-2 rounded-lg hover:bg-slate-100 relative transition-colors" aria-label="View notifications">
+                  <Bell className="h-5 w-5 text-slate-600" />
+                  <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-[#C9A227] rounded-full"></span>
                 </button>
                 
-                <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-slate-50/80 border border-slate-200/60">
+                  <div className="w-8 h-8 rounded-full bg-[#0A2540] flex items-center justify-center text-white font-medium text-sm">
                     {user?.name?.charAt(0) || "A"}
                   </div>
                   <div className="hidden sm:block">
-                    <p className="text-sm font-medium text-gray-900">{user?.name || "Admin"}</p>
-                    <p className="text-xs text-gray-500">Administrator</p>
+                    <p className="text-sm font-medium text-slate-900">{user?.name || "Admin"}</p>
+                    <p className="text-xs text-slate-500">Administrator</p>
                   </div>
                 </div>
 
-                <Button variant="outline" size="sm" onClick={() => { logout(); window.location.href = "/"; }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { logout(); window.location.href = "/"; }}
+                  className="border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                >
                   <LogOut className="h-4 w-4" />
                 </Button>
               </div>
@@ -546,8 +551,8 @@ export default function AdminDashboard() {
             <div className="space-y-6">
               {/* Page Title */}
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
-                <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your loan applications.</p>
+                <h2 className="text-xl font-semibold text-[#0A2540] tracking-tight">Dashboard Overview</h2>
+                <p className="text-slate-500 text-sm mt-1">Welcome back! Here's what's happening with your loan applications.</p>
               </div>
 
               {/* Real-Time Statistics with Falcon-style colored cards */}

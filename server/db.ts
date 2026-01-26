@@ -2267,7 +2267,7 @@ export async function getOverduePayments(minDays: number = 1, maxDays: number = 
       principalAmount: paymentSchedules.principalAmount,
       interestAmount: paymentSchedules.interestAmount,
       status: paymentSchedules.status,
-      daysOverdue: sql<number>`EXTRACT(DAY FROM (CAST(${sql.raw(`'${today}'`)} AS date) - CAST(${paymentSchedules.dueDate} AS date)))`,
+      daysOverdue: sql<number>`(${sql.raw(`'${today}'::date`)} - ${paymentSchedules.dueDate}::date)`,
       userId: users.id,
       email: users.email,
       firstName: users.firstName,
@@ -2286,7 +2286,7 @@ export async function getOverduePayments(minDays: number = 1, maxDays: number = 
             eq(paymentSchedules.status, "not_paid"),
             eq(paymentSchedules.status, "late")
           ),
-          sql`DATE(${paymentSchedules.dueDate}) < ${sql.raw(`'${today}'::date`)}`
+          sql`${paymentSchedules.dueDate}::date < ${sql.raw(`'${today}'::date`)}`
         )
       );
     
@@ -2323,7 +2323,7 @@ export async function getDelinquentPayments(minDays: number = 30) {
       principalAmount: paymentSchedules.principalAmount,
       interestAmount: paymentSchedules.interestAmount,
       status: paymentSchedules.status,
-      daysOverdue: sql<number>`EXTRACT(DAY FROM (CAST(${sql.raw(`'${today}'`)} AS date) - CAST(${paymentSchedules.dueDate} AS date)))`,
+      daysOverdue: sql<number>`(${sql.raw(`'${today}'::date`)} - ${paymentSchedules.dueDate}::date)`,
       userId: users.id,
       email: users.email,
       firstName: users.firstName,
@@ -2343,7 +2343,7 @@ export async function getDelinquentPayments(minDays: number = 30) {
             eq(paymentSchedules.status, "not_paid"),
             eq(paymentSchedules.status, "late")
           ),
-          sql`DATE(${paymentSchedules.dueDate}) < ${sql.raw(`'${today}'::date`)}`
+          sql`${paymentSchedules.dueDate}::date < ${sql.raw(`'${today}'::date`)}`
         )
       );
     

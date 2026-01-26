@@ -95,7 +95,7 @@ export default function LoanStatusTimeline({
   return (
     <Card className="mt-6">
       <CardHeader>
-        <CardTitle className="text-lg text-[#0033A0]">Loan Application Progress</CardTitle>
+        <CardTitle className="text-lg text-[#0A2540]">Loan Application Progress</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -127,7 +127,7 @@ export default function LoanStatusTimeline({
                           isCompleted
                             ? "bg-green-500 text-white"
                             : isCurrent
-                            ? "bg-[#0033A0] text-white ring-4 ring-blue-100"
+                            ? "bg-[#0A2540] text-white ring-4 ring-blue-100"
                             : "bg-gray-200 text-gray-500"
                         }
                       `}
@@ -143,7 +143,7 @@ export default function LoanStatusTimeline({
 
                     {/* Stage Label & Details */}
                     <div className="mt-3 text-center w-full px-2">
-                      <p className={`text-sm font-semibold ${isCurrent ? "text-[#0033A0]" : "text-gray-600"}`}>
+                      <p className={`text-sm font-semibold ${isCurrent ? "text-[#0A2540]" : "text-gray-600"}`}>
                         {stage.label}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">{stage.description}</p>
@@ -157,7 +157,7 @@ export default function LoanStatusTimeline({
 
                       {isCurrent && (
                         <div className="mt-2 px-2 py-1 bg-blue-50 rounded text-xs">
-                          <p className="font-semibold text-[#0033A0]">
+                          <p className="font-semibold text-[#0A2540]">
                             {stage.daysElapsed} day{stage.daysElapsed > 1 ? "s" : ""} in this stage
                           </p>
                         </div>
@@ -172,9 +172,9 @@ export default function LoanStatusTimeline({
           {/* Current status message */}
           <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-[#0033A0] mt-0.5 flex-shrink-0" />
+              <Clock className="w-5 h-5 text-[#0A2540] mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-[#0033A0]">
+                <p className="font-semibold text-[#0A2540]">
                   {currentStatus === "pending" && "Your application is being reviewed"}
                   {currentStatus === "approved" && "Your loan has been approved!"}
                   {(currentStatus === "fee_pending" || currentStatus === "fee_paid") && "Processing fee received"}

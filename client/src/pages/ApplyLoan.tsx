@@ -786,14 +786,14 @@ export default function ApplyLoan() {
               <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
                 <CheckCircle2 className="w-12 h-12 text-green-600" />
               </div>
-              <h2 className="text-3xl font-bold text-[#0033A0] mb-4">Application Submitted Successfully!</h2>
+              <h2 className="text-3xl font-bold text-[#0A2540] mb-4">Application Submitted Successfully!</h2>
               <p className="text-gray-600 mb-6">
                 Thank you for submitting your loan application. We're reviewing your information and will get back to you shortly.
               </p>
               
               <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
                 <p className="text-sm text-gray-600 mb-2">Your Tracking Number:</p>
-                <p className="text-3xl font-bold text-[#0033A0] font-mono tracking-wider">
+                <p className="text-3xl font-bold text-[#0A2540] font-mono tracking-wider">
                   {submittedTrackingNumber}
                 </p>
                 <p className="text-sm text-gray-500 mt-3">
@@ -802,7 +802,7 @@ export default function ApplyLoan() {
               </div>
 
               <div className="space-y-3 text-left mb-6">
-                <h3 className="font-semibold text-[#0033A0] text-lg">What happens next?</h3>
+                <h3 className="font-semibold text-[#0A2540] text-lg">What happens next?</h3>
                 <ul className="space-y-2 text-gray-600">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
@@ -825,14 +825,14 @@ export default function ApplyLoan() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  className="flex-1 bg-[#0033A0] hover:bg-[#002080] text-white"
+                  className="flex-1 bg-[#0A2540] hover:bg-[#002080] text-white"
                   asChild
                 >
                   <Link href="/dashboard">View Dashboard</Link>
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 border-[#0033A0] text-[#0033A0]"
+                  className="flex-1 border-[#0A2540] text-[#0A2540]"
                   asChild
                 >
                   <Link href="/">Back to Home</Link>
@@ -893,7 +893,7 @@ export default function ApplyLoan() {
               </a>
               {isAuthenticated && (
                 <Link href="/dashboard">
-                  <Button variant="outline" className="border-[#0033A0] text-[#0033A0] px-3 py-1.5 text-xs">
+                  <Button variant="outline" className="border-[#0A2540] text-[#0A2540] px-3 py-1.5 text-xs">
                     Dashboard
                   </Button>
                 </Link>
@@ -913,7 +913,7 @@ export default function ApplyLoan() {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
                       currentStep >= step
-                        ? "bg-[#0033A0] text-white"
+                        ? "bg-[#0A2540] text-white"
                         : "bg-gray-200 text-gray-500"
                     }`}
                   >
@@ -935,7 +935,7 @@ export default function ApplyLoan() {
                 {step < 6 && (
                   <div
                     className={`h-1 flex-1 mx-2 ${
-                      currentStep > step ? "bg-[#0033A0]" : "bg-gray-200"
+                      currentStep > step ? "bg-[#0A2540]" : "bg-gray-200"
                     }`}
                   />
                 )}
@@ -971,7 +971,7 @@ export default function ApplyLoan() {
                 {currentStep === 1 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-xl sm:text-2xl font-bold text-[#0033A0] mb-2">
+                      <h2 className="text-xl sm:text-2xl font-bold text-[#0A2540] mb-2">
                         Personal Information
                       </h2>
                       <p className="text-sm sm:text-base text-gray-600">
@@ -1202,7 +1202,7 @@ export default function ApplyLoan() {
                       <Button
                         type="button"
                         onClick={nextStep}
-                        className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8"
+                        className="bg-[#C9A227] hover:bg-[#B8922A] text-white px-8"
                       >
                         Continue
                       </Button>
@@ -1214,7 +1214,7 @@ export default function ApplyLoan() {
                 {currentStep === 2 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-2xl font-bold text-[#0033A0] mb-2">
+                      <h2 className="text-2xl font-bold text-[#0A2540] mb-2">
                         Address Information
                       </h2>
                       <p className="text-gray-600">
@@ -1324,7 +1324,7 @@ export default function ApplyLoan() {
                         type="button"
                         onClick={prevStep}
                         variant="outline"
-                        className="border-[#0033A0] text-[#0033A0]"
+                        className="border-[#0A2540] text-[#0A2540]"
                       >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back
@@ -1342,7 +1342,7 @@ export default function ApplyLoan() {
                         <Button
                           type="button"
                           onClick={nextStep}
-                          className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8"
+                          className="bg-[#C9A227] hover:bg-[#B8922A] text-white px-8"
                         >
                           Continue
                         </Button>
@@ -1355,7 +1355,7 @@ export default function ApplyLoan() {
                 {currentStep === 3 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-2xl font-bold text-[#0033A0] mb-2">
+                      <h2 className="text-2xl font-bold text-[#0A2540] mb-2">
                         Employment Information
                       </h2>
                       <p className="text-gray-600">
@@ -1528,7 +1528,7 @@ export default function ApplyLoan() {
                         type="button"
                         onClick={prevStep}
                         variant="outline"
-                        className="border-[#0033A0] text-[#0033A0]"
+                        className="border-[#0A2540] text-[#0A2540]"
                       >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back
@@ -1546,7 +1546,7 @@ export default function ApplyLoan() {
                         <Button
                           type="button"
                           onClick={nextStep}
-                          className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8"
+                          className="bg-[#C9A227] hover:bg-[#B8922A] text-white px-8"
                         >
                           Continue
                         </Button>
@@ -1559,7 +1559,7 @@ export default function ApplyLoan() {
                 {currentStep === 4 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-2xl font-bold text-[#0033A0] mb-2">
+                      <h2 className="text-2xl font-bold text-[#0A2540] mb-2">
                         Loan Details
                       </h2>
                       <p className="text-gray-600">
@@ -1643,7 +1643,7 @@ export default function ApplyLoan() {
                       {/* Bank Account Details for Direct Deposit */}
                       {formData.disbursementMethod === "bank_transfer" && (
                         <div className="space-y-4 border-l-4 border-green-500 pl-4 bg-green-50 p-4 rounded-r-lg">
-                          <h4 className="font-semibold text-[#0033A0] flex items-center gap-2">
+                          <h4 className="font-semibold text-[#0A2540] flex items-center gap-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
@@ -1751,7 +1751,7 @@ export default function ApplyLoan() {
                     </div>
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-[#0033A0] mb-4 flex items-center gap-2">
+                      <h4 className="font-semibold text-[#0A2540] mb-4 flex items-center gap-2">
                         <Calculator className="w-5 h-5" />
                         Loan Calculator
                       </h4>
@@ -1761,11 +1761,11 @@ export default function ApplyLoan() {
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <p className="text-xs text-gray-600 mb-1">Loan Amount</p>
-                              <p className="text-lg font-semibold text-[#0033A0]">{formatCurrency(formData.requestedAmount)}</p>
+                              <p className="text-lg font-semibold text-[#0A2540]">{formatCurrency(formData.requestedAmount)}</p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-600 mb-1">Processing Fee (3.5%)</p>
-                              <p className="text-lg font-semibold text-[#FF8C00]">{formatCurrency(Math.round(Number(formData.requestedAmount) * 0.035).toString())}</p>
+                              <p className="text-lg font-semibold text-[#B8922A]">{formatCurrency(Math.round(Number(formData.requestedAmount) * 0.035).toString())}</p>
                             </div>
                           </div>
                           
@@ -1774,15 +1774,15 @@ export default function ApplyLoan() {
                             <div className="space-y-2">
                               <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
                                 <span className="text-sm text-gray-600">12-Month Term (14.99% APR)</span>
-                                <span className="font-semibold text-[#0033A0]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 12).toString())}/mo</span>
+                                <span className="font-semibold text-[#0A2540]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 12).toString())}/mo</span>
                               </div>
                               <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
                                 <span className="text-sm text-gray-600">24-Month Term (14.99% APR)</span>
-                                <span className="font-semibold text-[#0033A0]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 24).toString())}/mo</span>
+                                <span className="font-semibold text-[#0A2540]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 24).toString())}/mo</span>
                               </div>
                               <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
                                 <span className="text-sm text-gray-600">36-Month Term (14.99% APR)</span>
-                                <span className="font-semibold text-[#0033A0]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 36).toString())}/mo</span>
+                                <span className="font-semibold text-[#0A2540]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 36).toString())}/mo</span>
                               </div>
                             </div>
                             <p className="text-xs text-gray-500 mt-3">*Actual APR and terms depend on credit approval. Processing fee is due before disbursement.</p>
@@ -1795,7 +1795,7 @@ export default function ApplyLoan() {
                     </div>
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-[#0033A0] mb-2">Before You Submit</h4>
+                      <h4 className="font-semibold text-[#0A2540] mb-2">Before You Submit</h4>
                       <ul className="space-y-1 text-sm text-gray-700">
                         <li className="flex items-start gap-2">
                           <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1814,7 +1814,7 @@ export default function ApplyLoan() {
 
                     {/* Terms and Conditions */}
                     <div className="space-y-4 border-t pt-4">
-                      <h4 className="font-semibold text-[#0033A0]">Required Agreements</h4>
+                      <h4 className="font-semibold text-[#0A2540]">Required Agreements</h4>
                       
                       <div className="flex items-start space-x-3">
                         <Checkbox
@@ -1832,7 +1832,7 @@ export default function ApplyLoan() {
                             href="/legal/terms-of-service.md"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#0033A0] underline hover:text-[#FF8C00]"
+                            className="text-[#0A2540] underline hover:text-[#B8922A]"
                           >
                             Terms of Service
                           </a>{" "}
@@ -1841,7 +1841,7 @@ export default function ApplyLoan() {
                             href="/legal/loan-agreement.md"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#0033A0] underline hover:text-[#FF8C00]"
+                            className="text-[#0A2540] underline hover:text-[#B8922A]"
                           >
                             Loan Agreement
                           </a>
@@ -1865,7 +1865,7 @@ export default function ApplyLoan() {
                             href="/legal/privacy-policy.md"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#0033A0] underline hover:text-[#FF8C00]"
+                            className="text-[#0A2540] underline hover:text-[#B8922A]"
                           >
                             Privacy Policy
                           </a>
@@ -1889,7 +1889,7 @@ export default function ApplyLoan() {
                             href="/legal/esign-consent.md"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#0033A0] underline hover:text-[#FF8C00]"
+                            className="text-[#0A2540] underline hover:text-[#B8922A]"
                           >
                             E-Sign Consent Agreement
                           </a>
@@ -1903,7 +1903,7 @@ export default function ApplyLoan() {
                         type="button"
                         onClick={prevStep}
                         variant="outline"
-                        className="border-[#0033A0] text-[#0033A0]"
+                        className="border-[#0A2540] text-[#0A2540]"
                       >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back
@@ -1921,7 +1921,7 @@ export default function ApplyLoan() {
                         <Button
                           type="submit"
                           disabled={submitMutation.isPending}
-                          className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8"
+                          className="bg-[#C9A227] hover:bg-[#B8922A] text-white px-8"
                         >
                           {submitMutation.isPending ? (
                             <>
@@ -1946,13 +1946,13 @@ export default function ApplyLoan() {
             <div className="flex items-center justify-center gap-4">
               <a
                 href="tel:+19452121609"
-                className="flex items-center gap-2 text-[#0033A0] hover:underline"
+                className="flex items-center gap-2 text-[#0A2540] hover:underline"
               >
                 <Phone className="w-4 h-4" />
                 +1 945 212-1609
               </a>
               <span className="text-gray-400">|</span>
-              <a href="#faq" className="text-[#0033A0] hover:underline">
+              <a href="#faq" className="text-[#0A2540] hover:underline">
                 View FAQs
               </a>
             </div>
@@ -1961,30 +1961,30 @@ export default function ApplyLoan() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-[#0033A0] to-[#003366] text-white py-8">
+      <footer className="bg-gradient-to-r from-[#0A2540] to-[#003366] text-white py-8">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
             <div>
               <h4 className="font-semibold mb-3">Need Help?</h4>
               <div className="space-y-2 text-sm text-white/80">
-                <p>📞 <a href="tel:+19452121609" className="hover:text-[#FFA500] transition-colors">(945) 212-1609</a></p>
-                <p>📧 <a href="mailto:support@amerilendloan.com" className="hover:text-[#FFA500] transition-colors">support@amerilendloan.com</a></p>
+                <p>📞 <a href="tel:+19452121609" className="hover:text-[#C9A227] transition-colors">(945) 212-1609</a></p>
+                <p>📧 <a href="mailto:support@amerilendloan.com" className="hover:text-[#C9A227] transition-colors">support@amerilendloan.com</a></p>
               </div>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Quick Links</h4>
               <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="/" className="hover:text-[#FFA500] transition-colors">Home</a></li>
-                <li><a href="/auth" className="hover:text-[#FFA500] transition-colors">Sign In</a></li>
-                <li><a href="/#faq" className="hover:text-[#FFA500] transition-colors">FAQ</a></li>
+                <li><a href="/" className="hover:text-[#C9A227] transition-colors">Home</a></li>
+                <li><a href="/auth" className="hover:text-[#C9A227] transition-colors">Sign In</a></li>
+                <li><a href="/#faq" className="hover:text-[#C9A227] transition-colors">FAQ</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Legal</h4>
               <ul className="space-y-2 text-sm text-white/80">
-                <li><a href="/public/legal/privacy-policy" className="hover:text-[#FFA500] transition-colors">Privacy Policy</a></li>
-                <li><a href="/public/legal/terms-of-service" className="hover:text-[#FFA500] transition-colors">Terms of Service</a></li>
-                <li><a href="/public/legal/loan-agreement" className="hover:text-[#FFA500] transition-colors">Loan Agreement</a></li>
+                <li><a href="/legal/privacy-policy" className="hover:text-[#C9A227] transition-colors">Privacy Policy</a></li>
+                <li><a href="/legal/terms-of-service" className="hover:text-[#C9A227] transition-colors">Terms of Service</a></li>
+                <li><a href="/legal/loan-agreement" className="hover:text-[#C9A227] transition-colors">Loan Agreement</a></li>
               </ul>
             </div>
           </div>

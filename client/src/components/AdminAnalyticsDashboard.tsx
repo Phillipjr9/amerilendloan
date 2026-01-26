@@ -99,7 +99,7 @@ export default function AdminAnalyticsDashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0033A0]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#0A2540]" />
         <span className="ml-3 text-gray-600">Loading analytics data...</span>
       </div>
     );
@@ -110,7 +110,7 @@ export default function AdminAnalyticsDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-[#0033A0]">Analytics Dashboard</h2>
+          <h2 className="text-3xl font-bold text-[#0A2540]">Analytics Dashboard</h2>
           <p className="text-gray-600 mt-1">Real-time business intelligence and metrics</p>
         </div>
         <div className="flex gap-2">
@@ -133,7 +133,7 @@ export default function AdminAnalyticsDashboard() {
             onClick={() => setTimeRange(range)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               timeRange === range
-                ? "bg-white text-[#0033A0] shadow"
+                ? "bg-white text-[#0A2540] shadow"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
@@ -407,7 +407,7 @@ function MetricCard({ title, value, change, icon, trend, trendIsGood = "up" }: M
               {trend === "up" ? "↑" : "↓"} {change}
             </p>
           </div>
-          <div className="p-3 bg-blue-100 rounded-lg text-[#0033A0]">
+          <div className="p-3 bg-blue-100 rounded-lg text-[#0A2540]">
             {icon}
           </div>
         </div>

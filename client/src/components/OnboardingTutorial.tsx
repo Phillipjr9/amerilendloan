@@ -127,7 +127,7 @@ export function OnboardingTutorial({
                 <div
                   key={index}
                   className={`h-2 rounded-full transition-all ${
-                    index === currentStep ? "w-8 bg-[#0033A0]" : "w-2 bg-gray-300"
+                    index === currentStep ? "w-8 bg-[#0A2540]" : "w-2 bg-gray-300"
                   }`}
                 />
               ))}
@@ -160,7 +160,7 @@ export function OnboardingTutorial({
             )}
             <Button
               onClick={handleNext}
-              className="flex-1 bg-[#0033A0] hover:bg-[#002080]"
+              className="flex-1 bg-[#0A2540] hover:bg-[#002080]"
             >
               {isLastStep ? (
                 <>

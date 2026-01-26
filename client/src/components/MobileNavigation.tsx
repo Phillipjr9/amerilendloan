@@ -95,7 +95,7 @@ export function MobileNavTabs({ tabs, defaultTab }: MobileNavTabsProps) {
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
                 activeTab === tab.id
-                  ? "bg-[#0033A0] text-white"
+                  ? "bg-[#0A2540] text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
@@ -114,7 +114,7 @@ export function MobileNavTabs({ tabs, defaultTab }: MobileNavTabsProps) {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
-                ? "border-[#0033A0] text-[#0033A0]"
+                ? "border-[#0A2540] text-[#0A2540]"
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >

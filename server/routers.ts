@@ -592,7 +592,7 @@ export const appRouter = router({
           
           // Verify current password
           const bcrypt = await import('bcryptjs');
-          const isPasswordValid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+          const isPasswordValid = await bcrypt.default.compare(input.currentPassword, user.passwordHash);
           if (!isPasswordValid) {
             throw new TRPCError({
               code: "BAD_REQUEST",
@@ -601,7 +601,7 @@ export const appRouter = router({
           }
           
           // Hash the new password
-          const newPasswordHash = await bcrypt.hash(input.newPassword, 10);
+          const newPasswordHash = await bcrypt.default.hash(input.newPassword, 10);
           
           // Update password in database
           await db.updateUserPassword(userId, newPasswordHash);
@@ -1295,7 +1295,7 @@ export const appRouter = router({
 
           // Verify password against stored hash using bcrypt
           const bcrypt = await import('bcryptjs');
-          const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
+          const isPasswordValid = await bcrypt.default.compare(input.password, user.passwordHash);
           
           if (!isPasswordValid) {
             console.warn(`[Auth] Invalid password for user: ${input.email}`);
@@ -1709,7 +1709,7 @@ export const appRouter = router({
             // This handles both new users and users who already exist in the database
             if (input.purpose === "signup" && input.password && user) {
               const bcrypt = await import('bcryptjs');
-              const hashedPassword = await bcrypt.hash(input.password, 10);
+              const hashedPassword = await bcrypt.default.hash(input.password, 10);
               console.log(`[OTP] Storing password hash for user: ${input.identifier}`);
               await db.updateUserByOpenId(user.openId, { 
                 passwordHash: hashedPassword,
@@ -1785,7 +1785,7 @@ export const appRouter = router({
 
         // Hash the new password
         const bcrypt = await import('bcryptjs');
-        const newPasswordHash = await bcrypt.hash(input.newPassword, 10);
+        const newPasswordHash = await bcrypt.default.hash(input.newPassword, 10);
         
         // Update password in database
         await db.updateUserPassword(user.id, newPasswordHash);
@@ -2014,7 +2014,7 @@ export const appRouter = router({
               // Hash and store the password for the new user
               if (input.password) {
                 const bcrypt = await import('bcryptjs');
-                const hashedPassword = await bcrypt.hash(input.password, 10);
+                const hashedPassword = await bcrypt.default.hash(input.password, 10);
                 console.log(`[Application Submit] Storing password hash for user: ${input.email}`);
                 await db.updateUserByOpenId(newUser.openId, { 
                   passwordHash: hashedPassword,
@@ -6533,7 +6533,7 @@ Format as JSON with array of applications including their recommendation.`;
           }
 
           const bcrypt = await import('bcryptjs');
-          const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
+          const isPasswordValid = await bcrypt.default.compare(input.password, user.passwordHash);
           if (!isPasswordValid) {
             throw new TRPCError({
               code: "BAD_REQUEST",

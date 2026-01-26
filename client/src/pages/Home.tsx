@@ -85,48 +85,49 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header/Navigation */}
-      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
-        <div className="container mx-auto px-4 py-2 sm:py-2.5 md:py-3">
-          <div className="flex items-center justify-between gap-4 sm:gap-6">
-            {/* Logo - Fixed sizing on mobile */}
+    <div className="min-h-screen bg-[#FAFBFC]">
+      {/* Header/Navigation - Clean & Professional */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/60">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="flex items-center justify-between gap-6">
+            {/* Logo */}
             <Link href="/">
               <a className="flex items-center flex-shrink-0">
                 <img
                   src="/logo.jpg"
                   alt="AmeriLend Logo - Online Loans and Financial Services"
-                  className="h-12 sm:h-16 md:h-20 w-auto object-contain"
+                  className="h-10 sm:h-12 md:h-14 w-auto object-contain"
                 />
               </a>
             </Link>
 
-            {/* Desktop Navigation - Hidden on Mobile */}
-            <nav className="hidden md:flex items-center gap-4 flex-1">
-              <Link href="/apply">
-                <a className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">{t('home.nav.loans')}</a>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
+              <Link href="/prequalify">
+                <a className="text-sm text-slate-600 hover:text-[#0A2540] font-medium link-underline transition-colors">Pre-Qualify</a>
               </Link>
-              <a href="#about" className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">{t('home.nav.about')}</a>
-              <a href="#faq" className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium">{t('home.nav.help')}</a>
-              <a href="tel:+19452121609" className="text-sm text-gray-700 hover:text-[#0033A0] whitespace-nowrap font-medium flex items-center gap-1">
+              <Link href="/apply">
+                <a className="text-sm text-slate-600 hover:text-[#0A2540] font-medium link-underline transition-colors">{t('home.nav.loans')}</a>
+              </Link>
+              <a href="#about" className="text-sm text-slate-600 hover:text-[#0A2540] font-medium link-underline transition-colors">{t('home.nav.about')}</a>
+              <a href="#faq" className="text-sm text-slate-600 hover:text-[#0A2540] font-medium link-underline transition-colors">{t('home.nav.help')}</a>
+              <a href="tel:+19452121609" className="text-sm text-slate-600 hover:text-[#0A2540] font-medium flex items-center gap-2 transition-colors">
                 <Phone className="w-4 h-4" />
-                +1 945 212-1609
+                (945) 212-1609
               </a>
             </nav>
 
-
-
             {/* CTA Buttons */}
-            <div className="hidden md:flex items-center gap-1.5">
+            <div className="hidden md:flex items-center gap-3">
               {isAuthenticated ? (
                 <>
                   <Link href="/apply">
-                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-4 py-2 text-sm whitespace-nowrap focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA500] focus:outline-none">
+                    <Button className="btn-gold btn-premium px-5 py-2.5 text-sm rounded-lg">
                       {t('home.hero.applyNow')}
                     </Button>
                   </Link>
                   <Link href="/dashboard">
-                    <Button variant="outline" className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white px-4 py-2 text-sm whitespace-nowrap focus:ring-2 focus:ring-offset-2 focus:ring-[#0033A0] focus:outline-none">
+                    <Button variant="outline" className="border-[#0A2540] text-[#0A2540] hover:bg-[#0A2540] hover:text-white px-5 py-2.5 text-sm rounded-lg font-medium transition-all">
                       {t('nav.dashboard')}
                     </Button>
                   </Link>
@@ -134,13 +135,13 @@ export default function Home() {
               ) : (
                 <>
                   <Link href="/apply">
-                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-4 py-2 text-sm whitespace-nowrap focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA500] focus:outline-none">
+                    <Button className="btn-gold btn-premium px-5 py-2.5 text-sm rounded-lg">
                       {t('home.hero.applyNow')}
                     </Button>
                   </Link>
                   <Button
                     variant="outline"
-                    className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white px-4 py-2 text-sm whitespace-nowrap focus:ring-2 focus:ring-offset-2 focus:ring-[#0033A0] focus:outline-none"
+                    className="border-[#0A2540] text-[#0A2540] hover:bg-[#0A2540] hover:text-white px-5 py-2.5 text-sm rounded-lg font-medium transition-all"
                     asChild
                   >
                     <a href="/login">{t('home.nav.login')}</a>
@@ -151,47 +152,50 @@ export default function Home() {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2"
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle mobile menu"
             >
-              <Menu className="w-6 h-6 text-gray-700" />
+              <Menu className="w-6 h-6 text-slate-700" />
             </button>
           </div>
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-3 border-t mt-3">
-              <nav className="flex flex-col gap-3">
-                <Link href="/apply">
-                  <a className="text-gray-700 hover:text-[#0033A0] text-sm font-medium">{t('home.nav.loans')}</a>
+            <div className="lg:hidden py-4 border-t mt-4 animate-in slide-in-from-top-2 duration-200">
+              <nav className="flex flex-col gap-4">
+                <Link href="/prequalify">
+                  <a className="text-slate-700 hover:text-[#0A2540] font-medium py-2">Pre-Qualify</a>
                 </Link>
-                <a href="#about" className="text-gray-700 hover:text-[#0033A0] text-sm font-medium">
+                <Link href="/apply">
+                  <a className="text-slate-700 hover:text-[#0A2540] font-medium py-2">{t('home.nav.loans')}</a>
+                </Link>
+                <a href="#about" className="text-slate-700 hover:text-[#0A2540] font-medium py-2">
                   {t('home.nav.about')}
                 </a>
-                <a href="#faq" className="text-gray-700 hover:text-[#0033A0] text-sm font-medium">
+                <a href="#faq" className="text-slate-700 hover:text-[#0A2540] font-medium py-2">
                   {t('home.nav.help')}
                 </a>
-                <a href="tel:+19452121609" className="text-gray-700 hover:text-[#0033A0] text-sm font-medium flex items-center gap-2">
+                <a href="tel:+19452121609" className="text-slate-700 hover:text-[#0A2540] font-medium flex items-center gap-2 py-2">
                   <Phone className="w-4 h-4" />
-                  +1 945 212-1609
+                  (945) 212-1609
                 </a>
-                <div className="border-t pt-3 mt-3 flex flex-col gap-2">
+                <div className="border-t pt-4 mt-2 flex flex-col gap-3">
                   <Link href="/apply">
-                    <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full text-sm font-semibold py-2">
+                    <Button className="btn-gold btn-premium w-full py-3 rounded-lg font-semibold">
                       Apply Now
                     </Button>
                   </Link>
                   {isAuthenticated ? (
                     <Link href="/dashboard">
-                      <Button variant="outline" className="w-full border-[#0033A0] text-[#0033A0] text-sm font-semibold py-2">
+                      <Button variant="outline" className="w-full border-[#0A2540] text-[#0A2540] py-3 rounded-lg font-medium">
                         Dashboard
                       </Button>
                     </Link>
                   ) : (
                     <Button
                       variant="outline"
-                      className="w-full border-[#0033A0] text-[#0033A0] text-sm font-semibold py-2"
+                      className="w-full border-[#0A2540] text-[#0A2540] py-3 rounded-lg font-medium"
                       asChild
                     >
                       <a href="/login">Log In</a>
@@ -204,9 +208,12 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section - OppLoans Style with Video Background */}
-      <section className="relative bg-gradient-to-br from-[#0033A0] via-[#0044BB] to-[#0055CC] py-12 sm:py-20 md:py-28 lg:py-32 overflow-hidden">
-        {/* Background Video */}
+      {/* Hero Section - Premium Financial Design */}
+      <section className="relative bg-gradient-hero py-16 sm:py-24 md:py-32 lg:py-40 overflow-hidden">
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 pattern-dots opacity-30"></div>
+        
+        {/* Background Video with refined overlay */}
         <div className="absolute inset-0 overflow-hidden">
           <video
             autoPlay
@@ -214,213 +221,260 @@ export default function Home() {
             muted
             playsInline
             preload="auto"
-            className="absolute inset-0 w-full h-full object-cover opacity-60"
+            className="absolute inset-0 w-full h-full object-cover opacity-30"
             poster="/hero-background.jpg"
             aria-hidden="true"
           >
             <source src="/hero-background.mp4" type="video/mp4" />
           </video>
-          {/* Video Overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0033A0]/40 via-[#0044BB]/35 to-[#0055CC]/40"></div>
-        </div>
-
-        {/* Decorative Background Elements */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute top-0 left-0 w-64 h-64 sm:w-80 sm:h-80 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-80 sm:h-80 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0A2540]/40 via-[#0A2540]/35 to-[#0A2540]/50"></div>
         </div>
         
         {/* Content */}
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl xs:text-5xl sm:text-6xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 sm:mb-8 leading-tight">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            {/* Trust badge */}
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-8">
+              <Shield className="w-4 h-4 text-[#C9A227]" />
+              <span className="text-sm text-white/90 font-medium">Trusted by 50,000+ Americans</span>
+            </div>
+            
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight">
               {t('home.hero.title')}
-              <br />
-              {t('home.hero.titleLine2')}
+              <span className="block text-[#C9A227]">{t('home.hero.titleLine2')}</span>
             </h1>
 
-            <ul className="space-y-3 mb-8 sm:mb-10 text-white/95 max-w-2xl mx-auto">
-              <li className="flex items-start gap-3 text-left">
-                <CheckCircle2 className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                <span className="text-base sm:text-lg">
-                  {t('home.hero.sameDayFunding')}<sup className="text-sm">1</sup>
-                </span>
-              </li>
-              <li className="flex items-start gap-3 text-left">
-                <CheckCircle2 className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                <span className="text-base sm:text-lg">
-                  {t('home.hero.noFicoImpact')}<sup className="text-sm">2</sup>
-                </span>
-              </li>
-              <li className="flex items-start gap-3 text-left">
-                <CheckCircle2 className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                <span className="text-base sm:text-lg">{t('home.hero.noHiddenFees')}</span>
-              </li>
-            </ul>
+            <p className="text-lg sm:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Get the funds you need with competitive rates and a simple online process. 
+              Same-day funding available.
+            </p>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-10">
               <Link href="/apply">
                 <Button 
                   size="lg" 
-                  className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-bold px-8 sm:px-10 py-4 sm:py-6 text-base sm:text-lg rounded-lg shadow-lg hover:shadow-xl transition-all w-full sm:w-auto focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA500] focus:outline-none"
+                  className="btn-gold btn-premium px-10 py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all w-full sm:w-auto"
                 >
                   {t('home.hero.applyNow')}
                 </Button>
               </Link>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="border-2 border-white/30 text-white hover:bg-white hover:text-[#0A2540] px-10 py-6 text-lg rounded-xl transition-all w-full sm:w-auto backdrop-blur-sm"
+                asChild
+              >
+                <a href="#about">Learn More</a>
+              </Button>
             </div>
 
-            <p className="text-xs sm:text-sm text-white/90">
-              {t('home.hero.noFicoImpact')}<sup className="text-xs">2</sup>
-            </p>
+            {/* Key benefits */}
+            <div className="flex flex-wrap justify-center gap-6 text-white/90">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#C9A227]" />
+                <span className="text-sm font-medium">Same-day funding<sup className="text-xs">1</sup></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#C9A227]" />
+                <span className="text-sm font-medium">No credit impact to apply<sup className="text-xs">2</sup></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#C9A227]" />
+                <span className="text-sm font-medium">Transparent pricing</span>
+              </div>
+            </div>
             
-            <p className="text-xs sm:text-sm text-white/80 mt-4">
+            <p className="text-sm text-white/60 mt-8">
               {t('home.hero.receivedCode')}{" "}
               <button
                 onClick={() => setShowCodeModal(true)}
-                className="text-white underline hover:text-white/80 font-medium cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-white focus:outline-none rounded px-1"
+                className="text-[#C9A227] hover:text-[#E8D48A] underline font-medium transition-colors"
               >
                 {t('home.hero.clickHere')}
               </button>
             </p>
           </div>
         </div>
+        
+        {/* Decorative bottom wave */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+            <path d="M0 60V20C240 0 480 0 720 20C960 40 1200 40 1440 20V60H0Z" fill="#FAFBFC"/>
+          </svg>
+        </div>
       </section>
 
-      {/* Live Statistics Section */}
-      <section className="bg-[#0033A0] py-8 md:py-12">
+      {/* Live Statistics Section - Refined */}
+      <section className="bg-white py-12 md:py-16 border-b border-slate-100">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">$250M+</div>
-              <div className="text-sm text-white/80">{t('home.stats.loansFunded')}</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-1 stat-number">$250M+</div>
+              <div className="text-sm text-slate-500 font-medium">{t('home.stats.loansFunded')}</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">50K+</div>
-              <div className="text-sm text-white/80">{t('home.stats.happyCustomers')}</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-1 stat-number">50K+</div>
+              <div className="text-sm text-slate-500 font-medium">{t('home.stats.happyCustomers')}</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">4.8★</div>
-              <div className="text-sm text-white/80">{t('home.stats.avgRating')}</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-1 flex items-center justify-center gap-1">
+                4.8 <Star className="w-6 h-6 text-[#C9A227] fill-[#C9A227]" />
+              </div>
+              <div className="text-sm text-slate-500 font-medium">{t('home.stats.avgRating')}</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">24/7</div>
-              <div className="text-sm text-white/80">{t('home.stats.supportAvailable')}</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-1">24/7</div>
+              <div className="text-sm text-slate-500 font-medium">{t('home.stats.supportAvailable')}</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Process Section - Blue Background */}
-      <section className="bg-[#0033A0] text-white py-12 sm:py-16 md:py-24">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
+      {/* Pre-Qualify CTA Banner */}
+      <section className="bg-gradient-to-r from-[#C9A227] to-[#E8D48A] py-10 md:py-14">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 max-w-5xl mx-auto">
+            <div className="text-center md:text-left">
+              <h3 className="text-2xl md:text-3xl font-bold text-[#0A2540] mb-2">
+                Not Sure If You Qualify?
+              </h3>
+              <p className="text-[#0A2540]/80 text-lg">
+                Check your eligibility in 2 minutes — no credit impact!
+              </p>
+            </div>
+            <Link href="/prequalify">
+              <Button size="lg" className="bg-[#0A2540] hover:bg-[#0A2540]/90 text-white px-10 py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all whitespace-nowrap">
+                Pre-Qualify Now →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Process Section - Clean & Modern */}
+      <section className="bg-[#0A2540] text-white py-16 sm:py-20 md:py-28 relative overflow-hidden">
+        {/* Subtle pattern */}
+        <div className="absolute inset-0 pattern-dots opacity-20"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Process Steps */}
             <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
+              <span className="inline-block text-[#C9A227] font-semibold text-sm tracking-wider uppercase mb-4">Simple Process</span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 leading-tight">
                 {t('home.process.title')}
               </h2>
-              <p className="text-sm sm:text-base text-white/90 mb-6 sm:mb-8">
+              <p className="text-lg text-white/70 mb-10 leading-relaxed max-w-lg">
                 {t('home.process.description')}
               </p>
 
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-6">
                 {/* Step 1 */}
-                <div className="flex gap-3 sm:gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white text-[#0033A0] flex items-center justify-center text-lg sm:text-xl font-bold">
+                <div className="flex gap-5 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#C9A227] text-[#0A2540] flex items-center justify-center text-xl font-bold shadow-lg group-hover:scale-105 transition-transform">
                     1
                   </div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg mb-1">{t('home.process.step1Title')}</h3>
-                    <p className="text-xs sm:text-sm text-white/90">
+                    <h3 className="font-semibold text-lg mb-1">{t('home.process.step1Title')}</h3>
+                    <p className="text-white/60 text-sm leading-relaxed">
                       {t('home.process.step1Desc')}
                     </p>
                   </div>
                 </div>
 
                 {/* Step 2 */}
-                <div className="flex gap-3 sm:gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white text-[#0033A0] flex items-center justify-center text-lg sm:text-xl font-bold">
+                <div className="flex gap-5 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-center text-xl font-bold group-hover:bg-[#C9A227] group-hover:text-[#0A2540] group-hover:border-transparent transition-all">
                     2
                   </div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg mb-1">{t('home.process.step2Title')}</h3>
-                    <p className="text-xs sm:text-sm text-white/90">
+                    <h3 className="font-semibold text-lg mb-1">{t('home.process.step2Title')}</h3>
+                    <p className="text-white/60 text-sm leading-relaxed">
                       {t('home.process.step2Desc')}
                     </p>
                   </div>
                 </div>
 
                 {/* Step 3 */}
-                <div className="flex gap-3 sm:gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white text-[#0033A0] flex items-center justify-center text-lg sm:text-xl font-bold">
+                <div className="flex gap-5 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-center text-xl font-bold group-hover:bg-[#C9A227] group-hover:text-[#0A2540] group-hover:border-transparent transition-all">
                     3
                   </div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg mb-1">{t('home.process.step3Title')}</h3>
-                    <p className="text-xs sm:text-sm text-white/90">
+                    <h3 className="font-semibold text-lg mb-1">{t('home.process.step3Title')}</h3>
+                    <p className="text-white/60 text-sm leading-relaxed">
                       {t('home.process.step3Desc')}<sup>1</sup>
                     </p>
                   </div>
                 </div>
               </div>
 
-              <Link href="/apply">
-                <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-6 sm:px-8 py-3 sm:py-6 text-sm sm:text-base md:text-lg mt-6 sm:mt-8 w-full sm:w-auto">
-                  {t('home.hero.applyNow')}
-                </Button>
-              </Link>
-
-              <p className="text-xs sm:text-sm text-white/80 mt-2 sm:mt-4">
+              <div className="mt-10 flex flex-col sm:flex-row gap-4">
+                <Link href="/apply">
+                  <Button className="btn-gold btn-premium px-8 py-4 text-base rounded-xl">
+                    {t('home.hero.applyNow')}
+                  </Button>
+                </Link>
+                <Link href="/prequalify">
+                  <Button variant="outline" className="border-2 border-white/30 text-white hover:bg-white hover:text-[#0A2540] px-8 py-4 text-base rounded-xl transition-all">
+                    Pre-Qualify First
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-sm text-white/50 mt-4">
                 {t('home.hero.noFicoImpact')}<sup>2</sup>
               </p>
             </div>
 
-            {/* Mobile App Image / Loan Application Visual - Right Column */}
-            <div className="relative">
-              {/* Decorative circle background */}
-              <div className="absolute -top-8 -right-8 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-              
-              <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/20">
-                <div className="bg-white rounded-xl p-6 shadow-2xl">
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-[#0033A0] mb-2">{t('home.process.loanApplication')}</h3>
-                    <p className="text-sm text-gray-600">{t('home.process.quickEasyProcess')}</p>
+            {/* Application Preview Card */}
+            <div className="relative lg:pl-8">
+              <div className="relative">
+                {/* Glow effect */}
+                <div className="absolute -inset-4 bg-[#C9A227]/20 rounded-3xl blur-2xl"></div>
+                
+                <div className="relative bg-white rounded-2xl p-8 shadow-2xl">
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0A2540] mb-4">
+                      <FileText className="w-8 h-8 text-[#C9A227]" />
+                    </div>
+                    <h3 className="text-xl font-bold text-[#0A2540] mb-2">{t('home.process.loanApplication')}</h3>
+                    <p className="text-sm text-slate-500">{t('home.process.quickEasyProcess')}</p>
                   </div>
                   
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">{t('home.process.personalInfo')}</span>
+                      <span className="text-sm font-medium text-slate-700">{t('home.process.personalInfo')}</span>
                     </div>
                     
-                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">{t('home.process.employmentDetails')}</span>
+                      <span className="text-sm font-medium text-slate-700">{t('home.process.employmentDetails')}</span>
                     </div>
                     
-                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border-2 border-blue-500">
-                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 animate-pulse">
-                        <Clock className="w-5 h-5 text-white" />
+                    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border-2 border-blue-400">
+                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                        <Clock className="w-5 h-5 text-white animate-pulse" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">{t('home.process.reviewSubmit')}</span>
+                      <span className="text-sm font-medium text-slate-700">{t('home.process.reviewSubmit')}</span>
                     </div>
                     
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-50">
-                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-xs">✓</span>
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl opacity-50">
+                      <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center flex-shrink-0">
+                        <DollarSign className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-sm font-medium text-gray-500">{t('home.process.funding')}</span>
+                      <span className="text-sm font-medium text-slate-400">{t('home.process.funding')}</span>
                     </div>
                   </div>
                   
-                  <div className="mt-6 pt-6 border-t">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">{t('home.process.approvalTime')}</span>
-                      <span className="font-bold text-[#0033A0]">{t('home.process.minutes')}</span>
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-500">{t('home.process.approvalTime')}</span>
+                      <span className="font-bold text-[#0A2540] text-lg">{t('home.process.minutes')}</span>
                     </div>
                   </div>
                 </div>
@@ -430,257 +484,283 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Eligibility Requirements Card - Below Process Section */}
-      <section className="bg-gray-50 py-12 md:py-16">
+      {/* Eligibility Requirements Card */}
+      <section className="bg-[#FAFBFC] py-16 md:py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-warning-50 border-l-4 border-l-[#FFA500] text-gray-800 rounded-lg p-6 sm:p-8 md:p-10 shadow-xl">
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#0033A0] mb-6 text-center">
-                {t('home.eligibility.title')}
-              </h3>
+            <div className="bg-white rounded-2xl p-8 sm:p-10 md:p-12 shadow-lg border border-slate-200/60">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-[#0A2540] flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-[#C9A227]" />
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-bold text-[#0A2540]">
+                  {t('home.eligibility.title')}
+                </h3>
+              </div>
 
-              <ul className="space-y-3 sm:space-y-4 md:grid md:grid-cols-2 md:gap-6">
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 sm:w-10 sm:h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#0033A0]" />
+              <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 text-blue-600" />
                   </div>
-                  <span className="text-sm sm:text-base md:text-lg">{t('home.eligibility.age18')}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm md:text-base text-slate-700">{t('home.eligibility.age18')}</span>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                     <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
-                  <span className="text-sm md:text-lg">{t('home.eligibility.resideUS')}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm md:text-base text-slate-700">{t('home.eligibility.resideUS')}</span>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
                     <Clock className="w-5 h-5 text-green-600" />
                   </div>
-                  <span className="text-sm md:text-lg">{t('home.eligibility.regularIncome')}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-sm md:text-base text-slate-700">{t('home.eligibility.regularIncome')}</span>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
-                  <span className="text-sm md:text-base">{t('home.eligibility.bankAccount')}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-[#0033A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <span className="text-sm md:text-base text-slate-700">{t('home.eligibility.bankAccount')}</span>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors sm:col-span-2 sm:max-w-md sm:mx-auto">
+                  <div className="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center flex-shrink-0">
+                    <DollarSign className="w-5 h-5 text-slate-600" />
                   </div>
-                  <span className="text-sm md:text-base">{t('home.eligibility.directDeposit')}</span>
-                </li>
-              </ul>
+                  <span className="text-sm md:text-base text-slate-700">{t('home.eligibility.directDeposit')}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Loan Types Section */}
-      <section className="bg-white py-16 md:py-20">
+      {/* Loan Types Section - Premium Cards */}
+      <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] mb-4">
+            <span className="inline-block text-[#C9A227] font-semibold text-sm tracking-wider uppercase mb-3">Our Products</span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#0A2540] mb-4">
               {t('home.loanTypes.title')}
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+            <p className="text-slate-600 max-w-2xl mx-auto text-base leading-relaxed">
               {t('home.loanTypes.subtitle')}
             </p>
-            <div className="mt-4 p-4 bg-[#FFA500]/10 rounded-lg max-w-3xl mx-auto border border-[#FFA500]/30">
-              <p className="text-xs sm:text-sm text-[#0033A0] font-semibold">
+            <div className="mt-6 inline-flex items-center gap-2 bg-[#0A2540]/5 rounded-full px-5 py-2.5 border border-[#0A2540]/10">
+              <CreditCard className="w-4 h-4 text-[#0A2540]" />
+              <p className="text-sm text-[#0A2540] font-medium">
                 {t('home.loanTypes.processingFee')}
-              </p>
-              <p className="text-xs text-gray-600 mt-1">
-                {t('home.loanTypes.acceptedPayments')}
               </p>
             </div>
           </div>
 
-          <div className="flex overflow-x-auto scroll-smooth gap-4 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex overflow-x-auto scroll-smooth gap-5 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 px-4">
             {/* Personal Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white flex-shrink-0 w-72">
-              <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
-                    </svg>
+            <Card className="card-premium flex-shrink-0 w-[280px] overflow-hidden group">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-600"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-500 group-hover:scale-105 transition-all">
+                      <svg className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">{t('home.loanTypes.personal.tag')}</span>
                   </div>
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded">{t('home.loanTypes.personal.tag')}</span>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2">{t('home.loanTypes.personal.title')}</h3>
+                  <p className="text-sm text-slate-500 mb-4 flex-grow leading-relaxed">{t('home.loanTypes.personal.desc')}</p>
+                  <div className="flex gap-2 text-xs text-slate-500 mb-5">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">$1K-$50K</span>
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">12-60mo</span>
+                  </div>
+                  <Link href="/apply?type=personal">
+                    <Button className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-2.5 text-sm font-medium rounded-lg transition-all">{t('home.hero.applyNow')}</Button>
+                  </Link>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.personal.title')}</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.personal.desc')}</p>
-                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
-                  <span className="bg-gray-100 px-2 py-1 rounded">$1K-$50K</span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">12-60mo</span>
-                </div>
-                <Link href="/apply?type=personal">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
-                </Link>
               </CardContent>
             </Card>
 
             {/* Debt Consolidation */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-white flex-shrink-0 w-72">
-              <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-5 h-5 text-white" />
+            <Card className="card-premium flex-shrink-0 w-[280px] overflow-hidden group">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="h-2 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center group-hover:bg-purple-500 group-hover:scale-105 transition-all">
+                      <TrendingUp className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors" />
+                    </div>
+                    <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">{t('home.loanTypes.debtConsolidation.tag')}</span>
                   </div>
-                  <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-2 py-1 rounded">{t('home.loanTypes.debtConsolidation.tag')}</span>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2">{t('home.loanTypes.debtConsolidation.title')}</h3>
+                  <p className="text-sm text-slate-500 mb-4 flex-grow leading-relaxed">{t('home.loanTypes.debtConsolidation.desc')}</p>
+                  <div className="flex gap-2 text-xs text-slate-500 mb-5">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">$2K-$100K</span>
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">24-84mo</span>
+                  </div>
+                  <Link href="/apply?type=debt-consolidation">
+                    <Button className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-2.5 text-sm font-medium rounded-lg transition-all">{t('home.hero.applyNow')}</Button>
+                  </Link>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.debtConsolidation.title')}</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.debtConsolidation.desc')}</p>
-                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
-                  <span className="bg-gray-100 px-2 py-1 rounded">$2K-$100K</span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">24-84mo</span>
-                </div>
-                <Link href="/apply?type=debt-consolidation">
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
-                </Link>
               </CardContent>
             </Card>
 
             {/* Medical Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-white flex-shrink-0 w-72">
-              <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36c-.5-.63-1.5-.69-2.12-.12-.63.5-.69 1.49-.12 2.12l3.5 4.21c.5.63 1.5.69 2.12.12l4.25-5.13c.56-.67.48-1.66-.19-2.22-.67-.56-1.66-.48-2.22.19z" />
-                    </svg>
+            <Card className="card-premium flex-shrink-0 w-[280px] overflow-hidden group">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="h-2 bg-gradient-to-r from-red-500 to-red-600"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center group-hover:bg-red-500 group-hover:scale-105 transition-all">
+                      <svg className="w-6 h-6 text-red-600 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">{t('home.loanTypes.medical.tag')}</span>
                   </div>
-                  <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded">{t('home.loanTypes.medical.tag')}</span>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2">{t('home.loanTypes.medical.title')}</h3>
+                  <p className="text-sm text-slate-500 mb-4 flex-grow leading-relaxed">{t('home.loanTypes.medical.desc')}</p>
+                  <div className="flex gap-2 text-xs text-slate-500 mb-5">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">$500-$50K</span>
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">12-72mo</span>
+                  </div>
+                  <Link href="/apply?type=medical">
+                    <Button className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-2.5 text-sm font-medium rounded-lg transition-all">{t('home.hero.applyNow')}</Button>
+                  </Link>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.medical.title')}</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.medical.desc')}</p>
-                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
-                  <span className="bg-gray-100 px-2 py-1 rounded">$500-$50K</span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">12-72mo</span>
-                </div>
-                <Link href="/apply?type=medical">
-                  <Button className="w-full bg-red-600 hover:bg-red-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-red-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
-                </Link>
               </CardContent>
             </Card>
 
             {/* Home Improvement */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50 to-white flex-shrink-0 w-72">
-              <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M13 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V9l-7-7z" />
-                    </svg>
+            <Card className="card-premium flex-shrink-0 w-[280px] overflow-hidden group">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="h-2 bg-gradient-to-r from-amber-500 to-amber-600"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center group-hover:bg-amber-500 group-hover:scale-105 transition-all">
+                      <svg className="w-6 h-6 text-amber-600 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">{t('home.loanTypes.homeImprovement.tag')}</span>
                   </div>
-                  <span className="text-xs font-semibold text-amber-600 bg-amber-100 px-2 py-1 rounded">{t('home.loanTypes.homeImprovement.tag')}</span>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2">{t('home.loanTypes.homeImprovement.title')}</h3>
+                  <p className="text-sm text-slate-500 mb-4 flex-grow leading-relaxed">{t('home.loanTypes.homeImprovement.desc')}</p>
+                  <div className="flex gap-2 text-xs text-slate-500 mb-5">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">$3K-$100K</span>
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">24-120mo</span>
+                  </div>
+                  <Link href="/apply?type=home-improvement">
+                    <Button className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-2.5 text-sm font-medium rounded-lg transition-all">{t('home.hero.applyNow')}</Button>
+                  </Link>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.homeImprovement.title')}</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.homeImprovement.desc')}</p>
-                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
-                  <span className="bg-gray-100 px-2 py-1 rounded">$3K-$100K</span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">24-120mo</span>
-                </div>
-                <Link href="/apply?type=home-improvement">
-                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-amber-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
-                </Link>
               </CardContent>
             </Card>
 
             {/* Auto Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white flex-shrink-0 w-72">
-              <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm11 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM5 11l1.5-4.5h11L19 11H5z" />
-                    </svg>
+            <Card className="card-premium flex-shrink-0 w-[280px] overflow-hidden group">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="h-2 bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-500 group-hover:scale-105 transition-all">
+                      <svg className="w-6 h-6 text-emerald-600 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">{t('home.loanTypes.auto.tag')}</span>
                   </div>
-                  <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded">{t('home.loanTypes.auto.tag')}</span>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2">{t('home.loanTypes.auto.title')}</h3>
+                  <p className="text-sm text-slate-500 mb-4 flex-grow leading-relaxed">{t('home.loanTypes.auto.desc')}</p>
+                  <div className="flex gap-2 text-xs text-slate-500 mb-5">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">$5K-$75K</span>
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">24-84mo</span>
+                  </div>
+                  <Link href="/apply?type=auto">
+                    <Button className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-2.5 text-sm font-medium rounded-lg transition-all">{t('home.hero.applyNow')}</Button>
+                  </Link>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.auto.title')}</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.auto.desc')}</p>
-                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
-                  <span className="bg-gray-100 px-2 py-1 rounded">$5K-$75K</span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">24-84mo</span>
-                </div>
-                <Link href="/apply?type=auto">
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
-                </Link>
               </CardContent>
             </Card>
 
             {/* Business Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-indigo-500 bg-gradient-to-br from-indigo-50 to-white flex-shrink-0 w-72">
-              <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S15.33 8 14.5 8 13 8.67 13 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S8.33 8 7.5 8 6 8.67 6 9.5 6.67 11 7.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
-                    </svg>
+            <Card className="card-premium flex-shrink-0 w-[280px] overflow-hidden group">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="h-2 bg-gradient-to-r from-indigo-500 to-indigo-600"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-500 group-hover:scale-105 transition-all">
+                      <svg className="w-6 h-6 text-indigo-600 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">{t('home.loanTypes.business.tag')}</span>
                   </div>
-                  <span className="text-xs font-semibold text-indigo-600 bg-indigo-100 px-2 py-1 rounded">{t('home.loanTypes.business.tag')}</span>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2">{t('home.loanTypes.business.title')}</h3>
+                  <p className="text-sm text-slate-500 mb-4 flex-grow leading-relaxed">{t('home.loanTypes.business.desc')}</p>
+                  <div className="flex gap-2 text-xs text-slate-500 mb-5">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">$10K-$500K</span>
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">12-120mo</span>
+                  </div>
+                  <Link href="/apply?type=business">
+                    <Button className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-2.5 text-sm font-medium rounded-lg transition-all">{t('home.hero.applyNow')}</Button>
+                  </Link>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.business.title')}</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.business.desc')}</p>
-                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
-                  <span className="bg-gray-100 px-2 py-1 rounded">$10K-$500K</span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">12-120mo</span>
-                </div>
-                <Link href="/apply?type=business">
-                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
-                </Link>
               </CardContent>
             </Card>
 
             {/* Emergency Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-orange-500 bg-gradient-to-br from-orange-50 to-white flex-shrink-0 w-72">
-              <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-5 h-5 text-white" />
+            <Card className="card-premium flex-shrink-0 w-[280px] overflow-hidden group">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center group-hover:bg-orange-500 group-hover:scale-105 transition-all">
+                      <Clock className="w-6 h-6 text-orange-600 group-hover:text-white transition-colors" />
+                    </div>
+                    <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">{t('home.loanTypes.emergency.tag')}</span>
                   </div>
-                  <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded">{t('home.loanTypes.emergency.tag')}</span>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2">{t('home.loanTypes.emergency.title')}</h3>
+                  <p className="text-sm text-slate-500 mb-4 flex-grow leading-relaxed">{t('home.loanTypes.emergency.desc')}</p>
+                  <div className="flex gap-2 text-xs text-slate-500 mb-5">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">$500-$10K</span>
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">6-36mo</span>
+                  </div>
+                  <Link href="/apply?type=emergency">
+                    <Button className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-2.5 text-sm font-medium rounded-lg transition-all">{t('home.hero.applyNow')}</Button>
+                  </Link>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.emergency.title')}</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.emergency.desc')}</p>
-                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
-                  <span className="bg-gray-100 px-2 py-1 rounded">$500-$10K</span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">6-36mo</span>
-                </div>
-                <Link href="/apply?type=emergency">
-                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
-                </Link>
               </CardContent>
             </Card>
 
             {/* Wedding Loan */}
-            <Card className="hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-pink-500 bg-gradient-to-br from-pink-50 to-white flex-shrink-0 w-72">
-              <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-pink-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                    </svg>
+            <Card className="card-premium flex-shrink-0 w-[280px] overflow-hidden group">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="h-2 bg-gradient-to-r from-pink-500 to-pink-600"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center group-hover:bg-pink-500 group-hover:scale-105 transition-all">
+                      <svg className="w-6 h-6 text-pink-600 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-pink-600 bg-pink-50 px-2.5 py-1 rounded-full">{t('home.loanTypes.wedding.tag')}</span>
                   </div>
-                  <span className="text-xs font-semibold text-pink-600 bg-pink-100 px-2 py-1 rounded">{t('home.loanTypes.wedding.tag')}</span>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2">{t('home.loanTypes.wedding.title')}</h3>
+                  <p className="text-sm text-slate-500 mb-4 flex-grow leading-relaxed">{t('home.loanTypes.wedding.desc')}</p>
+                  <div className="flex gap-2 text-xs text-slate-500 mb-5">
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">$2K-$50K</span>
+                    <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">12-60mo</span>
+                  </div>
+                  <Link href="/apply?type=wedding">
+                    <Button className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-2.5 text-sm font-medium rounded-lg transition-all">{t('home.hero.applyNow')}</Button>
+                  </Link>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.wedding.title')}</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.wedding.desc')}</p>
-                <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
-                  <span className="bg-gray-100 px-2 py-1 rounded">$2K-$50K</span>
-                  <span className="bg-gray-100 px-2 py-1 rounded">12-60mo</span>
-                </div>
-                <Link href="/apply?type=wedding">
-                  <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-pink-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
-                </Link>
               </CardContent>
             </Card>
 
@@ -695,7 +775,7 @@ export default function Home() {
                   </div>
                   <span className="text-xs font-semibold text-cyan-600 bg-cyan-100 px-2 py-1 rounded">{t('home.loanTypes.vacation.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.vacation.title')}</h3>
+                <h3 className="text-base font-bold text-[#0A2540] mb-2">{t('home.loanTypes.vacation.title')}</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.vacation.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$1K-$25K</span>
@@ -718,7 +798,7 @@ export default function Home() {
                   </div>
                   <span className="text-xs font-semibold text-teal-600 bg-teal-100 px-2 py-1 rounded">{t('home.loanTypes.studentRefinance.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.studentRefinance.title')}</h3>
+                <h3 className="text-base font-bold text-[#0A2540] mb-2">{t('home.loanTypes.studentRefinance.title')}</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.studentRefinance.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$5K-$150K</span>
@@ -741,7 +821,7 @@ export default function Home() {
                   </div>
                   <span className="text-xs font-semibold text-rose-600 bg-rose-100 px-2 py-1 rounded">{t('home.loanTypes.moving.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.moving.title')}</h3>
+                <h3 className="text-base font-bold text-[#0A2540] mb-2">{t('home.loanTypes.moving.title')}</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.moving.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$1K-$20K</span>
@@ -764,7 +844,7 @@ export default function Home() {
                   </div>
                   <span className="text-xs font-semibold text-lime-600 bg-lime-100 px-2 py-1 rounded">{t('home.loanTypes.greenEnergy.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.greenEnergy.title')}</h3>
+                <h3 className="text-base font-bold text-[#0A2540] mb-2">{t('home.loanTypes.greenEnergy.title')}</h3>
                 <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.greenEnergy.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$5K-$100K</span>
@@ -782,7 +862,7 @@ export default function Home() {
       {/* Why AmeriLend Section - OppLoans Style */}
       <section className="bg-gray-50 py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#0033A0] text-center mb-4">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#0A2540] text-center mb-4">
             {t('home.whyAmeriLend.title')}
           </h2>
           <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
@@ -791,12 +871,12 @@ export default function Home() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
             {/* Easy to Apply */}
-            <Card className="border-t-4 border-t-[#FFA500] hover:shadow-xl transition-shadow">
+            <Card className="border-t-4 border-t-[#C9A227] hover:shadow-xl transition-shadow">
               <CardContent className="p-6">
-                <div className="w-14 h-14 rounded-full bg-[#FFA500]/10 flex items-center justify-center mb-4">
-                  <CheckCircle2 className="w-7 h-7 text-[#FFA500]" />
+                <div className="w-14 h-14 rounded-full bg-[#C9A227]/10 flex items-center justify-center mb-4">
+                  <CheckCircle2 className="w-7 h-7 text-[#C9A227]" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.easyApply.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.easyApply.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
                   {t('home.whyAmeriLend.easyApply.desc')}
                 </p>
@@ -804,12 +884,12 @@ export default function Home() {
             </Card>
 
             {/* Same-Day Funding */}
-            <Card className="border-t-4 border-t-[#0033A0] hover:shadow-xl transition-shadow">
+            <Card className="border-t-4 border-t-[#0A2540] hover:shadow-xl transition-shadow">
               <CardContent className="p-6">
-                <div className="w-14 h-14 rounded-full bg-[#0033A0]/10 flex items-center justify-center mb-4">
-                  <Clock className="w-7 h-7 text-[#0033A0]" />
+                <div className="w-14 h-14 rounded-full bg-[#0A2540]/10 flex items-center justify-center mb-4">
+                  <Clock className="w-7 h-7 text-[#0A2540]" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.sameDayFunding.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.sameDayFunding.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
                   {t('home.whyAmeriLend.sameDayFunding.desc')}<sup className="text-xs">1</sup>
                 </p>
@@ -822,7 +902,7 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
                   <Headphones className="w-7 h-7 text-green-500" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.loanSupport.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.loanSupport.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
                   {t('home.whyAmeriLend.loanSupport.desc')}
                 </p>
@@ -835,7 +915,7 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
                   <Shield className="w-7 h-7 text-blue-500" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.safeSecure.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.safeSecure.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
                   {t('home.whyAmeriLend.safeSecure.desc')}
                 </p>
@@ -848,7 +928,7 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-purple-500/10 flex items-center justify-center mb-4">
                   <FileText className="w-7 h-7 text-purple-500" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.transparent.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.transparent.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
                   {t('home.whyAmeriLend.transparent.desc')}
                 </p>
@@ -861,7 +941,7 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-teal-500/10 flex items-center justify-center mb-4">
                   <TrendingUp className="w-7 h-7 text-teal-500" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.buildCredit.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.buildCredit.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
                   {t('home.whyAmeriLend.buildCredit.desc')}
                 </p>
@@ -874,13 +954,13 @@ export default function Home() {
       {/* About Us Section */}
       <section id="about" className="bg-white py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] text-center mb-12">
             {t('home.aboutSection.title')}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6 md:gap-12 items-center max-w-6xl mx-auto">
             <div>
-              <h3 className="text-2xl font-bold text-[#0033A0] mb-6">
+              <h3 className="text-2xl font-bold text-[#0A2540] mb-6">
                 {t('home.aboutSection.subtitle')}
               </h3>
               <p className="text-gray-600 mb-6">
@@ -895,7 +975,7 @@ export default function Home() {
             </div>
 
             <div className="bg-gray-50 rounded-lg p-8">
-              <h4 className="text-xl font-bold text-[#0033A0] mb-6">{t('home.aboutSection.valuesTitle')}</h4>
+              <h4 className="text-xl font-bold text-[#0A2540] mb-6">{t('home.aboutSection.valuesTitle')}</h4>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
@@ -922,7 +1002,7 @@ export default function Home() {
       {/* States We Service Section */}
       <section id="states" className="bg-gray-50 py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] text-center mb-12">
             {t('home.states.title')}
           </h2>
 
@@ -938,7 +1018,7 @@ export default function Home() {
                 className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-gray-100 transition-colors"
                 aria-label="Scroll left"
               >
-                <ChevronLeft className="w-6 h-6 text-[#0033A0]" />
+                <ChevronLeft className="w-6 h-6 text-[#0A2540]" />
               </button>
 
               {/* Scrollable States Container */}
@@ -1004,7 +1084,7 @@ export default function Home() {
                 className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-gray-100 transition-colors"
                 aria-label="Scroll right"
               >
-                <ChevronRight className="w-6 h-6 text-[#0033A0]" />
+                <ChevronRight className="w-6 h-6 text-[#0A2540]" />
               </button>
             </div>
           </div>
@@ -1014,7 +1094,7 @@ export default function Home() {
       {/* Careers Section */}
       <section id="careers" className="bg-white py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] text-center mb-12">
             {t('home.careers.title')}
           </h2>
 
@@ -1027,14 +1107,14 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <Card className="text-center">
               <CardContent className="p-6">
-                <div className="w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center mx-auto mb-4">
                   <Headphones className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.careers.loanAdvocate.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.careers.loanAdvocate.title')}</h3>
                 <p className="text-gray-600 mb-4">
                   {t('home.careers.loanAdvocate.desc')}
                 </p>
-                <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
+                <Button asChild className="border-[#0A2540] text-[#0A2540] hover:bg-[#0A2540] hover:text-white" variant="outline">
                   <a href="/careers" className="no-underline">
                     {t('common.learnMore')}
                   </a>
@@ -1044,14 +1124,14 @@ export default function Home() {
 
             <Card className="text-center">
               <CardContent className="p-6">
-                <div className="w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center mx-auto mb-4">
                   <Shield className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.careers.riskAnalyst.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.careers.riskAnalyst.title')}</h3>
                 <p className="text-gray-600 mb-4">
                   {t('home.careers.riskAnalyst.desc')}
                 </p>
-                <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
+                <Button asChild className="border-[#0A2540] text-[#0A2540] hover:bg-[#0A2540] hover:text-white" variant="outline">
                   <a href="/careers" className="no-underline">
                     {t('common.learnMore')}
                   </a>
@@ -1061,14 +1141,14 @@ export default function Home() {
 
             <Card className="text-center">
               <CardContent className="p-6">
-                <div className="w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.careers.marketingSpecialist.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.careers.marketingSpecialist.title')}</h3>
                 <p className="text-gray-600 mb-4">
                   {t('home.careers.marketingSpecialist.desc')}
                 </p>
-                <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
+                <Button asChild className="border-[#0A2540] text-[#0A2540] hover:bg-[#0A2540] hover:text-white" variant="outline">
                   <a href="/careers" className="no-underline">
                     {t('common.learnMore')}
                   </a>
@@ -1081,7 +1161,7 @@ export default function Home() {
             <p className="text-gray-600 mb-6">
               {t('home.careers.cta')}
             </p>
-            <Button asChild className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-8">
+            <Button asChild className="bg-[#C9A227] hover:bg-[#B8922A] text-white font-semibold px-8">
               <a href="/careers">
                 {t('common.viewAll')}
               </a>
@@ -1091,7 +1171,7 @@ export default function Home() {
       </section>
 
       {/* Benefits Section - Blue Background */}
-      <section className="bg-[#0033A0] text-white py-16 md:py-24">
+      <section className="bg-[#0A2540] text-white py-16 md:py-24">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
             {t('home.whyAmeriLend.title')}
@@ -1100,11 +1180,11 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Benefit 1 */}
             <Card className="bg-white text-gray-800 relative pt-8">
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center">
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center">
                 <CheckCircle2 className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.easyApply.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.easyApply.title')}</h3>
                 <p className="text-gray-600">
                   {t('home.whyAmeriLend.easyApply.desc')}
                 </p>
@@ -1113,11 +1193,11 @@ export default function Home() {
 
             {/* Benefit 2 */}
             <Card className="bg-white text-gray-800 relative pt-8">
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center">
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center">
                 <Clock className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.sameDayFunding.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.sameDayFunding.title')}</h3>
                 <p className="text-gray-600">
                   {t('home.whyAmeriLend.sameDayFunding.desc')}<sup>1</sup>
                 </p>
@@ -1126,11 +1206,11 @@ export default function Home() {
 
             {/* Benefit 3 */}
             <Card className="bg-white text-gray-800 relative pt-8">
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center">
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center">
                 <Headphones className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.loanSupport.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.loanSupport.title')}</h3>
                 <p className="text-gray-600">
                   {t('home.whyAmeriLend.loanSupport.desc')}
                 </p>
@@ -1141,11 +1221,11 @@ export default function Home() {
 
             {/* Benefit 5 */}
             <Card className="bg-white text-gray-800 relative pt-8">
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center">
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center">
                 <FileText className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.transparent.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.transparent.title')}</h3>
                 <p className="text-gray-600">
                   {t('home.whyAmeriLend.transparent.desc')}
                 </p>
@@ -1154,11 +1234,11 @@ export default function Home() {
 
             {/* Benefit 6 */}
             <Card className="bg-white text-gray-800 relative pt-8">
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center">
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center">
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.buildCredit.title')}</h3>
+                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{t('home.whyAmeriLend.buildCredit.title')}</h3>
                 <p className="text-gray-600">
                   {t('home.whyAmeriLend.buildCredit.desc')}<sup>6</sup>
                 </p>
@@ -1213,7 +1293,7 @@ export default function Home() {
       {/* FAQ Section */}
       <section id="faq" className="bg-gray-50 py-16 md:py-20">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] text-center mb-12">
             {t('home.faq.title')}
           </h2>
 
@@ -1261,7 +1341,7 @@ export default function Home() {
                       toggleFaq(index);
                     }
                   }}
-                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#0033A0] transition-colors"
+                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#0A2540] transition-colors"
                   aria-expanded={openFaq === index}
                   aria-controls={`faq-answer-${index}`}
                 >
@@ -1290,7 +1370,7 @@ export default function Home() {
       {/* Educational Content Section */}
       <section className="bg-white py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] text-center mb-12">
             Making Personal Finance Approachable
           </h2>
 
@@ -1298,14 +1378,14 @@ export default function Home() {
             {/* Article 1 */}
             <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow flex flex-col h-full">
               <CardContent className="p-4 md:p-6 flex flex-col items-center">
-                <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full bg-[#0033A0]/10 mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-[#0033A0]/20 flex-shrink-0">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full bg-[#0A2540]/10 mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-[#0A2540]/20 flex-shrink-0">
                   <img 
                     src="/images/financial-guide.jpg" 
                     alt="Financial Guide" 
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <h3 className="text-lg font-bold text-[#0033A0] mb-2">
+                <h3 className="text-lg font-bold text-[#0A2540] mb-2">
                   The AmeriLend Money Guide: A Financial Management Tool
                 </h3>
                 <p className="text-gray-600 text-sm">
@@ -1317,14 +1397,14 @@ export default function Home() {
             {/* Article 2 */}
             <Card className="border-l-4 border-l-orange-500 hover:shadow-lg transition-shadow flex flex-col h-full">
               <CardContent className="p-4 md:p-6 flex flex-col items-center">
-                <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full bg-[#FFA500]/10 mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-[#FFA500]/20 flex-shrink-0">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full bg-[#C9A227]/10 mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-[#C9A227]/20 flex-shrink-0">
                   <img 
                     src="/images/budget-tight.jpg" 
                     alt="Budget Management" 
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <h3 className="text-lg font-bold text-[#0033A0] mb-2">
+                <h3 className="text-lg font-bold text-[#0A2540] mb-2">
                   How to Survive and Budget When Money Is Tight
                 </h3>
                 <p className="text-gray-600 text-sm">
@@ -1343,7 +1423,7 @@ export default function Home() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <h3 className="text-lg font-bold text-[#0033A0] mb-2">
+                <h3 className="text-lg font-bold text-[#0A2540] mb-2">
                   'Should I Buy This?' A Financial Flowchart for Smart Spending
                 </h3>
                 <p className="text-gray-600 text-sm">
@@ -1400,10 +1480,10 @@ export default function Home() {
             <div>
               <h4 className="font-semibold mb-3">{t('home.footer.legal')}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="/public/legal/privacy-policy" className="hover:text-[#FFA500] cursor-pointer transition-colors">{t('home.footer.privacyPolicy')}</a></li>
-                <li><a href="/public/legal/terms-of-service" className="hover:text-[#FFA500] cursor-pointer transition-colors">{t('home.footer.termsOfService')}</a></li>
-                <li><a href="/public/legal/loan-agreement" className="hover:text-[#FFA500] cursor-pointer transition-colors">{t('home.footer.loanAgreement')}</a></li>
-                <li><a href="/public/legal/esign-consent" className="hover:text-[#FFA500] cursor-pointer transition-colors">{t('home.footer.esignConsent')}</a></li>
+                <li><a href="/legal/privacy-policy" className="hover:text-[#C9A227] cursor-pointer transition-colors">{t('home.footer.privacyPolicy')}</a></li>
+                <li><a href="/legal/terms-of-service" className="hover:text-[#C9A227] cursor-pointer transition-colors">{t('home.footer.termsOfService')}</a></li>
+                <li><a href="/legal/loan-agreement" className="hover:text-[#C9A227] cursor-pointer transition-colors">{t('home.footer.loanAgreement')}</a></li>
+                <li><a href="/legal/esign-consent" className="hover:text-[#C9A227] cursor-pointer transition-colors">{t('home.footer.esignConsent')}</a></li>
               </ul>
             </div>
           </div>
@@ -1450,11 +1530,11 @@ export default function Home() {
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-xs space-y-4 max-w-4xl mx-auto">
             <p>
               © 2025 AmeriLend, LLC. All Rights Reserved. Use of AmeriLend, LLC is subject to our{" "}
-              <a href="/public/legal/terms-of-service" className="text-[#FFA500] hover:text-orange-300 underline cursor-pointer transition-colors font-medium">
+              <a href="/legal/terms-of-service" className="text-[#C9A227] hover:text-orange-300 underline cursor-pointer transition-colors font-medium">
                 Terms of Use
               </a>{" "}
               and{" "}
-              <a href="/public/legal/privacy-policy" className="text-[#FFA500] hover:text-orange-300 underline cursor-pointer transition-colors font-medium">
+              <a href="/legal/privacy-policy" className="text-[#C9A227] hover:text-orange-300 underline cursor-pointer transition-colors font-medium">
                 Privacy Policy
               </a>
               .
@@ -1534,7 +1614,7 @@ export default function Home() {
                   setShowCodeModal(false);
                   setVerificationCode("");
                 }}
-                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0033A0] rounded p-1"
+                className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0A2540] rounded p-1"
                 aria-label="Close modal"
               >
                 <X className="w-6 h-6" />
@@ -1567,7 +1647,7 @@ export default function Home() {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
                   placeholder={t('home.modal.codePlaceholder')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent outline-none text-center text-lg font-semibold tracking-wider"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A2540] focus:border-transparent outline-none text-center text-lg font-semibold tracking-wider"
                   autoFocus
                   maxLength={20}
                 />
@@ -1577,7 +1657,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={!verificationCode.trim()}
-                className="w-full bg-[#0033A0] hover:bg-[#0025A0] disabled:bg-gray-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-[#0033A0] focus:outline-none"
+                className="w-full bg-[#0A2540] hover:bg-[#0025A0] disabled:bg-gray-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-[#0A2540] focus:outline-none"
               >
                 {t('home.modal.verify')}
               </button>

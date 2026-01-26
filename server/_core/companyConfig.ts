@@ -49,26 +49,17 @@ export const COMPANY_INFO = {
  */
 export function getEmailFooter(): string {
   return `
-    <div style="background-color: #f5f5f5; border-top: 3px solid #0033A0; padding: 30px 20px; margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
-      <p style="margin: 8px 0; font-weight: bold; font-size: 16px; color: #0033A0;">${COMPANY_INFO.name}</p>
+    <div style="background-color: #f5f5f5; border-top: 3px solid #0033A0; padding: 25px 20px; margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
+      <p style="margin: 8px 0; font-weight: bold; font-size: 18px; color: #0033A0;">${COMPANY_INFO.name}</p>
+      <p style="margin: 8px 0; color: #555; font-size: 13px;">${COMPANY_INFO.address.formatted}</p>
       
-      <div style="margin: 20px 0; line-height: 1.9;">
-        <p style="margin: 8px 0; color: #555;">
-          <strong>📍 Address:</strong><br>${COMPANY_INFO.address.formatted}
-        </p>
-        <p style="margin: 12px 0;">
-          <strong>📧 Email:</strong> <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0; text-decoration: none; font-weight: 500;">${COMPANY_INFO.contact.email}</a>
-        </p>
-        <p style="margin: 12px 0;">
-          <strong>📞 Call Us:</strong> <a href="tel:${COMPANY_INFO.contact.phoneFormatted.replace(/\D/g, '')}" style="color: #0033A0; text-decoration: none; font-weight: 500;">${COMPANY_INFO.contact.phone}</a>
-        </p>
+      <div style="margin: 15px 0;">
+        <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0; text-decoration: none; font-weight: 500;">${COMPANY_INFO.contact.email}</a>
+        <span style="margin: 0 10px; color: #ccc;">|</span>
+        <a href="tel:${COMPANY_INFO.contact.phoneFormatted.replace(/\D/g, '')}" style="color: #0033A0; text-decoration: none; font-weight: 500;">${COMPANY_INFO.contact.phone}</a>
       </div>
       
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-        <div style="margin-bottom: 20px;">
-          <img src="${COMPANY_INFO.logo.url}" alt="${COMPANY_INFO.logo.alt}" style="height: 80px; max-width: 200px; object-fit: contain; display: block; margin: 0 auto;">
-        </div>
-        <p style="margin: 10px 0; color: #0033A0; font-size: 18px; font-weight: bold;">AmeriLend</p>
+      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
         <p style="margin: 6px 0; color: #999; font-size: 11px;">
           © ${new Date().getFullYear()} ${COMPANY_INFO.name}. All rights reserved.
         </p>

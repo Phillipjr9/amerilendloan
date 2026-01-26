@@ -201,10 +201,10 @@ export default function Dashboard() {
   // Show loading state while checking authentication
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
+      <div className="flex items-center justify-center min-h-screen bg-[#FAFBFC]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#0A2540] border-t-transparent mx-auto mb-4"></div>
+          <p className="text-slate-500 text-sm">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -373,13 +373,13 @@ export default function Dashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+      <div className="min-h-screen flex flex-col bg-[#FAFBFC]">
+        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200/60">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-16">
               <Link href="/">
                 <a className="flex items-center">
-                  <img src="/logo.jpg" alt="AmeriLend" className="h-16 w-auto logo-blend" />
+                  <img src="/logo.jpg" alt="AmeriLend" className="h-14 w-auto logo-blend" />
                 </a>
               </Link>
             </div>
@@ -387,25 +387,25 @@ export default function Dashboard() {
         </header>
 
         <div className="flex-1 flex items-center justify-center py-12">
-          <Card className="max-w-md w-full mx-4">
-            <CardContent className="p-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#0033A0]/10 flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-[#0033A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          <div className="max-w-md w-full mx-4 bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-[#0A2540]/5 flex items-center justify-center mx-auto mb-5">
+                <svg className="w-8 h-8 text-[#0A2540]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-[#0033A0] mb-2">Sign In Required</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className="text-xl font-semibold text-[#0A2540] mb-2 tracking-tight">Sign In Required</h2>
+              <p className="text-slate-500 mb-6 text-sm leading-relaxed">
                 Please sign in to view your dashboard and manage your loan applications.
               </p>
               <Button
-                className="w-full bg-[#FFA500] hover:bg-[#FF8C00] text-white"
+                className="w-full bg-[#C9A227] hover:bg-[#B8922A] text-white font-medium py-2.5 rounded-lg shadow-sm"
                 asChild
               >
-                <a href="/login">Sign In</a>
+                <a href="/login">Sign In to Continue</a>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -487,20 +487,20 @@ export default function Dashboard() {
 
   return (
     <>
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      {/* Left Sidebar Navigation */}
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#FAFBFC]">
+      {/* Left Sidebar Navigation - Premium Design */}
       <aside className={`${
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      } md:translate-x-0 fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r shadow-lg transition-transform duration-300 ease-in-out`}>
+      } md:translate-x-0 fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-white border-r border-slate-200/60 transition-transform duration-300 ease-in-out`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b">
+          <div className="p-5 border-b border-slate-100">
             <Link href="/">
               <a className="flex items-center">
                 <img
                   src="/logo.jpg"
                   alt="AmeriLend"
-                  className="h-16 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
               </a>
             </Link>
@@ -514,14 +514,14 @@ export default function Dashboard() {
                   setActiveTab("applications");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "applications"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <FileText className="w-5 h-5" />
-                <span>My Applications</span>
+                <span className="text-sm">My Applications</span>
               </button>
 
               <button
@@ -529,14 +529,14 @@ export default function Dashboard() {
                   setActiveTab("quick-apply");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "quick-apply"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Zap className="w-5 h-5" />
-                <span>Quick Apply</span>
+                <span className="text-sm">Quick Apply</span>
               </button>
 
               <button
@@ -544,14 +544,14 @@ export default function Dashboard() {
                   setActiveTab("verification");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "verification"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Shield className="w-5 h-5" />
-                <span>Verification</span>
+                <span className="text-sm">Verification</span>
               </button>
 
               <button
@@ -559,14 +559,14 @@ export default function Dashboard() {
                   setActiveTab("messages");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "messages"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <MessageSquare className="w-5 h-5" />
-                <span>Messages</span>
+                <span className="text-sm">Messages</span>
               </button>
 
               <button
@@ -574,14 +574,14 @@ export default function Dashboard() {
                   setActiveTab("payments");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "payments"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <CreditCard className="w-5 h-5" />
-                <span>Payments</span>
+                <span className="text-sm">Payments</span>
               </button>
 
               <button
@@ -589,14 +589,14 @@ export default function Dashboard() {
                   setActiveTab("auto-pay");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "auto-pay"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Calendar className="w-5 h-5" />
-                <span>Auto-Pay</span>
+                <span className="text-sm">Auto-Pay</span>
               </button>
 
               <button
@@ -604,14 +604,14 @@ export default function Dashboard() {
                   setActiveTab("timeline");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "timeline"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Activity className="w-5 h-5" />
-                <span>Activity</span>
+                <span className="text-sm">Activity</span>
               </button>
 
               <button
@@ -619,14 +619,14 @@ export default function Dashboard() {
                   setActiveTab("notifications");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "notifications"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Bell className="w-5 h-5" />
-                <span>Notifications</span>
+                <span className="text-sm">Notifications</span>
               </button>
 
               <button
@@ -634,14 +634,14 @@ export default function Dashboard() {
                   setActiveTab("documents");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "documents"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Download className="w-5 h-5" />
-                <span>Documents</span>
+                <span className="text-sm">Documents</span>
               </button>
 
               <button
@@ -649,39 +649,39 @@ export default function Dashboard() {
                   setActiveTab("security");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   activeTab === "security"
-                    ? "bg-blue-50 text-[#0033A0] font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#0A2540] text-white font-medium shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Lock className="w-5 h-5" />
-                <span>Security</span>
+                <span className="text-sm">Security</span>
               </button>
             </div>
 
-            <div className="mt-6 pt-6 border-t">
-              <div className="px-4 py-3">
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <div className="px-4 py-2">
                 <LanguageSwitcher />
               </div>
               <Link href="/settings">
-                <a className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100">
+                <a className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
                   <Settings className="w-5 h-5" />
-                  <span>Settings</span>
+                  <span className="text-sm">Settings</span>
                 </a>
               </Link>
               <Link href="/profile">
-                <a className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100">
+                <a className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
                   <User className="w-5 h-5" />
-                  <span>Profile</span>
+                  <span className="text-sm">Profile</span>
                 </a>
               </Link>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-700 hover:bg-red-50"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
               >
                 <LogOut className="w-5 h-5" />
-                <span>Log Out</span>
+                <span className="text-sm">Sign Out</span>
               </button>
             </div>
           </nav>
@@ -691,40 +691,41 @@ export default function Dashboard() {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Top Header */}
-        <header className="sticky top-0 z-20 bg-white border-b shadow-sm">
+        {/* Top Header - Premium Design */}
+        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-200/60">
           <div className="px-4 py-3 md:px-6">
             <div className="flex items-center justify-between">
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+                className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
                 aria-label="Menu"
               >
-                <Menu className="w-6 h-6 text-gray-700" />
+                <Menu className="w-6 h-6 text-slate-700" />
               </button>
 
               <div className="flex-1 md:flex-none">
-                <h1 className="text-xl md:text-2xl font-bold text-[#0033A0]">
-                  Welcome, {user?.firstName || user?.name || "there"}!
+                <h1 className="text-lg md:text-xl font-semibold text-[#0A2540] tracking-tight">
+                  Welcome back, {user?.firstName || user?.name || "there"}
                 </h1>
+                <p className="text-sm text-slate-500 hidden md:block">Manage your loan applications and payments</p>
               </div>
 
-              <div className="flex items-center gap-2 md:gap-4">
+              <div className="flex items-center gap-2 md:gap-3">
                 {/* Notification Bell */}
                 <UserNotificationBell />
 
                 {/* Phone Number */}
                 <a
                   href="tel:+19452121609"
-                  className="hidden lg:flex items-center gap-2 text-gray-700 hover:text-[#0033A0]"
+                  className="hidden lg:flex items-center gap-2 text-slate-600 hover:text-[#0A2540] transition-colors px-3 py-2 rounded-lg hover:bg-slate-50"
                 >
                   <Phone className="w-4 h-4" />
                   <span className="text-sm">+1 945 212-1609</span>
@@ -734,34 +735,44 @@ export default function Dashboard() {
                 <div className="relative">
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-all"
                   >
-                    <User className="w-4 h-4" />
+                    <div className="w-8 h-8 rounded-full bg-[#0A2540] flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
                     <span className="text-sm font-medium hidden sm:inline">{user?.name?.split(" ")[0] || "Account"}</span>
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
                   </button>
                   
                   {showProfileMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                      <Link href="/profile">
-                        <a className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b">
-                          <User className="w-4 h-4 inline mr-2" />
-                          My Profile
-                        </a>
-                      </Link>
-                      <Link href="/settings">
-                        <a className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b">
-                          <Settings className="w-4 h-4 inline mr-2" />
-                          Settings
-                        </a>
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-4 py-3 text-sm text-red-700 hover:bg-red-50"
-                      >
-                        <LogOut className="w-4 h-4 inline mr-2" />
-                        Log Out
-                      </button>
+                    <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-10 overflow-hidden">
+                      <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                        <p className="text-sm font-medium text-slate-900">{user?.name || "User"}</p>
+                        <p className="text-xs text-slate-500 truncate">{user?.email || ""}</p>
+                      </div>
+                      <div className="py-1">
+                        <Link href="/profile">
+                          <a className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                            <User className="w-4 h-4 text-slate-400" />
+                            My Profile
+                          </a>
+                        </Link>
+                        <Link href="/settings">
+                          <a className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                            <Settings className="w-4 h-4 text-slate-400" />
+                            Settings
+                          </a>
+                        </Link>
+                      </div>
+                      <div className="border-t border-slate-100">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -771,79 +782,71 @@ export default function Dashboard() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto bg-gray-50">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
-          {/* Analytics Dashboard */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Total Applications</p>
-                    <p className="text-3xl font-bold text-[#0033A0]">{stats.total}</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-6 h-6 text-blue-600" />
-                  </div>
+          {/* Analytics Dashboard - Premium Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            <div className="bg-white rounded-xl border border-slate-200/60 p-5 hover:shadow-md transition-all group">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">Total Applications</p>
+                  <p className="text-3xl font-semibold text-[#0A2540] tracking-tight">{stats.total}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="w-11 h-11 rounded-xl bg-[#0A2540]/5 flex items-center justify-center group-hover:bg-[#0A2540]/10 transition-colors">
+                  <FileText className="w-5 h-5 text-[#0A2540]" />
+                </div>
+              </div>
+            </div>
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Approved</p>
-                    <p className="text-3xl font-bold text-green-600">{stats.approved}</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-6 h-6 text-green-600" />
-                  </div>
+            <div className="bg-white rounded-xl border border-slate-200/60 p-5 hover:shadow-md transition-all group">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">Approved</p>
+                  <p className="text-3xl font-semibold text-emerald-600 tracking-tight">{stats.approved}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                </div>
+              </div>
+            </div>
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Pending Review</p>
-                    <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-6 h-6 text-yellow-600" />
-                  </div>
+            <div className="bg-white rounded-xl border border-slate-200/60 p-5 hover:shadow-md transition-all group">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">Pending Review</p>
+                  <p className="text-3xl font-semibold text-amber-600 tracking-tight">{stats.pending}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                </div>
+              </div>
+            </div>
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Total Funded</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                        maximumFractionDigits: 0,
-                      }).format((stats.totalFunded || 0) / 100)}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-6 h-6 text-green-600" />
-                  </div>
+            <div className="bg-white rounded-xl border border-slate-200/60 p-5 hover:shadow-md transition-all group">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">Total Funded</p>
+                  <p className="text-2xl font-semibold text-emerald-600 tracking-tight">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                      maximumFractionDigits: 0,
+                    }).format((stats.totalFunded || 0) / 100)}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Tab Content Based on activeTab */}
           {activeTab === "applications" && (
-              <Card>
-                <CardHeader>
+              <Card className="bg-white rounded-xl border border-slate-200/60 overflow-hidden">
+                <CardHeader className="p-5 border-b border-slate-100">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <CardTitle className="text-2xl text-[#0033A0]">My Loan Applications</CardTitle>
+                    <CardTitle className="text-lg font-semibold text-[#0A2540]">My Loan Applications</CardTitle>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -867,7 +870,7 @@ export default function Dashboard() {
                           })),
                           "loan-applications"
                         )}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 text-sm"
                       >
                         <Download className="w-4 h-4" />
                         Export
@@ -877,25 +880,25 @@ export default function Dashboard() {
 
                   {/* Search Bar */}
                   <div className="mt-4 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
                       type="text"
                       placeholder="Search by tracking number or loan type..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 border-slate-200 focus:ring-2 focus:ring-[#0A2540]/10 focus:border-[#0A2540]"
                     />
                   </div>
 
                   {/* Advanced Filters */}
                   {showFilters && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
-                      <h4 className="font-semibold text-gray-900">Advanced Filters</h4>
+                    <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
+                      <h4 className="font-medium text-slate-900">Advanced Filters</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                          <Label>Status</Label>
+                          <Label className="text-slate-600 text-sm">Status</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger>
+                            <SelectTrigger className="border-slate-200 mt-1">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -909,37 +912,41 @@ export default function Dashboard() {
                           </Select>
                         </div>
                         <div>
-                          <Label>Date From</Label>
+                          <Label className="text-slate-600 text-sm">Date From</Label>
                           <Input
                             type="date"
                             value={dateFrom}
                             onChange={(e) => setDateFrom(e.target.value)}
+                            className="border-slate-200 mt-1"
                           />
                         </div>
                         <div>
-                          <Label>Date To</Label>
+                          <Label className="text-slate-600 text-sm">Date To</Label>
                           <Input
                             type="date"
                             value={dateTo}
                             onChange={(e) => setDateTo(e.target.value)}
+                            className="border-slate-200 mt-1"
                           />
                         </div>
                         <div>
-                          <Label>Min Amount ($)</Label>
+                          <Label className="text-slate-600 text-sm">Min Amount ($)</Label>
                           <Input
                             type="number"
                             placeholder="0"
                             value={amountMin}
                             onChange={(e) => setAmountMin(e.target.value)}
+                            className="border-slate-200 mt-1"
                           />
                         </div>
                         <div>
-                          <Label>Max Amount ($)</Label>
+                          <Label className="text-slate-600 text-sm">Max Amount ($)</Label>
                           <Input
                             type="number"
                             placeholder="50000"
                             value={amountMax}
                             onChange={(e) => setAmountMax(e.target.value)}
+                            className="border-slate-200 mt-1"
                           />
                         </div>
                       </div>
@@ -975,7 +982,7 @@ export default function Dashboard() {
                   ) : filteredLoans && filteredLoans.length > 0 ? (
                     <div className="space-y-4">
                       {filteredLoans.map((loan) => (
-                        <Card key={loan.id} id={`loan-${loan.id}`} className="border-l-4 border-l-[#0033A0]">
+                        <Card key={loan.id} id={`loan-${loan.id}`} className="border-l-4 border-l-[#0A2540]">
                           <CardContent className="p-6">
                             <button
                               onClick={() => setExpandedLoan(expandedLoan === loan.id ? null : loan.id)}
@@ -991,7 +998,7 @@ export default function Dashboard() {
                                   </div>
                                   <div className="mb-3">
                                     <p className="text-xs text-gray-500">Tracking Number</p>
-                                    <p className="font-mono text-sm font-semibold text-[#0033A0]">
+                                    <p className="font-mono text-sm font-semibold text-[#0A2540]">
                                       {loan.trackingNumber}
                                     </p>
                                   </div>
@@ -1032,7 +1039,7 @@ export default function Dashboard() {
                                         <p>Your loan has been approved.</p>
                                       </div>
                                       <Link href={`/payment/${loan.id}`}>
-                                        <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full">
+                                        <Button className="bg-[#C9A227] hover:bg-[#B8922A] text-white w-full">
                                           Pay Processing Fee
                                         </Button>
                                       </Link>
@@ -1075,7 +1082,7 @@ export default function Dashboard() {
                                 {/* Loan Terms Section - Only show for approved/fee_paid/disbursed loans */}
                                 {(loan.status === "approved" || loan.status === "fee_paid" || loan.status === "disbursed") && loan.approvedAmount && (
                                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                                    <h4 className="font-bold text-[#0033A0] mb-3 flex items-center gap-2">
+                                    <h4 className="font-bold text-[#0A2540] mb-3 flex items-center gap-2">
                                       <Receipt className="w-4 h-4" />
                                       Loan Terms & Payment Details
                                     </h4>
@@ -1226,7 +1233,7 @@ export default function Dashboard() {
                       Congratulations! Your loan has been approved. Pay the processing fee to proceed with disbursement.
                     </p>
                     <Link href={`/payment/${loan.id}`}>
-                      <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white">
+                      <Button className="bg-[#C9A227] hover:bg-[#B8922A] text-white">
                         Pay Processing Fee ({formatCurrency(loan.processingFeeAmount || 0)})
                       </Button>
                     </Link>
@@ -1291,7 +1298,7 @@ export default function Dashboard() {
                                     <p className="font-semibold text-green-800 mb-2">Congratulations!</p>
                                     <p className="text-sm text-green-800 mb-3">Your loan has been approved.</p>
                                     <Link href={`/payment/${loan.id}`}>
-                                      <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white w-full">
+                                      <Button className="bg-[#C9A227] hover:bg-[#B8922A] text-white w-full">
                                         Pay Processing Fee
                                       </Button>
                                     </Link>
@@ -1303,13 +1310,13 @@ export default function Dashboard() {
                                   <div className="border-t border-gray-200 pt-4 mt-4">
                                     <h4 className="font-semibold text-gray-800 mb-3">Documents</h4>
                                     <div className="flex flex-wrap gap-2">
-                                      <a href="/public/legal/loan-agreement" target="_blank" rel="noopener noreferrer">
+                                      <a href="/legal/loan-agreement" target="_blank" rel="noopener noreferrer">
                                         <Button variant="outline" size="sm">
                                           <Download className="w-3 h-3 mr-1" />
                                           Loan Agreement
                                         </Button>
                                       </a>
-                                      <a href="/public/legal/truth-in-lending" target="_blank" rel="noopener noreferrer">
+                                      <a href="/legal/truth-in-lending" target="_blank" rel="noopener noreferrer">
                                         <Button variant="outline" size="sm">
                                           <Download className="w-3 h-3 mr-1" />
                                           Truth in Lending Disclosure
@@ -1368,7 +1375,7 @@ export default function Dashboard() {
                         You haven't submitted any loan applications. Ready to get started?
                       </p>
                       <Link href="/apply">
-                        <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white px-8">
+                        <Button className="bg-[#C9A227] hover:bg-[#B8922A] text-white px-8">
                           Apply for a Loan
                         </Button>
                       </Link>
@@ -1404,14 +1411,14 @@ export default function Dashboard() {
             {activeTab === "timeline" && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-2xl text-[#0033A0]">Activity Timeline</CardTitle>
+                  <CardTitle className="text-2xl text-[#0A2540]">Activity Timeline</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
                     {loans && loans.length > 0 ? (
                       loans.map((loan) => (
-                        <div key={loan.id} id={`loan-${loan.id}`} className="border-l-2 border-[#0033A0] pl-6 pb-6 relative">
-                          <div className="absolute -left-3 w-6 h-6 bg-[#0033A0] rounded-full border-4 border-white"></div>
+                        <div key={loan.id} id={`loan-${loan.id}`} className="border-l-2 border-[#0A2540] pl-6 pb-6 relative">
+                          <div className="absolute -left-3 w-6 h-6 bg-[#0A2540] rounded-full border-4 border-white"></div>
                           <div className="bg-gray-50 p-4 rounded-lg">
                             <p className="font-semibold text-gray-800 mb-1">
                               {loan.loanType === "installment" ? "Installment Loan" : "Short-Term Loan"} - {loan.status.replace("_", " ")}
@@ -1471,7 +1478,7 @@ export default function Dashboard() {
                 {/* Legal Documents Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-xl text-[#0033A0]">Legal Documents</CardTitle>
+                    <CardTitle className="text-xl text-[#0A2540]">Legal Documents</CardTitle>
                     <CardDescription>View our legal and policy documents</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1484,7 +1491,7 @@ export default function Dashboard() {
                             <p className="text-sm text-gray-600">Our privacy practices and data protection</p>
                           </div>
                         </div>
-                        <a href="/public/legal/privacy-policy" target="_blank" rel="noopener noreferrer">
+                        <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm">
                             <Download className="w-4 h-4 mr-1" />
                             View
@@ -1499,7 +1506,7 @@ export default function Dashboard() {
                             <p className="text-sm text-gray-600">Terms and conditions of using our service</p>
                           </div>
                         </div>
-                        <a href="/public/legal/terms-of-service" target="_blank" rel="noopener noreferrer">
+                        <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm">
                             <Download className="w-4 h-4 mr-1" />
                             View
@@ -1519,7 +1526,7 @@ export default function Dashboard() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-2xl text-[#0033A0]">Support Tickets</CardTitle>
+                        <CardTitle className="text-2xl text-[#0A2540]">Support Tickets</CardTitle>
                         <p className="text-sm text-gray-600 mt-1">View and manage your support conversations</p>
                       </div>
                       <Button 
@@ -1545,7 +1552,7 @@ export default function Dashboard() {
                               id="ticket-category"
                               value={newTicketCategory}
                               onChange={(e) => setNewTicketCategory(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                             >
                               <option value="general_inquiry">General Inquiry</option>
                               <option value="loan_application">Loan Application</option>
@@ -1563,7 +1570,7 @@ export default function Dashboard() {
                               value={newTicketSubject}
                               onChange={(e) => setNewTicketSubject(e.target.value)}
                               placeholder="Brief description of your issue..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                             />
                           </div>
                           <div>
@@ -1575,14 +1582,14 @@ export default function Dashboard() {
                               onChange={(e) => setNewTicketMessage(e.target.value)}
                               placeholder="Provide details about your issue..."
                               rows={4}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                             />
                           </div>
                           <div className="flex gap-2">
                             <Button 
                               onClick={handleCreateTicket}
                               disabled={createTicketMutation.isPending}
-                              className="bg-[#0033A0] hover:bg-[#002080]"
+                              className="bg-[#0A2540] hover:bg-[#002080]"
                             >
                               {createTicketMutation.isPending ? "Creating..." : "Create Ticket"}
                             </Button>
@@ -1627,7 +1634,7 @@ export default function Dashboard() {
                             onClick={() => setSelectedTicket(ticket.id)}
                             className={`p-4 border rounded-lg cursor-pointer transition-all ${
                               selectedTicket === ticket.id
-                                ? "border-[#0033A0] bg-blue-50"
+                                ? "border-[#0A2540] bg-blue-50"
                                 : "border-gray-200 hover:border-gray-300 bg-white"
                             }`}
                           >
@@ -1667,7 +1674,7 @@ export default function Dashboard() {
                   <Card>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl text-[#0033A0]">Conversation</CardTitle>
+                        <CardTitle className="text-xl text-[#0A2540]">Conversation</CardTitle>
                         <Button 
                           onClick={() => setSelectedTicket(null)}
                           variant="outline"
@@ -1687,7 +1694,7 @@ export default function Dashboard() {
                                 <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                                   msg.isAdmin 
                                     ? "bg-gray-100 text-gray-800" 
-                                    : "bg-[#0033A0] text-white"
+                                    : "bg-[#0A2540] text-white"
                                 }`}>
                                   <p className="font-semibold text-sm mb-1">{msg.sender}</p>
                                   <p className="text-sm break-words">{msg.message}</p>
@@ -1769,12 +1776,12 @@ export default function Dashboard() {
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
                               onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0]"
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                             />
                             <button
                               onClick={handleSendMessage}
                               disabled={!newMessage.trim() || addMessageMutation.isPending}
-                              className="px-4 py-2 bg-[#0033A0] text-white rounded-lg hover:bg-[#002080] disabled:bg-gray-300 transition-colors"
+                              className="px-4 py-2 bg-[#0A2540] text-white rounded-lg hover:bg-[#002080] disabled:bg-gray-300 transition-colors"
                             >
                               {addMessageMutation.isPending ? "Sending..." : "Send"}
                             </button>
@@ -1817,7 +1824,7 @@ export default function Dashboard() {
             {/* Payment Schedule Section */}
             <Card className="mt-6">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#0033A0]">Payment Schedule</CardTitle>
+              <CardTitle className="text-2xl text-[#0A2540]">Payment Schedule</CardTitle>
               <CardDescription>View your upcoming loan repayment schedule</CardDescription>
             </CardHeader>
             <CardContent>
@@ -1858,7 +1865,7 @@ export default function Dashboard() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-gray-600">Monthly Payment</p>
-                          <p className="text-2xl font-bold text-[#0033A0]">
+                          <p className="text-2xl font-bold text-[#0A2540]">
                             ${monthlyPayment.toFixed(2)}
                           </p>
                         </div>
@@ -1966,7 +1973,7 @@ export default function Dashboard() {
           {/* Auto-Pay Settings */}
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#0033A0]">Auto-Pay Settings</CardTitle>
+              <CardTitle className="text-2xl text-[#0A2540]">Auto-Pay Settings</CardTitle>
               <CardDescription>Set up automatic monthly payments</CardDescription>
             </CardHeader>
             <CardContent>
@@ -2045,13 +2052,13 @@ export default function Dashboard() {
                 <Phone className="w-6 h-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-[#0033A0] mb-2">Need Help?</h3>
+                <h3 className="font-bold text-[#0A2540] mb-2">Need Help?</h3>
                 <p className="text-gray-700 mb-4">
                   Our Loan Advocates are here to help you every step of the way. Call us Monday-Friday, 8am-8pm EST.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Button
-                    className="bg-[#FFA500] hover:bg-[#FF8C00] text-white"
+                    className="bg-[#C9A227] hover:bg-[#B8922A] text-white"
                     asChild
                   >
                     <a href="tel:+19452121609">
@@ -2061,7 +2068,7 @@ export default function Dashboard() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-[#0033A0] text-[#0033A0]"
+                    className="border-[#0A2540] text-[#0A2540]"
                     asChild
                   >
                     <Link href="/#faq">
@@ -2076,31 +2083,31 @@ export default function Dashboard() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-gradient-to-r from-[#0033A0] to-[#003366] text-white py-8">
+        <footer className="bg-gradient-to-r from-[#0A2540] to-[#003366] text-white py-8">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
               <div>
                 <h4 className="font-semibold mb-3">Need Help?</h4>
                 <div className="space-y-2 text-sm text-white/80">
-                  <p>📞 <a href="tel:+19452121609" className="hover:text-[#FFA500] transition-colors">(945) 212-1609</a></p>
-                  <p>📧 <a href="mailto:support@amerilendloan.com" className="hover:text-[#FFA500] transition-colors">support@amerilendloan.com</a></p>
+                  <p>📞 <a href="tel:+19452121609" className="hover:text-[#C9A227] transition-colors">(945) 212-1609</a></p>
+                  <p>📧 <a href="mailto:support@amerilendloan.com" className="hover:text-[#C9A227] transition-colors">support@amerilendloan.com</a></p>
                   <p>Hours: Mon-Fri 8am-8pm, Sat-Sun 9am-5pm CT</p>
                 </div>
               </div>
               <div>
                 <h4 className="font-semibold mb-3">Quick Links</h4>
                 <ul className="space-y-2 text-sm text-white/80">
-                  <li><a href="/" className="hover:text-[#FFA500] transition-colors">Home</a></li>
-                  <li><a href="/#faq" className="hover:text-[#FFA500] transition-colors">FAQ</a></li>
-                  <li><Link href="/settings"><span className="hover:text-[#FFA500] transition-colors">Settings</span></Link></li>
+                  <li><a href="/" className="hover:text-[#C9A227] transition-colors">Home</a></li>
+                  <li><a href="/#faq" className="hover:text-[#C9A227] transition-colors">FAQ</a></li>
+                  <li><Link href="/settings"><span className="hover:text-[#C9A227] transition-colors">Settings</span></Link></li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-semibold mb-3">Legal</h4>
                 <ul className="space-y-2 text-sm text-white/80">
-                  <li><a href="/public/legal/privacy-policy" className="hover:text-[#FFA500] transition-colors">Privacy Policy</a></li>
-                  <li><a href="/public/legal/terms-of-service" className="hover:text-[#FFA500] transition-colors">Terms of Service</a></li>
-                  <li><a href="/public/legal/loan-agreement" className="hover:text-[#FFA500] transition-colors">Loan Agreement</a></li>
+                  <li><a href="/legal/privacy-policy" className="hover:text-[#C9A227] transition-colors">Privacy Policy</a></li>
+                  <li><a href="/legal/terms-of-service" className="hover:text-[#C9A227] transition-colors">Terms of Service</a></li>
+                  <li><a href="/legal/loan-agreement" className="hover:text-[#C9A227] transition-colors">Loan Agreement</a></li>
                 </ul>
               </div>
             </div>

@@ -353,51 +353,63 @@ export default function OTPLogin() {
   const isLoading = requestEmailCodeMutation.isPending || verifyCodeMutation.isPending;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
-          <img src="/logo.jpg" alt="AmeriLend" className="h-40 w-auto mb-4 mix-blend-multiply" />
-          <h1 className="text-3xl font-bold text-[#0033A0]">AmeriLend</h1>
-          <p className="text-gray-600 mt-2">Secure Authentication</p>
+    <div className="min-h-screen flex flex-col bg-[#FAFBFC]">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200/60 py-4">
+        <div className="container mx-auto px-4">
+          <Link href="/">
+            <a className="flex items-center gap-2">
+              <img src="/logo.jpg" alt="AmeriLend" className="h-10 w-auto" />
+            </a>
+          </Link>
         </div>
+      </header>
+      
+      <div className="flex-1 flex items-center justify-center py-12 px-4">
+        <div className="w-full max-w-md">
+          {/* Logo and welcome text */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-[#0A2540]">Welcome Back</h1>
+            <p className="text-slate-500 mt-2">Sign in to manage your loans</p>
+          </div>
 
         {step === "form" ? (
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="flex border-b border-gray-200">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden">
+            <div className="flex">
               <button
                 onClick={toggleLogin}
-                className={`flex-1 py-4 px-6 text-lg font-semibold transition-all ${
+                className={`flex-1 py-4 px-6 text-sm font-semibold transition-all border-b-2 ${
                   isLogin
-                    ? "bg-[#0033A0] text-white"
-                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    ? "border-[#0A2540] text-[#0A2540] bg-white"
+                    : "border-transparent text-slate-400 bg-slate-50 hover:text-slate-600"
                 }`}
               >
-                Log In
+                Sign In
               </button>
               <button
                 onClick={toggleSignup}
-                className={`flex-1 py-4 px-6 text-lg font-semibold transition-all ${
+                className={`flex-1 py-4 px-6 text-sm font-semibold transition-all border-b-2 ${
                   !isLogin
-                    ? "bg-[#0033A0] text-white"
-                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    ? "border-[#0A2540] text-[#0A2540] bg-white"
+                    : "border-transparent text-slate-400 bg-slate-50 hover:text-slate-600"
                 }`}
               >
-                Sign Up
+                Create Account
               </button>
             </div>
 
             <div className="p-8">
               {isLogin && !isResetMode && (
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-5">
                   {/* Login Method Toggle */}
-                  <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
+                  <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
                     <button
                       type="button"
                       onClick={() => setLoginMethod("password")}
-                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${
                         loginMethod === "password"
-                          ? "bg-white text-[#0033A0] shadow-sm"
-                          : "text-gray-600 hover:text-gray-800"
+                          ? "bg-white text-[#0A2540] shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
                       Password
@@ -405,10 +417,10 @@ export default function OTPLogin() {
                     <button
                       type="button"
                       onClick={() => setLoginMethod("email-code")}
-                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all ${
                         loginMethod === "email-code"
-                          ? "bg-white text-[#0033A0] shadow-sm"
-                          : "text-gray-600 hover:text-gray-800"
+                          ? "bg-white text-[#0A2540] shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
                       Email Code
@@ -416,9 +428,10 @@ export default function OTPLogin() {
                   </div>
 
                   <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Email or Username</label>
                     <Input
                       type="text"
-                      placeholder="Enter email or username"
+                      placeholder="Enter your email or username"
                       value={loginIdentifier}
                       onChange={(e) => {
                         setLoginIdentifier(e.target.value);
@@ -433,15 +446,15 @@ export default function OTPLogin() {
                           checkEmailMutation.mutate({ email });
                         }
                       }}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
                       required
                     />
                     {checkEmailMutation.isPending && (
-                      <p className="text-sm text-gray-500 mt-2">Checking account...</p>
+                      <p className="text-sm text-slate-400 mt-2">Checking account...</p>
                     )}
                     {showForgotPasswordOption && existingAccountInfo && (
-                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm text-blue-900 mb-2">
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                        <p className="text-sm text-blue-800">
                           {existingAccountInfo.message}
                         </p>
                         {!existingAccountInfo.hasPassword && (
@@ -451,7 +464,7 @@ export default function OTPLogin() {
                               setLoginMethod("email-code");
                               setShowForgotPasswordOption(false);
                             }}
-                            className="text-sm text-blue-700 hover:text-blue-900 underline font-medium"
+                            className="text-sm text-blue-600 hover:text-blue-800 underline font-medium mt-1"
                           >
                             Use email verification code instead
                           </button>
@@ -461,27 +474,30 @@ export default function OTPLogin() {
                   </div>
 
                   {loginMethod === "password" ? (
-                    <div className="relative">
-                      <Input
-                        type={showLoginPassword ? "text" : "password"}
-                        placeholder="Enter password"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowLoginPassword(!showLoginPassword)}
-                        className="absolute right-3 top-3 text-gray-500 hover:text-[#0033A0]"
-                      >
-                        {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                      <div className="relative">
+                        <Input
+                          type={showLoginPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                          {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-sm text-blue-900">
-                        We'll send a 6-digit code to your email to verify your login.
+                    <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                      <p className="text-sm text-slate-600">
+                        We'll send a 6-digit verification code to your email.
                       </p>
                     </div>
                   )}
@@ -493,16 +509,16 @@ export default function OTPLogin() {
                           type="checkbox"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
-                          className="w-4 h-4 text-[#0033A0] border-gray-300 rounded focus:ring-[#0033A0]"
+                          className="w-4 h-4 text-[#0A2540] border-slate-300 rounded focus:ring-[#0A2540]"
                         />
-                        <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                        <span className="ml-2 text-sm text-slate-600">Remember me</span>
                       </label>
                       <button
                         type="button"
                         onClick={handleForgotPassword}
-                        className="text-[#0033A0] hover:underline text-sm font-medium"
+                        className="text-[#0A2540] hover:underline text-sm font-medium"
                       >
-                        Forgotten account?
+                        Forgot password?
                       </button>
                     </div>
                   )}
@@ -510,43 +526,44 @@ export default function OTPLogin() {
                   <Button
                     type="submit"
                     disabled={isLoading || supabaseLoginMutation.isPending || passwordLoginMutation.isPending}
-                    className="w-full bg-[#0033A0] hover:bg-[#002080] text-white py-3 rounded-lg font-semibold text-lg transition-all"
+                    className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-3.5 rounded-lg font-semibold transition-all shadow-sm"
                   >
                     {isLoading || supabaseLoginMutation.isPending || passwordLoginMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        {loginMethod === "password" ? "Logging in..." : "Sending code..."}
+                        {loginMethod === "password" ? "Signing in..." : "Sending code..."}
                       </>
                     ) : (
-                      loginMethod === "password" ? "Log In with Password" : "Send Login Code"
+                      loginMethod === "password" ? "Sign In" : "Send Verification Code"
                     )}
                   </Button>
 
                   <SocialAuthButtons purpose="login" />
 
                   <div className="text-center">
-                    <a href="mailto:support@amerilendloan.com" className="text-xs text-gray-600 hover:text-[#0033A0] underline">
-                      Need help logging in? Contact Support
+                    <a href="mailto:support@amerilendloan.com" className="text-xs text-slate-500 hover:text-[#0A2540] transition-colors">
+                      Need help? Contact Support
                     </a>
                   </div>
                 </form>
               )}
 
               {isLogin && isResetMode && (
-                <form onSubmit={handleResetPassword} className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-blue-900">
-                      <strong>Account Recovery:</strong> Enter your email or username and we'll send you a verification code to restore access.
+                <form onSubmit={handleResetPassword} className="space-y-5">
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                    <p className="text-sm text-blue-800">
+                      Enter your email or username and we'll send you a verification code to reset your password.
                     </p>
                   </div>
                   
                   <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Email or Username</label>
                     <Input
                       type="text"
-                      placeholder="Enter email or username"
+                      placeholder="Enter your email or username"
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
                       required
                     />
                   </div>
@@ -554,7 +571,7 @@ export default function OTPLogin() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-[#0033A0] hover:bg-[#002080] text-white py-3 rounded-lg font-semibold text-lg transition-all"
+                    className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-3.5 rounded-lg font-semibold transition-all shadow-sm"
                   >
                     {isLoading ? (
                       <>
@@ -569,16 +586,17 @@ export default function OTPLogin() {
                   <button
                     type="button"
                     onClick={() => setIsResetMode(false)}
-                    className="w-full text-[#0033A0] hover:underline text-sm font-medium"
+                    className="w-full text-slate-500 hover:text-[#0A2540] text-sm font-medium transition-colors"
                   >
-                     Back to Login
+                    ← Back to Sign In
                   </button>
                 </form>
               )}
 
               {!isLogin && (
-                <form onSubmit={handleSignup} className="space-y-4">
+                <form onSubmit={handleSignup} className="space-y-5">
                   <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
                     <Input
                       type="email"
                       placeholder="Enter your email"
@@ -586,32 +604,27 @@ export default function OTPLogin() {
                       onChange={(e) => {
                         const newEmail = e.target.value;
                         setSignupEmail(newEmail);
-                        // Only clear existing account info if email actually changed
                         if (existingAccountInfo?.email !== newEmail) {
                           setExistingAccountInfo(null);
                         }
                       }}
                       onBlur={(e) => {
-                        // Check if email already exists during signup
                         const email = e.target.value.trim();
                         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                         if (emailRegex.test(email)) {
                           checkEmailMutation.mutate({ email });
                         }
                       }}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
                       required
                     />
                     {checkEmailMutation.isPending && (
-                      <p className="text-sm text-gray-500 mt-2">Checking if email is available...</p>
+                      <p className="text-sm text-slate-400 mt-2">Checking availability...</p>
                     )}
                     {existingAccountInfo?.exists && !isLogin && (
-                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-900 font-medium">
-                          This email is already registered!
-                        </p>
-                        <p className="text-sm text-red-800 mt-1">
-                          {existingAccountInfo.message}
+                      <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                        <p className="text-sm text-red-700 font-medium">
+                          This email is already registered.
                         </p>
                         <button
                           type="button"
@@ -621,45 +634,49 @@ export default function OTPLogin() {
                             setLoginIdentifier(signupEmail);
                             setExistingAccountInfo(null);
                           }}
-                          className="text-sm text-red-700 hover:text-red-900 underline font-medium mt-2"
+                          className="text-sm text-red-600 hover:text-red-800 underline font-medium mt-1"
                         >
-                          Log in instead
+                          Sign in instead
                         </button>
                       </div>
                     )}
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Username</label>
                     <Input
                       type="text"
-                      placeholder="Choose username"
+                      placeholder="Choose a username"
                       value={signupUsername}
                       onChange={(e) => setSignupUsername(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
                       required
                     />
                   </div>
-                  <div className="relative">
-                    <Input
-                      type={showSignupPassword ? "text" : "password"}
-                      placeholder="Create password"
-                      value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
-                      required
-                      minLength={8}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowSignupPassword(!showSignupPassword)}
-                      className="absolute right-3 top-3 text-gray-500 hover:text-[#0033A0]"
-                    >
-                      {showSignupPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                    <div className="relative">
+                      <Input
+                        type={showSignupPassword ? "text" : "password"}
+                        placeholder="Create a password (8+ characters)"
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
+                        className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
+                        required
+                        minLength={8}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignupPassword(!showSignupPassword)}
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showSignupPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
                   </div>
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-[#FFA500] hover:bg-[#FF8C00] text-white py-3 rounded-lg font-semibold text-lg transition-all"
+                    className="w-full bg-[#C9A227] hover:bg-[#B8922A] text-white py-3.5 rounded-lg font-semibold transition-all shadow-sm"
                   >
                     {isLoading ? (
                       <>
@@ -671,13 +688,13 @@ export default function OTPLogin() {
                     )}
                   </Button>
 
-                  <p className="text-xs text-gray-600 text-center mt-4">
-                    Clicking <strong>create account</strong> means that you agree to our{" "}
-                    <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline">
-                      terms of services
-                    </a> and{" "}
-                    <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline">
-                      privacy policy
+                  <p className="text-xs text-slate-500 text-center">
+                    By creating an account, you agree to our{" "}
+                    <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#0A2540] hover:underline">
+                      Terms of Service
+                    </a>{" "}and{" "}
+                    <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#0A2540] hover:underline">
+                      Privacy Policy
                     </a>.
                   </p>
 
@@ -687,55 +704,61 @@ export default function OTPLogin() {
             </div>
           </div>
         ) : isResetMode && resetStep === "newPassword" ? (
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden p-8">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-[#0033A0] mb-2">Create New Password</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-bold text-[#0A2540] mb-2">Create New Password</h2>
+              <p className="text-slate-500">
                 Enter a new secure password for your account
               </p>
             </div>
 
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <div className="relative">
-                <Input
-                  type={showNewPassword ? "text" : "password"}
-                  placeholder="Enter new password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
-                  minLength={8}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-3 text-gray-500 hover:text-[#0033A0]"
-                >
-                  {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+            <form onSubmit={handleUpdatePassword} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">New Password</label>
+                <div className="relative">
+                  <Input
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
+                    minLength={8}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
 
-              <div className="relative">
-                <Input
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm new password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
-                  minLength={8}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-3 text-gray-500 hover:text-[#0033A0]"
-                >
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Confirm Password</label>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm new password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
+                    minLength={8}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-900">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <p className="text-xs text-slate-600">
                   <strong>Password Requirements:</strong>
                   <ul className="mt-2 list-disc list-inside space-y-1">
                     <li>At least 8 characters long</li>
@@ -747,7 +770,7 @@ export default function OTPLogin() {
               <Button
                 type="submit"
                 disabled={updatePasswordMutation.isPending}
-                className="w-full bg-[#0033A0] hover:bg-[#002080] text-white py-3 rounded-lg font-semibold text-lg transition-all"
+                className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-3.5 rounded-lg font-semibold transition-all shadow-sm"
               >
                 {updatePasswordMutation.isPending ? (
                   <>
@@ -776,26 +799,26 @@ export default function OTPLogin() {
             </form>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden p-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden p-8">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-[#0033A0] mb-2">Enter Verification Code</h2>
-              <p className="text-gray-600">
-                We sent a code to <strong>{pendingIdentifier}</strong>
+              <h2 className="text-2xl font-bold text-[#0A2540] mb-2">Enter Verification Code</h2>
+              <p className="text-slate-500">
+                We sent a code to <strong className="text-slate-700">{pendingIdentifier}</strong>
               </p>
             </div>
 
-            <form onSubmit={handleVerifyCode} className="space-y-4">
+            <form onSubmit={handleVerifyCode} className="space-y-5">
               <div>
                 <Input
                   type="text"
                   placeholder="000000"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-[#0033A0] focus:border-transparent"
+                  className="w-full px-4 py-4 border border-slate-200 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-[#0A2540]/20 focus:border-[#0A2540] transition-all"
                   maxLength={6}
                   required
                 />
-                <p className="text-sm text-gray-500 text-center mt-2">
+                <p className="text-sm text-slate-500 text-center mt-2">
                   Check your email for the 6-digit code. It expires in 10 minutes.
                 </p>
               </div>
@@ -803,7 +826,7 @@ export default function OTPLogin() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#0033A0] hover:bg-[#002080] text-white py-3 rounded-lg font-semibold text-lg transition-all"
+                className="w-full bg-[#0A2540] hover:bg-[#0A2540]/90 text-white py-3.5 rounded-lg font-semibold transition-all shadow-sm"
               >
                 {isLoading ? (
                   <>
@@ -815,21 +838,21 @@ export default function OTPLogin() {
                 )}
               </Button>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setStep("form")}
-                  className="flex-1"
+                  className="flex-1 border-slate-200 hover:bg-slate-50"
                 >
-                   Back
+                  ← Back
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleResendCode}
                   disabled={isLoading}
-                  className="flex-1"
+                  className="flex-1 border-slate-200 hover:bg-slate-50"
                 >
                   Resend Code
                 </Button>
@@ -838,10 +861,10 @@ export default function OTPLogin() {
           </div>
         )}
 
-        <div className="mt-6 text-center text-sm text-gray-600">
+        <div className="mt-6 text-center text-sm text-slate-500">
           <p>
             <Link href="/">
-              <a className="text-[#0033A0] hover:underline font-medium">
+              <a className="text-[#0A2540] hover:underline font-medium">
                 ← Back to Home
               </a>
             </Link>
@@ -849,33 +872,32 @@ export default function OTPLogin() {
         </div>
 
         <div className="mt-6 text-center">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Trusted by leading lending platforms</p>
+          <p className="text-sm font-medium text-slate-600 mb-3">Trusted by leading lending platforms</p>
           <div className="flex justify-center">
-            <img src="/ssl-seal.png" alt="SSL Certificate - Secure Connection" className="h-24 w-auto" />
+            <img src="/ssl-seal.png" alt="SSL Certificate - Secure Connection" className="h-20 w-auto opacity-80" />
           </div>
         </div>
 
         <div className="mt-4 space-y-2">
-          <div className="text-center text-xs text-gray-600">
-            <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline mx-2">
+          <div className="text-center text-xs text-slate-500">
+            <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-[#0A2540] hover:underline mx-2">
               Terms of Service
             </a>
-            <span className="text-gray-400">•</span>
-            <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#0033A0] hover:underline mx-2">
+            <span className="text-slate-300">•</span>
+            <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#0A2540] hover:underline mx-2">
               Privacy Policy
             </a>
-            <span className="text-gray-400">•</span>
-            <a href="mailto:support@amerilendloan.com" className="text-[#0033A0] hover:underline mx-2">
+            <span className="text-slate-300">•</span>
+            <a href="mailto:support@amerilendloan.com" className="text-[#0A2540] hover:underline mx-2">
               Support
             </a>
           </div>
-          <div className="text-center text-xs text-gray-500">
+          <div className="text-center text-xs text-slate-400">
             <p className="flex items-center justify-center gap-2">
               <span>🔒 Protected by 256-bit SSL encryption</span>
-              <span className="text-gray-400">•</span>
-              <span>⚠️ After 5 failed attempts, account will be temporarily locked</span>
             </p>
           </div>
+        </div>
         </div>
       </div>
     </div>
