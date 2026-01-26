@@ -1,22 +1,29 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createServer } from 'http';
-import express from 'express';
+import 'dotenv/config';
+import express, { Request, Response, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { appRouter } from '../server/routers';
-import { createContext } from '../server/_core/trpc';
+import { createContext } from '../server/_core/context';
+import { registerOAuthRoutes } from '../server/_core/oauth';
 
 const app = express();
 
+// Trust proxy for Vercel
+app.set('trust proxy', 1);
+
 // CORS configuration
 app.use(cors({
-  origin: true,
+  origin: ['https://www.amerilendloan.com', 'https://amerilendloan.com'],
   credentials: true,
 }));
 
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Register OAuth routes
+registerOAuthRoutes(app);
 
 // tRPC middleware
 app.use('/api/trpc', createExpressMiddleware({
@@ -25,14 +32,15 @@ app.use('/api/trpc', createExpressMiddleware({
 }));
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  return new Promise((resolve) => {
-    app(req as any, res as any, () => {
-      resolve(undefined);
-    });
-  });
-}
+// Error handler
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('API Error:', err);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+export default app;
+
