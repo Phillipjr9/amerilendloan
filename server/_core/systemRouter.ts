@@ -4,6 +4,8 @@ import { adminProcedure, publicProcedure, router } from "./trpc";
 import { getDb, getDbStatus } from "../db";
 import { buildMessages, getSuggestedPrompts as getAiSuggestedPrompts } from "./aiSupport";
 import { invokeLLM } from "./llm";
+import { createBackup, restoreBackup, listBackups } from "./database-backup";
+import * as path from "path";
 
 // Helper function to get varied fallback responses based on user intent
 const getFallbackResponse = (userMessage: string): string => {
@@ -165,4 +167,92 @@ export const systemRouter = router({
     const isAuthenticated = !!ctx.user;
     return getAiSuggestedPrompts(isAuthenticated);
   }),
+
+  // Database Backup Management (Admin Only)
+  createBackup: adminProcedure
+    .mutation(async () => {
+      try {
+        const backupPath = await createBackup();
+        if (backupPath) {
+          return {
+            success: true,
+            message: "Backup created successfully",
+            backupPath: path.basename(backupPath),
+          };
+        } else {
+          return {
+            success: false,
+            message: "Failed to create backup",
+            backupPath: null,
+          };
+        }
+      } catch (error) {
+        console.error("[Backup] Error creating backup:", error);
+        return {
+          success: false,
+          message: `Backup failed: ${(error as Error).message}`,
+          backupPath: null,
+        };
+      }
+    }),
+
+  listBackups: adminProcedure
+    .query(async () => {
+      try {
+        const backups = listBackups();
+        return {
+          success: true,
+          backups: backups.map(b => ({
+            ...b,
+            sizeFormatted: formatBytes(b.size),
+          })),
+        };
+      } catch (error) {
+        console.error("[Backup] Error listing backups:", error);
+        return {
+          success: false,
+          backups: [],
+        };
+      }
+    }),
+
+  restoreBackup: adminProcedure
+    .input(z.object({
+      filename: z.string().min(1, "Filename is required"),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const backupDir = path.join(process.cwd(), "backups");
+        const backupPath = path.join(backupDir, input.filename);
+        
+        // Security check - ensure filename doesn't contain path traversal
+        if (input.filename.includes("..") || input.filename.includes("/") || input.filename.includes("\\")) {
+          return {
+            success: false,
+            message: "Invalid filename",
+          };
+        }
+        
+        const success = await restoreBackup(backupPath);
+        return {
+          success,
+          message: success ? "Backup restored successfully" : "Failed to restore backup",
+        };
+      } catch (error) {
+        console.error("[Backup] Error restoring backup:", error);
+        return {
+          success: false,
+          message: `Restore failed: ${(error as Error).message}`,
+        };
+      }
+    }),
 });
+
+// Helper function to format bytes
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}

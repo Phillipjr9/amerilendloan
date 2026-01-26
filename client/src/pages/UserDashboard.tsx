@@ -21,9 +21,6 @@ export function UserDashboard() {
     enabled: !!user,
   });
 
-  // Debug: Log loans data
-  console.log('UserDashboard - All loans:', loans);
-
   if (userLoading || loansLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -46,18 +43,15 @@ export function UserDashboard() {
     return sum + amount;
   }, 0) || 0;
   
-  // Note: paidAmount is in paymentSchedules table, not in loanApplications
-  // For now, we'll show $0 until we add a proper query to aggregate payments
-  const totalPaid = 0; // TODO: Query paymentSchedules table
+  const totalPaid = loans?.reduce((sum: number, loan: any) => {
+    return sum + (loan.paidAmount || 0);
+  }, 0) || 0;
   const remainingBalance = totalLoansAmount - totalPaid;
   
   // Count actually disbursed loans (not 'active' which doesn't exist)
   const disbursedLoansCount = loans?.filter((l: any) => l.status === 'disbursed').length || 0;
   
-  // Find loan that needs processing fee payment
-  // Show for approved or fee_pending status
   const loanWithPendingFee = loans?.find((loan: any) => {
-    console.log('Checking loan:', loan.id, 'status:', loan.status, 'processingFeeAmount:', loan.processingFeeAmount, 'approvedAmount:', loan.approvedAmount);
     return (loan.status === 'approved' || loan.status === 'fee_pending') && loan.approvedAmount && loan.approvedAmount > 0;
   });
   

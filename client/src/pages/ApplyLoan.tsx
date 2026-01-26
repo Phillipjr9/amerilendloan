@@ -328,15 +328,12 @@ export default function ApplyLoan() {
     if (savedDraft) {
       setCurrentStep(savedDraft.step);
       setLastSaved(savedDraft.savedAt);
-      if (toast && typeof toast.success === 'function') {
-        toast.success(`Draft loaded from ${savedDraft.savedAt.toLocaleString()}`);
-      }
+      toast.success(`Draft restored from ${savedDraft.savedAt.toLocaleString()}`);
     }
   }, []);
 
-  // Auto-fill email and name from authenticated user
   useEffect(() => {
-    if (isAuthenticated && user && user.email && !authLoading) {
+    if (isAuthenticated && user?.email && !authLoading) {
       setFormData((prev: typeof formData) => ({
         ...prev,
         email: prev.email || user.email || "",

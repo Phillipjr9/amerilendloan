@@ -37,66 +37,46 @@ import {
   isSupabaseConfigured
 } from "./_core/supabase-auth";
 
-// Helper function to get varied fallback responses based on user intent
-// Returns different responses each time to avoid repetition
-const getFallbackResponse = (userMessage: string): string => {
+const FALLBACK_RESPONSES: Record<string, string[]> = {
+  apply: [
+    "Visit our Apply page to get started. Takes about 5 minutes.",
+    "Head to the Apply page - we just need some basic info about you.",
+    "Our application is quick. Visit Apply to begin.",
+  ],
+  payment: [
+    "Log into your dashboard to make a payment. We accept cards and bank transfers.",
+    "Payments are made through your dashboard - card or bank transfer.",
+    "Visit your dashboard to pay. Multiple options available.",
+  ],
+  status: [
+    "Use the Track Application tab with your ID and email to check status.",
+    "Track your app in the Track Application tab.",
+    "Enter your Application ID and email in Track Application.",
+  ],
+  fee: [
+    "Fees range 0.5-10% depending on loan terms. Shown before payment.",
+    "Processing fees are 0.5-10%, displayed upfront.",
+    "You'll see exact fees at checkout - typically 0.5-10%.",
+  ],
+  eligibility: [
+    "Need to be 18+, U.S. resident, with income. All credit levels welcome.",
+    "18+, U.S. resident, and income source. Credit flexible.",
+    "Basic requirements: 18+, U.S. based, income. We work with all credit.",
+  ],
+};
+
+function getFallbackResponse(userMessage: string): string {
   const msg = userMessage.toLowerCase();
-
-  // Application/Apply related
-  if (msg.includes("apply")) {
-    const responses = [
-      "To apply for a loan with AmeriLend, visit our Apply page. The process takes just a few minutes and requires basic information about yourself and the loan amount you need.",
-      "Ready to apply? Head to our Apply page and you'll be done in minutes. We just need some basic info about you and your desired loan amount.",
-      "Getting a loan from AmeriLend is easy! Simply visit our application page, enter your details, and we'll process your request quickly.",
-      "Our application process is simple and quick. Visit the Apply page to get started - most people complete it in under 5 minutes.",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
+  
+  const key = Object.keys(FALLBACK_RESPONSES).find(k => 
+    msg.includes(k) || (k === "eligibility" && (msg.includes("eligib") || msg.includes("require")))
+  );
+  
+  if (key) {
+    const arr = FALLBACK_RESPONSES[key];
+    return arr[Math.floor(Math.random() * arr.length)];
   }
-
-  // Payment related
-  if (msg.includes("payment") || msg.includes("pay")) {
-    const responses = [
-      "You can make payments through your dashboard. Log in to view your loan details and payment options. We accept credit cards and bank transfers.",
-      "Making a payment is simple - just log into your dashboard, find your loan, and select your preferred payment method (credit card or bank transfer).",
-      "Pay your loan anytime through your dashboard. We accept credit cards and bank transfers for your convenience.",
-      "To make a payment, simply log in, navigate to your loan details, and choose how you'd like to pay - credit card or bank transfer.",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  }
-
-  // Status/Tracking related
-  if (msg.includes("status") || msg.includes("track")) {
-    const responses = [
-      "You can track your application status using the Track Application tab. Simply enter your Application ID and email address to check your status in real-time.",
-      "Want to check your application status? Use our Track Application tab - just provide your Application ID and email address.",
-      "Track your application progress anytime! Go to the Track Application tab and enter your Application ID and email to see real-time updates.",
-      "Checking your status is easy - switch to the Track Application tab, enter your ID and email, and you'll get instant updates.",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  }
-
-  // Fee related
-  if (msg.includes("fee")) {
-    const responses = [
-      "Our processing fees are transparent and clearly displayed before you pay. They typically range from 0.5% to 10% depending on our current fee structure. You'll see the exact fee during the payment process.",
-      "All fees are clearly shown upfront during checkout. Depending on loan type and amount, fees typically range from 0.5% to 10%.",
-      "We believe in transparent pricing. Your exact fees will be displayed before payment, usually between 0.5% and 10%.",
-      "Processing fees are displayed transparently before you pay. Most customers see fees between 0.5% and 10% depending on their loan.",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  }
-
-  // Eligibility related
-  if (msg.includes("eligib") || msg.includes("require")) {
-    const responses = [
-      "To qualify for an AmeriLend loan, you need to be a U.S. resident, at least 18 years old, and have a valid income source. We work with applicants of all credit levels.",
-      "Basic eligibility: U.S. resident, 18+, and a valid income source. The good news? We work with all credit levels, not just perfect scores.",
-      "You'll need to be a U.S. resident, at least 18, with a valid income source. Don't worry about your credit score - we consider all levels.",
-      "Our eligibility is simple: U.S. residency, age 18+, and some income. We're flexible on credit - everyone gets a fair shot.",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  }
-
+  
   // Contact/Support related
   if (msg.includes("contact") || msg.includes("support")) {
     const responses = [

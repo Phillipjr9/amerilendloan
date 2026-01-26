@@ -250,31 +250,10 @@ function calculatePaymentSchedule(loan: any) {
   return schedule;
 }
 
-/**
- * Manual trigger for testing (admin only)
- */
 export async function triggerAutoPayForLoan(loanId: number) {
-  console.log(`[Auto-Pay] Manual trigger for loan ${loanId}...`);
+  const loan = await getLoanApplicationById(loanId);
+  if (!loan) throw new Error("Loan not found");
   
-  try {
-    const loan = await getLoanApplicationById(loanId);
-    if (!loan) {
-      throw new Error("Loan not found");
-    }
-    
-    // Note: autoPayEnabled field not yet in schema
-    // if (!loan.autoPayEnabled) {
-    //   throw new Error("Auto-pay not enabled for this loan");
-    // }
-    
-    // Process this single loan
-    const result = await processAutoPay();
-    
-    console.log(`[Auto-Pay] Manual trigger completed`);
-    return { success: true, result };
-    
-  } catch (error) {
-    console.error("[Auto-Pay] Manual trigger failed:", error);
-    throw error;
-  }
+  const result = await processAutoPay();
+  return { success: true, result };
 }

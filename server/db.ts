@@ -1060,10 +1060,22 @@ export async function getAdvancedStats() {
   
   const averageLoanAmount = avgAmountResult[0]?.avg ? Number(avgAmountResult[0].avg) : 0;
   
-  // Calculate approval rate
   const totalApps = Number(apps[0]?.count || 0);
   const approvedApps = Number(approved[0]?.count || 0);
   const approvalRate = totalApps > 0 ? (approvedApps / totalApps) * 100 : 0;
+  
+  // Calculate average processing time from approved applications
+  let avgProcessingTime = 0;
+  try {
+    const processingTimeResult = await db.select({
+      avgHours: sql<number>`AVG(EXTRACT(EPOCH FROM (${loanApplications.updatedAt} - ${loanApplications.createdAt})) / 3600)`
+    })
+      .from(loanApplications)
+      .where(eq(loanApplications.status, "approved"));
+    avgProcessingTime = Math.round(processingTimeResult[0]?.avgHours || 24);
+  } catch {
+    avgProcessingTime = 24;
+  }
   
   return {
     totalAdmins: Number(admins[0]?.count || 0),
@@ -1075,7 +1087,7 @@ export async function getAdvancedStats() {
     totalApprovedAmount,
     averageLoanAmount,
     approvalRate: Math.round(approvalRate * 100) / 100,
-    avgProcessingTime: 24, // Placeholder - would need timestamps to calculate
+    avgProcessingTime,
   };
 }
 
@@ -2122,6 +2134,56 @@ export async function updateRewardsBalance(userId: number, creditAmount: number,
 // ============================================
 // PHASE 4: PAYMENT NOTIFICATION QUERIES
 // ============================================
+
+/**
+ * Get payments coming due within N days
+ */
+export async function getUpcomingPayments(daysAhead: number = 7) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { paymentSchedules, loanApplications, users } = await import("../drizzle/schema");
+  
+  try {
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + daysAhead);
+    
+    const todayStr = today.toISOString().split('T')[0];
+    const futureStr = futureDate.toISOString().split('T')[0];
+    
+    const result = await db.select({
+      id: paymentSchedules.id,
+      loanApplicationId: paymentSchedules.loanApplicationId,
+      installmentNumber: paymentSchedules.installmentNumber,
+      dueDate: paymentSchedules.dueDate,
+      amount: paymentSchedules.dueAmount,
+      status: paymentSchedules.status,
+      userId: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      phoneNumber: users.phoneNumber,
+      loanNumber: loanApplications.trackingNumber,
+    })
+      .from(paymentSchedules)
+      .innerJoin(loanApplications, eq(paymentSchedules.loanApplicationId, loanApplications.id))
+      .innerJoin(users, eq(loanApplications.userId, users.id))
+      .where(
+        and(
+          or(
+            eq(paymentSchedules.status, "pending"),
+            eq(paymentSchedules.status, "not_paid")
+          ),
+          sql`DATE(${paymentSchedules.dueDate}) BETWEEN ${sql.raw(`'${todayStr}'`)} AND ${sql.raw(`'${futureStr}'`)}`
+        )
+      );
+    
+    return result;
+  } catch (error) {
+    console.error("[db.getUpcomingPayments] Error:", error);
+    return [];
+  }
+}
 
 /**
  * Get payments due in N days (e.g., 7 days)

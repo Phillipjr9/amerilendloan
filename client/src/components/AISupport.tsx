@@ -8,34 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageCircle, Package, Loader2 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-/**
- * Enhanced AI Support component with:
- * - A-Z customer support chat
- * - Application tracking without login
- * - Personalized service for authenticated users
- */
 export function AISupport() {
   const { user } = useAuth();
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"chat" | "track">("chat");
 
-  // Tracking state
   const [trackingId, setTrackingId] = useState("");
   const [trackingEmail, setTrackingEmail] = useState("");
   const [trackingResult, setTrackingResult] = useState<any>(null);
   const [isTracking, setIsTracking] = useState(false);
 
-  // Chat mutation
   const chatMutation = trpc.ai.chat.useMutation({
     onSuccess: (result) => {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: result.message,
-        } as Message,
-      ]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: result.message } as Message]);
       setIsLoading(false);
     },
     onError: (error: any) => {
@@ -44,7 +30,6 @@ export function AISupport() {
     },
   });
 
-  // Tracking mutation
   const trackingMutation = trpc.ai.trackApplication.useMutation({
     onSuccess: (result: any) => {
       setTrackingResult(result.application);
@@ -58,63 +43,30 @@ export function AISupport() {
   });
 
   const handleSendChatMessage = (content: string) => {
-    // Add user message
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content,
-      },
-    ]);
-
+    setChatMessages(prev => [...prev, { role: "user", content }]);
     setIsLoading(true);
 
-    // Check if message is about tracking
-    if (
-      content.toLowerCase().includes("track") ||
-      content.toLowerCase().includes("status") ||
-      content.toLowerCase().includes("application")
-    ) {
-      // Suggest switching to tracking tab
-      setChatMessages((prev) => [
+    if (content.toLowerCase().match(/track|status|application/)) {
+      setChatMessages(prev => [
         ...prev,
-        {
-          role: "assistant",
-          content:
-            "I can help you track your application! To get the most accurate status, please use our Application Tracker tab where you can enter your Application ID and email address. This will give you real-time updates on your application status.",
-        },
+        { role: "assistant", content: "For accurate status, use the Application Tracker tab with your ID and email." },
       ]);
       setIsLoading(false);
-      // Auto-switch to tracking tab
       setActiveTab("track");
       return;
     }
 
-    // Send chat message to AI
-    chatMutation.mutate({
-      messages: [
-        ...chatMessages,
-        {
-          role: "user",
-          content,
-        },
-      ],
-    });
+    chatMutation.mutate({ messages: [...chatMessages, { role: "user", content }] });
   };
 
   const handleTrackApplication = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!trackingId.trim() || !trackingEmail.trim()) {
-      toast.error("Please enter both Application ID and email");
+      toast.error("Enter both Application ID and email");
       return;
     }
-
     setIsTracking(true);
-    trackingMutation.mutate({
-      applicationId: trackingId,
-      email: trackingEmail,
-    });
+    trackingMutation.mutate({ applicationId: trackingId, email: trackingEmail });
   };
 
   return (

@@ -27,23 +27,22 @@ import AiSupportWidget from "@/components/AiSupportWidget";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import { trpc } from "@/lib/trpc";
 
-// Testimonials data extracted for performance
-const testimonials = [
-  { name: "Sarah M.", location: "Austin, TX", rating: 5, text: "AmeriLend saved me when I needed emergency car repairs. The application was so easy and I got approved within hours!" },
-  { name: "James T.", location: "Phoenix, AZ", rating: 5, text: "Best lending experience I've ever had. Transparent fees, quick approval, and amazing customer service." },
-  { name: "Maria G.", location: "Miami, FL", rating: 5, text: "I was worried about my credit score, but AmeriLend worked with me. They truly care about helping people." },
-  { name: "David R.", location: "Seattle, WA", rating: 5, text: "Fast, easy, and professional. Got the funds I needed for my medical bills without any hassle." },
-  { name: "Jennifer L.", location: "Chicago, IL", rating: 5, text: "The mobile app makes everything so convenient. I can manage my loan payments right from my phone!" },
-  { name: "Michael P.", location: "Dallas, TX", rating: 5, text: "Excellent rates and flexible payment options. AmeriLend really understands their customers' needs." },
-  { name: "Lisa K.", location: "Atlanta, GA", rating: 5, text: "Customer support is top-notch. They answered all my questions and made me feel comfortable throughout the process." },
-  { name: "Robert H.", location: "Denver, CO", rating: 5, text: "I've used other lenders before, but AmeriLend is by far the best. No hidden fees and very straightforward." },
-  { name: "Amanda S.", location: "Portland, OR", rating: 5, text: "Got approved even with less than perfect credit. The team was understanding and helpful every step of the way." },
-  { name: "Christopher B.", location: "Boston, MA", rating: 5, text: "Quick turnaround time and competitive rates. Highly recommend for anyone needing a personal loan." },
-  { name: "Patricia D.", location: "Las Vegas, NV", rating: 5, text: "The online application took less than 10 minutes. Money was in my account the next business day!" },
-  { name: "Daniel W.", location: "San Diego, CA", rating: 5, text: "Professional, reliable, and trustworthy. AmeriLend helped me consolidate my debt and save money." },
-  { name: "Jessica F.", location: "Nashville, TN", rating: 5, text: "Great experience from start to finish. The loan officer explained everything clearly and patiently." },
-  { name: "Thomas A.", location: "Charlotte, NC", rating: 5, text: "I needed funds urgently and AmeriLend delivered. Fast approval and same-day funding!" },
-  { name: "Michelle C.", location: "Minneapolis, MN", rating: 5, text: "Very impressed with how smooth the process was. No unnecessary paperwork or delays." },
+const customerReviews = [
+  { name: "Sarah M.", location: "Austin, TX", rating: 5, text: "Needed funds for car repairs and got approved same day. Smooth process." },
+  { name: "James T.", location: "Phoenix, AZ", rating: 5, text: "Clear terms, fast approval, helpful team." },
+  { name: "Maria G.", location: "Miami, FL", rating: 5, text: "They worked with my credit situation. Felt like they actually wanted to help." },
+  { name: "David R.", location: "Seattle, WA", rating: 5, text: "Medical bills covered without the runaround." },
+  { name: "Jennifer L.", location: "Chicago, IL", rating: 5, text: "Managing payments from my phone is convenient." },
+  { name: "Michael P.", location: "Dallas, TX", rating: 5, text: "Good rates and payment flexibility." },
+  { name: "Lisa K.", location: "Atlanta, GA", rating: 5, text: "Support team answered everything I asked." },
+  { name: "Robert H.", location: "Denver, CO", rating: 5, text: "Straightforward with no surprises." },
+  { name: "Amanda S.", location: "Portland, OR", rating: 5, text: "Approved with okay credit. Patient staff." },
+  { name: "Christopher B.", location: "Boston, MA", rating: 5, text: "Quick process, reasonable rates." },
+  { name: "Patricia D.", location: "Las Vegas, NV", rating: 5, text: "Applied in 10 min, funded next day." },
+  { name: "Daniel W.", location: "San Diego, CA", rating: 5, text: "Consolidated debt and lowered monthly payments." },
+  { name: "Jessica F.", location: "Nashville, TN", rating: 5, text: "Loan officer explained things clearly." },
+  { name: "Thomas A.", location: "Charlotte, NC", rating: 5, text: "Urgent need, quick delivery." },
+  { name: "Michelle C.", location: "Minneapolis, MN", rating: 5, text: "Minimal paperwork, no delays." },
 ];
 
 
@@ -235,27 +234,27 @@ export default function Home() {
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl xs:text-5xl sm:text-6xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 sm:mb-8 leading-tight">
-              Online Loans
+              {t('home.hero.title')}
               <br />
-              Designed for You
+              {t('home.hero.titleLine2')}
             </h1>
 
             <ul className="space-y-3 mb-8 sm:mb-10 text-white/95 max-w-2xl mx-auto">
               <li className="flex items-start gap-3 text-left">
                 <CheckCircle2 className="w-6 h-6 flex-shrink-0 mt-0.5" />
                 <span className="text-base sm:text-lg">
-                  Same-day funding available.<sup className="text-sm">1</sup>
+                  {t('home.hero.sameDayFunding')}<sup className="text-sm">1</sup>
                 </span>
               </li>
               <li className="flex items-start gap-3 text-left">
                 <CheckCircle2 className="w-6 h-6 flex-shrink-0 mt-0.5" />
                 <span className="text-base sm:text-lg">
-                  Applying does NOT affect your FICO® credit score.<sup className="text-sm">2</sup>
+                  {t('home.hero.noFicoImpact')}<sup className="text-sm">2</sup>
                 </span>
               </li>
               <li className="flex items-start gap-3 text-left">
                 <CheckCircle2 className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                <span className="text-base sm:text-lg">No hidden fees.</span>
+                <span className="text-base sm:text-lg">{t('home.hero.noHiddenFees')}</span>
               </li>
             </ul>
 
@@ -265,22 +264,22 @@ export default function Home() {
                   size="lg" 
                   className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-bold px-8 sm:px-10 py-4 sm:py-6 text-base sm:text-lg rounded-lg shadow-lg hover:shadow-xl transition-all w-full sm:w-auto focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA500] focus:outline-none"
                 >
-                  Apply Now
+                  {t('home.hero.applyNow')}
                 </Button>
               </Link>
             </div>
 
             <p className="text-xs sm:text-sm text-white/90">
-              Applying does NOT affect your FICO® credit score.<sup className="text-xs">2</sup>
+              {t('home.hero.noFicoImpact')}<sup className="text-xs">2</sup>
             </p>
             
             <p className="text-xs sm:text-sm text-white/80 mt-4">
-              Did you receive a code in the mail?{" "}
+              {t('home.hero.receivedCode')}{" "}
               <button
                 onClick={() => setShowCodeModal(true)}
                 className="text-white underline hover:text-white/80 font-medium cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-white focus:outline-none rounded px-1"
               >
-                Click here
+                {t('home.hero.clickHere')}
               </button>
             </p>
           </div>
@@ -293,19 +292,19 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-white mb-2">$250M+</div>
-              <div className="text-sm text-white/80">Loans Funded</div>
+              <div className="text-sm text-white/80">{t('home.stats.loansFunded')}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-white mb-2">50K+</div>
-              <div className="text-sm text-white/80">Happy Customers</div>
+              <div className="text-sm text-white/80">{t('home.stats.happyCustomers')}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-white mb-2">4.8★</div>
-              <div className="text-sm text-white/80">Average Rating</div>
+              <div className="text-sm text-white/80">{t('home.stats.avgRating')}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-white mb-2">24/7</div>
-              <div className="text-sm text-white/80">Support Available</div>
+              <div className="text-sm text-white/80">{t('home.stats.supportAvailable')}</div>
             </div>
           </div>
         </div>
@@ -318,10 +317,10 @@ export default function Home() {
             {/* Process Steps */}
             <div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
-                Simple Loan Application Process
+                {t('home.process.title')}
               </h2>
               <p className="text-sm sm:text-base text-white/90 mb-6 sm:mb-8">
-                Working with trusted financial partners, the AmeriLend platform offers personal loans designed to fit your needs. The process is simple and built around you:
+                {t('home.process.description')}
               </p>
 
               <div className="space-y-4 sm:space-y-6">
@@ -331,9 +330,9 @@ export default function Home() {
                     1
                   </div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg mb-1">Apply Online</h3>
+                    <h3 className="font-bold text-base sm:text-lg mb-1">{t('home.process.step1Title')}</h3>
                     <p className="text-xs sm:text-sm text-white/90">
-                      The application process is quick and easy, with decisions often made in minutes.
+                      {t('home.process.step1Desc')}
                     </p>
                   </div>
                 </div>
@@ -344,9 +343,9 @@ export default function Home() {
                     2
                   </div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg mb-1">Approval Process</h3>
+                    <h3 className="font-bold text-base sm:text-lg mb-1">{t('home.process.step2Title')}</h3>
                     <p className="text-xs sm:text-sm text-white/90">
-                      We consider more than just your credit score, so even if you've been turned down by others, you may still qualify.
+                      {t('home.process.step2Desc')}
                     </p>
                   </div>
                 </div>
@@ -357,9 +356,9 @@ export default function Home() {
                     3
                   </div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg mb-1">Same-Day Funding Available</h3>
+                    <h3 className="font-bold text-base sm:text-lg mb-1">{t('home.process.step3Title')}</h3>
                     <p className="text-xs sm:text-sm text-white/90">
-                      If approved, you may receive money in your account as soon as the same business day!<sup>1</sup>
+                      {t('home.process.step3Desc')}<sup>1</sup>
                     </p>
                   </div>
                 </div>
@@ -367,12 +366,12 @@ export default function Home() {
 
               <Link href="/apply">
                 <Button className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-6 sm:px-8 py-3 sm:py-6 text-sm sm:text-base md:text-lg mt-6 sm:mt-8 w-full sm:w-auto">
-                  Apply Now
+                  {t('home.hero.applyNow')}
                 </Button>
               </Link>
 
               <p className="text-xs sm:text-sm text-white/80 mt-2 sm:mt-4">
-                Applying does NOT affect your FICO® credit score.<sup>2</sup>
+                {t('home.hero.noFicoImpact')}<sup>2</sup>
               </p>
             </div>
 
@@ -384,8 +383,8 @@ export default function Home() {
               <div className="relative bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/20">
                 <div className="bg-white rounded-xl p-6 shadow-2xl">
                   <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-[#0033A0] mb-2">Loan Application</h3>
-                    <p className="text-sm text-gray-600">Quick & Easy Process</p>
+                    <h3 className="text-xl font-bold text-[#0033A0] mb-2">{t('home.process.loanApplication')}</h3>
+                    <p className="text-sm text-gray-600">{t('home.process.quickEasyProcess')}</p>
                   </div>
                   
                   <div className="space-y-4">
@@ -393,35 +392,35 @@ export default function Home() {
                       <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">Personal Information</span>
+                      <span className="text-sm font-medium text-gray-700">{t('home.process.personalInfo')}</span>
                     </div>
                     
                     <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                       <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">Employment Details</span>
+                      <span className="text-sm font-medium text-gray-700">{t('home.process.employmentDetails')}</span>
                     </div>
                     
                     <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border-2 border-blue-500">
                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 animate-pulse">
                         <Clock className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">Review & Submit</span>
+                      <span className="text-sm font-medium text-gray-700">{t('home.process.reviewSubmit')}</span>
                     </div>
                     
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-50">
                       <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs">✓</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-500">Funding</span>
+                      <span className="text-sm font-medium text-gray-500">{t('home.process.funding')}</span>
                     </div>
                   </div>
                   
                   <div className="mt-6 pt-6 border-t">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Approval Time:</span>
-                      <span className="font-bold text-[#0033A0]">Minutes</span>
+                      <span className="text-gray-600">{t('home.process.approvalTime')}</span>
+                      <span className="font-bold text-[#0033A0]">{t('home.process.minutes')}</span>
                     </div>
                   </div>
                 </div>
@@ -437,7 +436,7 @@ export default function Home() {
           <div className="max-w-4xl mx-auto">
             <div className="bg-warning-50 border-l-4 border-l-[#FFA500] text-gray-800 rounded-lg p-6 sm:p-8 md:p-10 shadow-xl">
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#0033A0] mb-6 text-center">
-                Before you get started, let's review our eligibility requirements.
+                {t('home.eligibility.title')}
               </h3>
 
               <ul className="space-y-3 sm:space-y-4 md:grid md:grid-cols-2 md:gap-6">
@@ -445,7 +444,7 @@ export default function Home() {
                   <div className="w-6 h-6 sm:w-10 sm:h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#0033A0]" />
                   </div>
-                  <span className="text-sm sm:text-base md:text-lg">Be at least 18 years old</span>
+                  <span className="text-sm sm:text-base md:text-lg">{t('home.eligibility.age18')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
@@ -454,13 +453,13 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
-                  <span className="text-sm md:text-lg">Reside in the United States</span>
+                  <span className="text-sm md:text-lg">{t('home.eligibility.resideUS')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
                     <Clock className="w-5 h-5 text-green-600" />
                   </div>
-                  <span className="text-sm md:text-lg">Have a regular source of income</span>
+                  <span className="text-sm md:text-lg">{t('home.eligibility.regularIncome')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
@@ -468,7 +467,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
-                  <span className="text-sm md:text-base">Have a checking or savings account</span>
+                  <span className="text-sm md:text-base">{t('home.eligibility.bankAccount')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
@@ -476,7 +475,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <span className="text-sm md:text-base">Receive paychecks through direct deposit</span>
+                  <span className="text-sm md:text-base">{t('home.eligibility.directDeposit')}</span>
                 </li>
               </ul>
             </div>
@@ -489,17 +488,17 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] mb-4">
-              Loan Options for Every Need
+              {t('home.loanTypes.title')}
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
-              Choose from our wide range of loan products designed to meet your specific financial needs
+              {t('home.loanTypes.subtitle')}
             </p>
             <div className="mt-4 p-4 bg-[#FFA500]/10 rounded-lg max-w-3xl mx-auto border border-[#FFA500]/30">
               <p className="text-xs sm:text-sm text-[#0033A0] font-semibold">
-                Processing fee: 2-10% based on loan terms (paid upfront via credit/debit card or crypto before loan disbursement)
+                {t('home.loanTypes.processingFee')}
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                Accepted: Visa, Mastercard, American Express, Bitcoin, Ethereum, USDT
+                {t('home.loanTypes.acceptedPayments')}
               </p>
             </div>
           </div>
@@ -514,16 +513,16 @@ export default function Home() {
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded">Quick</span>
+                  <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded">{t('home.loanTypes.personal.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Personal Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Flexible loans for any need</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.personal.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.personal.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$1K-$50K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-60mo</span>
                 </div>
                 <Link href="/apply?type=personal">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -535,16 +534,16 @@ export default function Home() {
                   <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-2 py-1 rounded">Save</span>
+                  <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-2 py-1 rounded">{t('home.loanTypes.debtConsolidation.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Debt Consolidation</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Combine debts into one payment</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.debtConsolidation.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.debtConsolidation.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$2K-$100K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">24-84mo</span>
                 </div>
                 <Link href="/apply?type=debt-consolidation">
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -558,16 +557,16 @@ export default function Home() {
                       <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36c-.5-.63-1.5-.69-2.12-.12-.63.5-.69 1.49-.12 2.12l3.5 4.21c.5.63 1.5.69 2.12.12l4.25-5.13c.56-.67.48-1.66-.19-2.22-.67-.56-1.66-.48-2.22.19z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded">Care</span>
+                  <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded">{t('home.loanTypes.medical.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Medical Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Cover healthcare procedures</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.medical.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.medical.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$500-$50K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-72mo</span>
                 </div>
                 <Link href="/apply?type=medical">
-                  <Button className="w-full bg-red-600 hover:bg-red-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-red-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-red-600 hover:bg-red-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-red-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -581,16 +580,16 @@ export default function Home() {
                       <path d="M13 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V9l-7-7z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-amber-600 bg-amber-100 px-2 py-1 rounded">Build</span>
+                  <span className="text-xs font-semibold text-amber-600 bg-amber-100 px-2 py-1 rounded">{t('home.loanTypes.homeImprovement.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Home Improvement</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Renovate and upgrade your home</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.homeImprovement.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.homeImprovement.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$3K-$100K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">24-120mo</span>
                 </div>
                 <Link href="/apply?type=home-improvement">
-                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-amber-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-amber-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -604,16 +603,16 @@ export default function Home() {
                       <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm11 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM5 11l1.5-4.5h11L19 11H5z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded">Drive</span>
+                  <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded">{t('home.loanTypes.auto.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Auto Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Finance your next vehicle</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.auto.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.auto.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$5K-$75K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">24-84mo</span>
                 </div>
                 <Link href="/apply?type=auto">
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -627,16 +626,16 @@ export default function Home() {
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S15.33 8 14.5 8 13 8.67 13 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S8.33 8 7.5 8 6 8.67 6 9.5 6.67 11 7.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-indigo-600 bg-indigo-100 px-2 py-1 rounded">Grow</span>
+                  <span className="text-xs font-semibold text-indigo-600 bg-indigo-100 px-2 py-1 rounded">{t('home.loanTypes.business.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Business Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Fuel business growth</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.business.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.business.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$10K-$500K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-120mo</span>
                 </div>
                 <Link href="/apply?type=business">
-                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -648,16 +647,16 @@ export default function Home() {
                   <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
                     <Clock className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded">Urgent</span>
+                  <span className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded">{t('home.loanTypes.emergency.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Emergency Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Fast cash when you need it</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.emergency.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.emergency.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$500-$10K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">6-36mo</span>
                 </div>
                 <Link href="/apply?type=emergency">
-                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -671,16 +670,16 @@ export default function Home() {
                       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-pink-600 bg-pink-100 px-2 py-1 rounded">Dream</span>
+                  <span className="text-xs font-semibold text-pink-600 bg-pink-100 px-2 py-1 rounded">{t('home.loanTypes.wedding.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Wedding Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Make your day special</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.wedding.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.wedding.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$2K-$50K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-60mo</span>
                 </div>
                 <Link href="/apply?type=wedding">
-                  <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-pink-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-pink-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -694,16 +693,16 @@ export default function Home() {
                       <path d="M20 6h-8l-1-1h-2l-1 1H4c-1.1 0-1.99.9-1.99 2L2 19c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 13H4V8h16v11zm-5.04-6.71l-2.75 3.54-1.96-2.36c-.5-.63-1.5-.69-2.12-.12-.63.5-.69 1.49-.12 2.12l3.5 4.21c.5.63 1.5.69 2.12.12l4.25-5.13c.56-.67.48-1.66-.19-2.22-.67-.56-1.66-.48-2.22.19z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-cyan-600 bg-cyan-100 px-2 py-1 rounded">Escape</span>
+                  <span className="text-xs font-semibold text-cyan-600 bg-cyan-100 px-2 py-1 rounded">{t('home.loanTypes.vacation.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Vacation Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Travel without worry</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.vacation.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.vacation.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$1K-$25K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-48mo</span>
                 </div>
                 <Link href="/apply?type=vacation">
-                  <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-cyan-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-cyan-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -717,16 +716,16 @@ export default function Home() {
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S15.33 8 14.5 8 13 8.67 13 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S8.33 8 7.5 8 6 8.67 6 9.5 6.67 11 7.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-teal-600 bg-teal-100 px-2 py-1 rounded">Learn</span>
+                  <span className="text-xs font-semibold text-teal-600 bg-teal-100 px-2 py-1 rounded">{t('home.loanTypes.studentRefinance.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Student Loan Refinance</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Lower your education debt</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.studentRefinance.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.studentRefinance.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$5K-$150K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">60-240mo</span>
                 </div>
                 <Link href="/apply?type=student-refinance">
-                  <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -740,16 +739,16 @@ export default function Home() {
                       <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-rose-600 bg-rose-100 px-2 py-1 rounded">Move</span>
+                  <span className="text-xs font-semibold text-rose-600 bg-rose-100 px-2 py-1 rounded">{t('home.loanTypes.moving.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Moving/Relocation Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Relocation made easy</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.moving.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.moving.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$1K-$20K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">12-48mo</span>
                 </div>
                 <Link href="/apply?type=moving">
-                  <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-rose-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-rose-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -763,16 +762,16 @@ export default function Home() {
                       <path d="M13 3h-2v10h2V3zm4.83 2.17l-1.41 1.41c1.04 1.04 1.68 2.48 1.68 4.08 0 3.09-2.51 5.6-5.6 5.6s-5.6-2.51-5.6-5.6c0-1.6.64-3.04 1.68-4.08l-1.41-1.41C2.82 5.75 2 7.6 2 9.66c0 5.02 4.08 9.1 9.1 9.1s9.1-4.08 9.1-9.1c0-2.06-.82-3.91-2.17-5.49z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-lime-600 bg-lime-100 px-2 py-1 rounded">Green</span>
+                  <span className="text-xs font-semibold text-lime-600 bg-lime-100 px-2 py-1 rounded">{t('home.loanTypes.greenEnergy.tag')}</span>
                 </div>
-                <h3 className="text-base font-bold text-[#0033A0] mb-2">Green Energy Loan</h3>
-                <p className="text-sm text-gray-600 mb-3 flex-grow">Go eco-friendly</p>
+                <h3 className="text-base font-bold text-[#0033A0] mb-2">{t('home.loanTypes.greenEnergy.title')}</h3>
+                <p className="text-sm text-gray-600 mb-3 flex-grow">{t('home.loanTypes.greenEnergy.desc')}</p>
                 <div className="flex gap-2 text-xs text-gray-600 mb-4 flex-wrap">
                   <span className="bg-gray-100 px-2 py-1 rounded">$5K-$100K</span>
                   <span className="bg-gray-100 px-2 py-1 rounded">36-240mo</span>
                 </div>
                 <Link href="/apply?type=green-energy">
-                  <Button className="w-full bg-lime-600 hover:bg-lime-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-lime-600 focus:outline-none">Apply Now</Button>
+                  <Button className="w-full bg-lime-600 hover:bg-lime-700 text-white py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:ring-lime-600 focus:outline-none">{t('home.hero.applyNow')}</Button>
                 </Link>
               </CardContent>
             </Card>
@@ -784,10 +783,10 @@ export default function Home() {
       <section className="bg-gray-50 py-16 md:py-24">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#0033A0] text-center mb-4">
-            Why AmeriLend Is Right For You
+            {t('home.whyAmeriLend.title')}
           </h2>
           <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-            We're committed to providing accessible, transparent, and customer-focused financial solutions
+            {t('home.whyAmeriLend.subtitle')}
           </p>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
@@ -797,9 +796,9 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-[#FFA500]/10 flex items-center justify-center mb-4">
                   <CheckCircle2 className="w-7 h-7 text-[#FFA500]" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Easy to Apply</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.easyApply.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Our online application process is convenient and only requires personal and employment information for quick and easy completion.
+                  {t('home.whyAmeriLend.easyApply.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -810,9 +809,9 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-[#0033A0]/10 flex items-center justify-center mb-4">
                   <Clock className="w-7 h-7 text-[#0033A0]" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Same-Day Funding Available</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.sameDayFunding.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  If approved, you may receive money in your account as soon as the same business day!<sup className="text-xs">1</sup>
+                  {t('home.whyAmeriLend.sameDayFunding.desc')}<sup className="text-xs">1</sup>
                 </p>
               </CardContent>
             </Card>
@@ -823,9 +822,9 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
                   <Headphones className="w-7 h-7 text-green-500" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Loan Support At Every Step</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.loanSupport.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Our top-rated Loan Advocates are available to provide support at every step of the application process. We succeed when you do!
+                  {t('home.whyAmeriLend.loanSupport.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -836,9 +835,9 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
                   <Shield className="w-7 h-7 text-blue-500" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Safe and Secure</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.safeSecure.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  We are dedicated to protecting your information and communications with advanced 256-bit encryption technology.
+                  {t('home.whyAmeriLend.safeSecure.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -849,9 +848,9 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-purple-500/10 flex items-center justify-center mb-4">
                   <FileText className="w-7 h-7 text-purple-500" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Transparent Process</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.transparent.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  We supply you with an easy-to-read schedule with predictable payments and the ability to set up automatic payments.
+                  {t('home.whyAmeriLend.transparent.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -862,9 +861,9 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-teal-500/10 flex items-center justify-center mb-4">
                   <TrendingUp className="w-7 h-7 text-teal-500" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Build Credit History</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.buildCredit.title')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  We report your payment history to the three major credit bureaus, so every on-time payment you make may help boost your credit history.
+                  {t('home.whyAmeriLend.buildCredit.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -876,43 +875,43 @@ export default function Home() {
       <section id="about" className="bg-white py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
-            About AmeriLend
+            {t('home.aboutSection.title')}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6 md:gap-12 items-center max-w-6xl mx-auto">
             <div>
               <h3 className="text-2xl font-bold text-[#0033A0] mb-6">
-                Making Personal Loans Accessible to Everyone
+                {t('home.aboutSection.subtitle')}
               </h3>
               <p className="text-gray-600 mb-6">
-                AmeriLend is committed to providing fast, fair, and transparent personal loans to help you achieve your financial goals. We understand that life can be unpredictable, and we're here to support you every step of the way.
+                {t('home.aboutSection.paragraph1')}
               </p>
               <p className="text-gray-600 mb-6">
-                Our mission is to democratize access to credit by using innovative technology and a customer-first approach. We partner with trusted financial institutions to offer competitive rates and flexible terms that work for you.
+                {t('home.aboutSection.paragraph2')}
               </p>
               <p className="text-gray-600">
-                With years of experience in the financial services industry, we've helped thousands of customers secure the funding they need for emergencies, debt consolidation, home improvements, and more.
+                {t('home.aboutSection.paragraph3')}
               </p>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-8">
-              <h4 className="text-xl font-bold text-[#0033A0] mb-6">Our Values</h4>
+              <h4 className="text-xl font-bold text-[#0033A0] mb-6">{t('home.aboutSection.valuesTitle')}</h4>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700"><strong>Transparency:</strong> Clear terms, no hidden fees</span>
+                  <span className="text-gray-700"><strong>{t('home.aboutSection.values.transparency.title')}:</strong> {t('home.aboutSection.values.transparency.desc')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700"><strong>Speed:</strong> Fast approvals and funding</span>
+                  <span className="text-gray-700"><strong>{t('home.aboutSection.values.speed.title')}:</strong> {t('home.aboutSection.values.speed.desc')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700"><strong>Support:</strong> Dedicated loan advocates</span>
+                  <span className="text-gray-700"><strong>{t('home.aboutSection.values.support.title')}:</strong> {t('home.aboutSection.values.support.desc')}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700"><strong>Innovation:</strong> Using technology for better service</span>
+                  <span className="text-gray-700"><strong>{t('home.aboutSection.values.innovation.title')}:</strong> {t('home.aboutSection.values.innovation.desc')}</span>
                 </li>
               </ul>
             </div>
@@ -924,12 +923,12 @@ export default function Home() {
       <section id="states" className="bg-gray-50 py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
-            States We Service
+            {t('home.states.title')}
           </h2>
 
           <div className="max-w-6xl mx-auto">
             <p className="text-center text-gray-600 mb-8">
-              AmeriLend is proud to serve customers in all 50 states across the United States.
+              {t('home.states.subtitle')}
             </p>
 
             <div className="relative">
@@ -1016,12 +1015,12 @@ export default function Home() {
       <section id="careers" className="bg-white py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-[#0033A0] text-center mb-12">
-            Join Our Team
+            {t('home.careers.title')}
           </h2>
 
           <div className="max-w-4xl mx-auto text-center mb-12">
             <p className="text-gray-600 text-lg">
-              We're always looking for talented individuals who are passionate about helping people achieve their financial goals. Join our growing team and make a difference in people's lives.
+              {t('home.careers.subtitle')}
             </p>
           </div>
 
@@ -1031,13 +1030,13 @@ export default function Home() {
                 <div className="w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center mx-auto mb-4">
                   <Headphones className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Loan Advocate</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.careers.loanAdvocate.title')}</h3>
                 <p className="text-gray-600 mb-4">
-                  Help customers navigate their loan applications and provide exceptional support throughout the process.
+                  {t('home.careers.loanAdvocate.desc')}
                 </p>
                 <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
                   <a href="/careers" className="no-underline">
-                    Learn More
+                    {t('common.learnMore')}
                   </a>
                 </Button>
               </CardContent>
@@ -1048,13 +1047,13 @@ export default function Home() {
                 <div className="w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center mx-auto mb-4">
                   <Shield className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Risk Analyst</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.careers.riskAnalyst.title')}</h3>
                 <p className="text-gray-600 mb-4">
-                  Analyze loan applications and ensure responsible lending practices while helping qualified applicants.
+                  {t('home.careers.riskAnalyst.desc')}
                 </p>
                 <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
                   <a href="/careers" className="no-underline">
-                    Learn More
+                    {t('common.learnMore')}
                   </a>
                 </Button>
               </CardContent>
@@ -1065,13 +1064,13 @@ export default function Home() {
                 <div className="w-16 h-16 rounded-full bg-[#0033A0] flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Marketing Specialist</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.careers.marketingSpecialist.title')}</h3>
                 <p className="text-gray-600 mb-4">
-                  Develop strategies to reach customers and educate them about responsible borrowing options.
+                  {t('home.careers.marketingSpecialist.desc')}
                 </p>
                 <Button asChild className="border-[#0033A0] text-[#0033A0] hover:bg-[#0033A0] hover:text-white" variant="outline">
                   <a href="/careers" className="no-underline">
-                    Learn More
+                    {t('common.learnMore')}
                   </a>
                 </Button>
               </CardContent>
@@ -1080,11 +1079,11 @@ export default function Home() {
 
           <div className="text-center mt-12">
             <p className="text-gray-600 mb-6">
-              Don't see a position that matches your skills? We're always interested in hearing from talented individuals.
+              {t('home.careers.cta')}
             </p>
             <Button asChild className="bg-[#FFA500] hover:bg-[#FF8C00] text-white font-semibold px-8">
               <a href="/careers">
-                View All Openings
+                {t('common.viewAll')}
               </a>
             </Button>
           </div>
@@ -1095,7 +1094,7 @@ export default function Home() {
       <section className="bg-[#0033A0] text-white py-16 md:py-24">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-            Why AmeriLend Is Right For You
+            {t('home.whyAmeriLend.title')}
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -1105,9 +1104,9 @@ export default function Home() {
                 <CheckCircle2 className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Easy to Apply</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.easyApply.title')}</h3>
                 <p className="text-gray-600">
-                  Our online application process is convenient and only requires personal and employment information for quick and easy completion.
+                  {t('home.whyAmeriLend.easyApply.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -1118,9 +1117,9 @@ export default function Home() {
                 <Clock className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Same-Day Funding Available</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.sameDayFunding.title')}</h3>
                 <p className="text-gray-600">
-                  If approved, you may receive money in your account as soon as the same business day!<sup>1</sup>
+                  {t('home.whyAmeriLend.sameDayFunding.desc')}<sup>1</sup>
                 </p>
               </CardContent>
             </Card>
@@ -1131,9 +1130,9 @@ export default function Home() {
                 <Headphones className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Loan Support At Every Step</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.loanSupport.title')}</h3>
                 <p className="text-gray-600">
-                  Our top-rated Loan Advocates are available to provide support at every step of the application process. We succeed when you do!
+                  {t('home.whyAmeriLend.loanSupport.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -1146,9 +1145,9 @@ export default function Home() {
                 <FileText className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Transparent Process</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.transparent.title')}</h3>
                 <p className="text-gray-600">
-                  We supply you with an easy-to-read schedule with predictable payments and the ability to set up automatic payments.
+                  {t('home.whyAmeriLend.transparent.desc')}
                 </p>
               </CardContent>
             </Card>
@@ -1159,9 +1158,9 @@ export default function Home() {
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
               <CardContent className="pt-8 pb-6 text-center">
-                <h3 className="text-xl font-bold text-[#0033A0] mb-3">Build Credit History</h3>
+                <h3 className="text-xl font-bold text-[#0033A0] mb-3">{t('home.whyAmeriLend.buildCredit.title')}</h3>
                 <p className="text-gray-600">
-                  We report your payment history to the three major credit bureaus, so every on-time payment you make may help boost your credit history.<sup>6</sup>
+                  {t('home.whyAmeriLend.buildCredit.desc')}<sup>6</sup>
                 </p>
               </CardContent>
             </Card>
@@ -1175,7 +1174,7 @@ export default function Home() {
       <section className="bg-white py-16">
         <div className="container mx-auto px-4">
           <div className="mt-0 pt-0">
-            <p className="text-center text-gray-700 text-base md:text-lg mb-6 md:mb-8">Trusted by leading platforms</p>
+            <p className="text-center text-gray-700 text-base md:text-lg mb-6 md:mb-8">{t('home.trustedBy')}</p>
             <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 md:gap-12 lg:gap-16">
               {/* LendingTree Logo */}
               <div className="flex items-center justify-center">
@@ -1362,56 +1361,56 @@ export default function Home() {
           {/* Contact Section */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-6 md:gap-8 mb-12 pb-8 border-b border-gray-800">
             <div>
-              <h4 className="font-semibold mb-3">Contact Us</h4>
-              <p className="text-sm text-gray-400">Need help? Reach out to our team.</p>
+              <h4 className="font-semibold mb-3">{t('home.footer.contactUs')}</h4>
+              <p className="text-sm text-gray-400">{t('home.footer.needHelp')}</p>
               <div className="mt-3 space-y-2 text-sm">
               </div>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Hours</h4>
+              <h4 className="font-semibold mb-3">{t('home.footer.hours')}</h4>
               <div className="text-sm text-gray-400 space-y-1">
-                <p>Mon-Fri: 8am - 8pm CT</p>
-                <p>Sat-Sun: 9am - 5pm CT</p>
+                <p>{t('home.footer.weekdayHours')}</p>
+                <p>{t('home.footer.weekendHours')}</p>
               </div>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Quick Links</h4>
+              <h4 className="font-semibold mb-3">{t('home.footer.quickLinks')}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="/" className="hover:text-white cursor-pointer">Home</a></li>
-                <li><a href="/apply" className="hover:text-white cursor-pointer">Apply Now</a></li>
-                <li><a href="#faq" className="hover:text-white cursor-pointer">FAQ</a></li>
+                <li><a href="/" className="hover:text-white cursor-pointer">{t('common.home')}</a></li>
+                <li><a href="/apply" className="hover:text-white cursor-pointer">{t('home.hero.applyNow')}</a></li>
+                <li><a href="#faq" className="hover:text-white cursor-pointer">{t('common.faq')}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Company</h4>
+              <h4 className="font-semibold mb-3">{t('home.footer.company')}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#about" className="hover:text-white cursor-pointer">About Us</a></li>
-                <li><a href="tel:+19452121609" className="hover:text-white cursor-pointer">Contact Support</a></li>
-                <li><a href="mailto:support@amerilendloan.com" className="hover:text-white cursor-pointer">Email Support</a></li>
+                <li><a href="#about" className="hover:text-white cursor-pointer">{t('common.aboutUs')}</a></li>
+                <li><a href="tel:+19452121609" className="hover:text-white cursor-pointer">{t('home.footer.contactSupport')}</a></li>
+                <li><a href="mailto:support@amerilendloan.com" className="hover:text-white cursor-pointer">{t('home.footer.emailSupport')}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Resources</h4>
+              <h4 className="font-semibold mb-3">{t('home.footer.resources')}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#faq" className="hover:text-white cursor-pointer">FAQ</a></li>
-                <li><a href="/dashboard" className="hover:text-white cursor-pointer">Dashboard</a></li>
-                <li><a href="mailto:support@amerilendloan.com" className="hover:text-white cursor-pointer">Help Center</a></li>
+                <li><a href="#faq" className="hover:text-white cursor-pointer">{t('common.faq')}</a></li>
+                <li><a href="/dashboard" className="hover:text-white cursor-pointer">{t('common.dashboard')}</a></li>
+                <li><a href="mailto:support@amerilendloan.com" className="hover:text-white cursor-pointer">{t('home.footer.helpCenter')}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Legal</h4>
+              <h4 className="font-semibold mb-3">{t('home.footer.legal')}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="/public/legal/privacy-policy" className="hover:text-[#FFA500] cursor-pointer transition-colors">Privacy Policy</a></li>
-                <li><a href="/public/legal/terms-of-service" className="hover:text-[#FFA500] cursor-pointer transition-colors">Terms of Service</a></li>
-                <li><a href="/public/legal/loan-agreement" className="hover:text-[#FFA500] cursor-pointer transition-colors">Loan Agreement</a></li>
-                <li><a href="/public/legal/esign-consent" className="hover:text-[#FFA500] cursor-pointer transition-colors">E-Sign Consent</a></li>
+                <li><a href="/public/legal/privacy-policy" className="hover:text-[#FFA500] cursor-pointer transition-colors">{t('home.footer.privacyPolicy')}</a></li>
+                <li><a href="/public/legal/terms-of-service" className="hover:text-[#FFA500] cursor-pointer transition-colors">{t('home.footer.termsOfService')}</a></li>
+                <li><a href="/public/legal/loan-agreement" className="hover:text-[#FFA500] cursor-pointer transition-colors">{t('home.footer.loanAgreement')}</a></li>
+                <li><a href="/public/legal/esign-consent" className="hover:text-[#FFA500] cursor-pointer transition-colors">{t('home.footer.esignConsent')}</a></li>
               </ul>
             </div>
           </div>
 
           {/* Social Media Section */}
           <div className="text-center py-8 border-b border-gray-800">
-            <h4 className="font-semibold mb-4">Connect With Us</h4>
+            <h4 className="font-semibold mb-4">{t('home.footer.connectWithUs')}</h4>
             <div className="flex justify-center gap-6">
               <a href="https://facebook.com/amerilend" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" title="Facebook">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -1529,7 +1528,7 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 sm:p-8">
             {/* Close Button */}
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Enter Your Code</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('home.modal.title')}</h2>
               <button
                 onClick={() => {
                   setShowCodeModal(false);
@@ -1544,7 +1543,7 @@ export default function Home() {
 
             {/* Modal Content */}
             <p className="text-gray-600 mb-6">
-              Enter the verification code you received in the mail to access your account.
+              {t('home.modal.description')}
             </p>
 
             {/* Code Input Form */}
@@ -1560,14 +1559,14 @@ export default function Home() {
             >
               <div>
                 <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
-                  Verification Code
+                  {t('home.modal.codeLabel')}
                 </label>
                 <input
                   id="code"
                   type="text"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
-                  placeholder="Enter code (e.g., ABC123)"
+                  placeholder={t('home.modal.codePlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0033A0] focus:border-transparent outline-none text-center text-lg font-semibold tracking-wider"
                   autoFocus
                   maxLength={20}
@@ -1580,7 +1579,7 @@ export default function Home() {
                 disabled={!verificationCode.trim()}
                 className="w-full bg-[#0033A0] hover:bg-[#0025A0] disabled:bg-gray-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-[#0033A0] focus:outline-none"
               >
-                Verify Code
+                {t('home.modal.verify')}
               </button>
 
               {/* Cancel Button */}
@@ -1592,7 +1591,7 @@ export default function Home() {
                 }}
                 className="w-full bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold py-2 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 focus:outline-none"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </form>
           </div>

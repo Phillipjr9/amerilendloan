@@ -190,7 +190,7 @@ export async function createCryptoCharge(
 }
 
 /**
- * Check payment status from blockchain
+ * Check payment status from blockchain or payment processor
  */
 export async function checkCryptoPaymentStatus(
   chargeId: string,
@@ -202,45 +202,49 @@ export async function checkCryptoPaymentStatus(
   blockNumber?: number;
   timestamp?: Date;
 }> {
-  // In production, would verify against blockchain:
-  // - For BTC: Use blockchain.com API or Blockchair
-  // - For ETH: Use etherscan.io API or alchemy
-  // - For USDT/USDC: Use token contract verification
-  
-  /*
   if (!txHash) {
     return { status: "pending" };
   }
 
   try {
-    // Example: Check Ethereum transaction
-    const response = await fetch(
-      `https://api.etherscan.io/api?module=proxy&action=eth_getTransactionReceipt&txhash=${txHash}&apikey=${process.env.ETHERSCAN_API_KEY}`
-    );
-    const data = await response.json();
+    const etherscanKey = process.env.ETHERSCAN_API_KEY;
     
-    if (data.result) {
-      const blockConfirmations = data.result.blockNumber ? 
-        Math.floor(Math.random() * 20) + 1 : 0; // Mock confirmations
+    if (etherscanKey && txHash.startsWith("0x")) {
+      const response = await fetch(
+        `https://api.etherscan.io/api?module=proxy&action=eth_getTransactionReceipt&txhash=${txHash}&apikey=${etherscanKey}`
+      );
+      const data = await response.json();
       
-      return {
-        status: blockConfirmations >= 12 ? "confirmed" : "pending",
-        txHash,
-        confirmations: blockConfirmations,
-        blockNumber: parseInt(data.result.blockNumber || "0"),
-        timestamp: new Date(parseInt(data.result.timeStamp || "0") * 1000),
-      };
+      if (data.result && data.result.blockNumber) {
+        const currentBlockRes = await fetch(
+          `https://api.etherscan.io/api?module=proxy&action=eth_blockNumber&apikey=${etherscanKey}`
+        );
+        const currentBlockData = await currentBlockRes.json();
+        const currentBlock = parseInt(currentBlockData.result, 16);
+        const txBlock = parseInt(data.result.blockNumber, 16);
+        const confirmations = currentBlock - txBlock;
+        
+        return {
+          status: confirmations >= 12 ? "confirmed" : "pending",
+          txHash,
+          confirmations,
+          blockNumber: txBlock,
+          timestamp: new Date(),
+        };
+      }
     }
+    
+    return {
+      status: "pending",
+      txHash,
+    };
   } catch (error) {
-    console.error("Error checking tx status:", error);
+    console.error("[CryptoPayment] Status check failed:", error);
+    return {
+      status: "pending",
+      txHash,
+    };
   }
-  */
-
-  // For demo, return mock status
-  return {
-    status: "pending",
-    txHash,
-  };
 }
 
 /**

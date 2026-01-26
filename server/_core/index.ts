@@ -20,6 +20,7 @@ import { startAutoPayScheduler } from "./auto-pay-scheduler";
 import { initializeReminderScheduler, shutdownReminderScheduler } from "./reminderScheduler";
 import { initializeCronJobs, stopAllCronJobs } from "./cron-jobs";
 import { initSentry, sentryErrorHandler } from "./monitoring";
+import { startBackupScheduler, stopBackupScheduler } from "./database-backup";
 import { healthCheck, readinessCheck, livenessCheck, metricsEndpoint } from "./health-checks";
 import { apiLimiter, authLimiter, paymentLimiter, uploadLimiter } from "./rate-limiting";
 import { handleFileUpload, handleFileDownload, upload } from "./upload-handler";
@@ -363,6 +364,7 @@ async function startServer() {
       startAutoPayScheduler();
       initializeReminderScheduler();
       cronJobs = initializeCronJobs(); // NEW: Initialize cron jobs for payment reminders
+      startBackupScheduler(24); // Backup every 24 hours
       console.log("[Server] ✅ All schedulers initialized successfully");
     } catch (error) {
       console.warn("[Server] Failed to initialize schedulers:", error);

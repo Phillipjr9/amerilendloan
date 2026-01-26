@@ -335,8 +335,7 @@ export async function notifyPaymentFailed(
 }
 
 /**
- * Batch send payment due reminders
- * Used by scheduled job to send reminders for all loans due in 7 days
+ * Batch process payment due reminders for all upcoming payments
  */
 export async function sendBatchPaymentDueReminders(): Promise<{
   total: number;
@@ -346,19 +345,43 @@ export async function sendBatchPaymentDueReminders(): Promise<{
   const results = { total: 0, succeeded: 0, failed: 0 };
 
   try {
-    // This would query payment schedules with dueDate = today + 7 days
-    // and send notifications. Implementation depends on your payment schedule table structure.
-    console.log("[Payment Notifications] Batch payment due reminders - not yet implemented");
+    const { getUpcomingPayments } = await import("../db");
+    const upcomingPayments = await getUpcomingPayments(7);
+    
+    if (!upcomingPayments?.length) {
+      return results;
+    }
+    
+    results.total = upcomingPayments.length;
+    
+    for (const payment of upcomingPayments) {
+      try {
+        const notifyResult = await notifyPaymentDueReminder(
+          payment.userId,
+          payment.loanNumber || `LOAN-${payment.loanApplicationId}`,
+          payment.amount,
+          new Date(payment.dueDate)
+        );
+        
+        if (notifyResult.success) {
+          results.succeeded++;
+        } else {
+          results.failed++;
+        }
+      } catch (err) {
+        results.failed++;
+      }
+    }
+    
     return results;
   } catch (error) {
-    console.error("[Payment Notifications] Error in batch payment due reminders:", error);
+    console.error("[PaymentNotifications] Batch reminder error:", error);
     return results;
   }
 }
 
 /**
- * Batch send payment overdue alerts
- * Used by scheduled job to check and alert on overdue payments
+ * Batch process overdue payment alerts
  */
 export async function sendBatchPaymentOverdueAlerts(): Promise<{
   total: number;
@@ -368,12 +391,42 @@ export async function sendBatchPaymentOverdueAlerts(): Promise<{
   const results = { total: 0, succeeded: 0, failed: 0 };
 
   try {
-    // This would query payment records with status = "overdue" and send alerts
-    // Implementation depends on your payment schedule table structure.
-    console.log("[Payment Notifications] Batch payment overdue alerts - not yet implemented");
+    const { getOverduePayments } = await import("../db");
+    const overduePayments = await getOverduePayments();
+    
+    if (!overduePayments?.length) {
+      return results;
+    }
+    
+    results.total = overduePayments.length;
+    
+    for (const payment of overduePayments) {
+      try {
+        const daysOverdue = Math.floor(
+          (Date.now() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        const notifyResult = await notifyPaymentOverdue(
+          payment.userId,
+          payment.loanNumber || `LOAN-${payment.loanApplicationId}`,
+          payment.amount,
+          daysOverdue,
+          new Date(payment.dueDate)
+        );
+        
+        if (notifyResult.success) {
+          results.succeeded++;
+        } else {
+          results.failed++;
+        }
+      } catch (err) {
+        results.failed++;
+      }
+    }
+    
     return results;
   } catch (error) {
-    console.error("[Payment Notifications] Error in batch payment overdue alerts:", error);
+    console.error("[PaymentNotifications] Batch overdue alert error:", error);
     return results;
   }
 }

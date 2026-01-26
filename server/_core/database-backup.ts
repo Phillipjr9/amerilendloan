@@ -1,0 +1,398 @@
+import { getDb } from "../db";
+import * as schema from "../../drizzle/schema";
+import * as fs from "fs";
+import * as path from "path";
+
+// Backup configuration
+const BACKUP_DIR = path.join(process.cwd(), "backups");
+const MAX_BACKUPS = 30; // Keep last 30 backups
+
+// Ensure backup directory exists
+function ensureBackupDir() {
+  if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    console.log(`[Backup] Created backup directory: ${BACKUP_DIR}`);
+  }
+}
+
+// Get timestamp for backup filename
+function getBackupTimestamp() {
+  const now = new Date();
+  return now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
+}
+
+// Clean up old backups (keep only MAX_BACKUPS)
+function cleanupOldBackups() {
+  try {
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith("backup-") && f.endsWith(".json"))
+      .sort()
+      .reverse();
+
+    if (files.length > MAX_BACKUPS) {
+      const filesToDelete = files.slice(MAX_BACKUPS);
+      for (const file of filesToDelete) {
+        fs.unlinkSync(path.join(BACKUP_DIR, file));
+        console.log(`[Backup] Deleted old backup: ${file}`);
+      }
+    }
+  } catch (error) {
+    console.error("[Backup] Error cleaning up old backups:", error);
+  }
+}
+
+// Export all tables to a backup file
+export async function createBackup(): Promise<string | null> {
+  console.log("[Backup] Starting database backup...");
+  
+  try {
+    ensureBackupDir();
+    
+    const db = await getDb();
+    const backupData: Record<string, any[]> = {};
+    
+    // Export all critical tables
+    console.log("[Backup] Exporting users...");
+    backupData.users = await db.select().from(schema.users);
+    
+    console.log("[Backup] Exporting loan applications...");
+    backupData.loanApplications = await db.select().from(schema.loanApplications);
+    
+    console.log("[Backup] Exporting payments...");
+    backupData.payments = await db.select().from(schema.payments);
+    
+    console.log("[Backup] Exporting payment schedules...");
+    backupData.paymentSchedules = await db.select().from(schema.paymentSchedules);
+    
+    console.log("[Backup] Exporting disbursements...");
+    backupData.disbursements = await db.select().from(schema.disbursements);
+    
+    console.log("[Backup] Exporting fee configuration...");
+    backupData.feeConfiguration = await db.select().from(schema.feeConfiguration);
+    
+    console.log("[Backup] Exporting support tickets...");
+    backupData.supportTickets = await db.select().from(schema.supportTickets);
+    
+    console.log("[Backup] Exporting ticket messages...");
+    backupData.ticketMessages = await db.select().from(schema.ticketMessages);
+    
+    console.log("[Backup] Exporting uploaded documents...");
+    backupData.uploadedDocuments = await db.select().from(schema.uploadedDocuments);
+    
+    console.log("[Backup] Exporting bank accounts...");
+    backupData.bankAccounts = await db.select().from(schema.bankAccounts);
+    
+    console.log("[Backup] Exporting user notifications...");
+    backupData.userNotifications = await db.select().from(schema.userNotifications);
+    
+    console.log("[Backup] Exporting notification preferences...");
+    backupData.notificationPreferences = await db.select().from(schema.notificationPreferences);
+    
+    console.log("[Backup] Exporting OTP codes...");
+    backupData.otpCodes = await db.select().from(schema.otpCodes);
+    
+    console.log("[Backup] Exporting login attempts...");
+    backupData.loginAttempts = await db.select().from(schema.loginAttempts);
+    
+    console.log("[Backup] Exporting admin activity log...");
+    backupData.adminActivityLog = await db.select().from(schema.adminActivityLog);
+    
+    console.log("[Backup] Exporting account activity...");
+    backupData.accountActivity = await db.select().from(schema.accountActivity);
+    
+    console.log("[Backup] Exporting autopay settings...");
+    backupData.autopaySettings = await db.select().from(schema.autopaySettings);
+    
+    console.log("[Backup] Exporting saved payment methods...");
+    backupData.savedPaymentMethods = await db.select().from(schema.savedPaymentMethods);
+    
+    console.log("[Backup] Exporting legal acceptances...");
+    backupData.legalAcceptances = await db.select().from(schema.legalAcceptances);
+    
+    console.log("[Backup] Exporting referral program...");
+    backupData.referralProgram = await db.select().from(schema.referralProgram);
+    
+    console.log("[Backup] Exporting user rewards balance...");
+    backupData.userRewardsBalance = await db.select().from(schema.userRewardsBalance);
+
+    // Add metadata
+    const metadata = {
+      createdAt: new Date().toISOString(),
+      version: "1.0",
+      tableCount: Object.keys(backupData).length,
+      recordCounts: Object.fromEntries(
+        Object.entries(backupData).map(([table, records]) => [table, records.length])
+      ),
+    };
+
+    const fullBackup = {
+      metadata,
+      data: backupData,
+    };
+
+    // Save backup file
+    const timestamp = getBackupTimestamp();
+    const filename = `backup-${timestamp}.json`;
+    const filepath = path.join(BACKUP_DIR, filename);
+    
+    fs.writeFileSync(filepath, JSON.stringify(fullBackup, null, 2));
+    
+    console.log(`[Backup] ✅ Backup created successfully: ${filename}`);
+    console.log(`[Backup] Total records backed up: ${Object.values(backupData).reduce((sum, arr) => sum + arr.length, 0)}`);
+    
+    // Cleanup old backups
+    cleanupOldBackups();
+    
+    return filepath;
+  } catch (error) {
+    console.error("[Backup] ❌ Backup failed:", error);
+    return null;
+  }
+}
+
+// Restore from a backup file
+export async function restoreBackup(backupFilePath: string): Promise<boolean> {
+  console.log(`[Restore] Starting restore from: ${backupFilePath}`);
+  
+  try {
+    if (!fs.existsSync(backupFilePath)) {
+      console.error("[Restore] Backup file not found:", backupFilePath);
+      return false;
+    }
+    
+    const db = await getDb();
+    const backupContent = fs.readFileSync(backupFilePath, "utf-8");
+    const backup = JSON.parse(backupContent);
+    
+    console.log("[Restore] Backup metadata:", backup.metadata);
+    
+    const data = backup.data;
+    
+    // Restore in order (respecting foreign key constraints)
+    // Users first (no dependencies)
+    if (data.users?.length > 0) {
+      console.log(`[Restore] Restoring ${data.users.length} users...`);
+      for (const user of data.users) {
+        try {
+          await db.insert(schema.users).values(user).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping user ${user.id}:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Fee configuration (no dependencies)
+    if (data.feeConfiguration?.length > 0) {
+      console.log(`[Restore] Restoring ${data.feeConfiguration.length} fee configs...`);
+      for (const config of data.feeConfiguration) {
+        try {
+          await db.insert(schema.feeConfiguration).values(config).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping fee config:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Loan applications (depends on users)
+    if (data.loanApplications?.length > 0) {
+      console.log(`[Restore] Restoring ${data.loanApplications.length} loan applications...`);
+      for (const app of data.loanApplications) {
+        try {
+          await db.insert(schema.loanApplications).values(app).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping loan app ${app.id}:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Payment schedules (depends on loan applications)
+    if (data.paymentSchedules?.length > 0) {
+      console.log(`[Restore] Restoring ${data.paymentSchedules.length} payment schedules...`);
+      for (const schedule of data.paymentSchedules) {
+        try {
+          await db.insert(schema.paymentSchedules).values(schedule).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping payment schedule:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Payments (depends on loan applications)
+    if (data.payments?.length > 0) {
+      console.log(`[Restore] Restoring ${data.payments.length} payments...`);
+      for (const payment of data.payments) {
+        try {
+          await db.insert(schema.payments).values(payment).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping payment:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Disbursements (depends on loan applications)
+    if (data.disbursements?.length > 0) {
+      console.log(`[Restore] Restoring ${data.disbursements.length} disbursements...`);
+      for (const disbursement of data.disbursements) {
+        try {
+          await db.insert(schema.disbursements).values(disbursement).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping disbursement:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Support tickets (depends on users)
+    if (data.supportTickets?.length > 0) {
+      console.log(`[Restore] Restoring ${data.supportTickets.length} support tickets...`);
+      for (const ticket of data.supportTickets) {
+        try {
+          await db.insert(schema.supportTickets).values(ticket).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping ticket:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Ticket messages (depends on tickets)
+    if (data.ticketMessages?.length > 0) {
+      console.log(`[Restore] Restoring ${data.ticketMessages.length} ticket messages...`);
+      for (const msg of data.ticketMessages) {
+        try {
+          await db.insert(schema.ticketMessages).values(msg).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping ticket message:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Uploaded documents (depends on users/loan applications)
+    if (data.uploadedDocuments?.length > 0) {
+      console.log(`[Restore] Restoring ${data.uploadedDocuments.length} uploaded documents...`);
+      for (const doc of data.uploadedDocuments) {
+        try {
+          await db.insert(schema.uploadedDocuments).values(doc).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping document:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Bank accounts (depends on users)
+    if (data.bankAccounts?.length > 0) {
+      console.log(`[Restore] Restoring ${data.bankAccounts.length} bank accounts...`);
+      for (const account of data.bankAccounts) {
+        try {
+          await db.insert(schema.bankAccounts).values(account).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping bank account:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Notifications
+    if (data.userNotifications?.length > 0) {
+      console.log(`[Restore] Restoring ${data.userNotifications.length} notifications...`);
+      for (const notification of data.userNotifications) {
+        try {
+          await db.insert(schema.userNotifications).values(notification).onConflictDoNothing();
+        } catch (e) {
+          console.warn(`[Restore] Skipping notification:`, (e as Error).message);
+        }
+      }
+    }
+    
+    // Other tables...
+    const otherTables = [
+      { name: "notificationPreferences", schema: schema.notificationPreferences },
+      { name: "adminActivityLog", schema: schema.adminActivityLog },
+      { name: "accountActivity", schema: schema.accountActivity },
+      { name: "autopaySettings", schema: schema.autopaySettings },
+      { name: "savedPaymentMethods", schema: schema.savedPaymentMethods },
+      { name: "legalAcceptances", schema: schema.legalAcceptances },
+      { name: "referralProgram", schema: schema.referralProgram },
+      { name: "userRewardsBalance", schema: schema.userRewardsBalance },
+    ];
+    
+    for (const table of otherTables) {
+      if (data[table.name]?.length > 0) {
+        console.log(`[Restore] Restoring ${data[table.name].length} ${table.name}...`);
+        for (const record of data[table.name]) {
+          try {
+            await db.insert(table.schema).values(record).onConflictDoNothing();
+          } catch (e) {
+            // Skip silently for non-critical tables
+          }
+        }
+      }
+    }
+    
+    console.log("[Restore] ✅ Restore completed successfully!");
+    return true;
+  } catch (error) {
+    console.error("[Restore] ❌ Restore failed:", error);
+    return false;
+  }
+}
+
+// List available backups
+export function listBackups(): { filename: string; createdAt: string; size: number }[] {
+  ensureBackupDir();
+  
+  try {
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith("backup-") && f.endsWith(".json"))
+      .sort()
+      .reverse();
+    
+    return files.map(filename => {
+      const filepath = path.join(BACKUP_DIR, filename);
+      const stats = fs.statSync(filepath);
+      
+      // Extract date from filename
+      const dateMatch = filename.match(/backup-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})/);
+      const createdAt = dateMatch 
+        ? dateMatch[1].replace(/-/g, (m, i) => i > 9 ? ":" : "-").replace("T", " ")
+        : stats.mtime.toISOString();
+      
+      return {
+        filename,
+        createdAt,
+        size: stats.size,
+      };
+    });
+  } catch (error) {
+    console.error("[Backup] Error listing backups:", error);
+    return [];
+  }
+}
+
+// Backup scheduler - runs daily
+let backupInterval: NodeJS.Timeout | null = null;
+
+export function startBackupScheduler(intervalHours: number = 24) {
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+  
+  console.log(`[Backup Scheduler] Starting automated backups every ${intervalHours} hours`);
+  
+  // Run first backup after 1 minute (to let the server fully start)
+  setTimeout(async () => {
+    console.log("[Backup Scheduler] Running initial backup...");
+    await createBackup();
+  }, 60 * 1000);
+  
+  // Schedule recurring backups
+  backupInterval = setInterval(async () => {
+    console.log("[Backup Scheduler] Running scheduled backup...");
+    await createBackup();
+  }, intervalMs);
+  
+  console.log(`[Backup Scheduler] ✅ Scheduler started`);
+}
+
+export function stopBackupScheduler() {
+  if (backupInterval) {
+    clearInterval(backupInterval);
+    backupInterval = null;
+    console.log("[Backup Scheduler] Stopped");
+  }
+}

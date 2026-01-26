@@ -218,26 +218,19 @@ export default function OTPLogin() {
     e.preventDefault();
     
     if (!loginIdentifier) {
-      toast.error("Please enter your email or username");
+      toast.error("Enter your email or username");
       return;
     }
 
     if (loginMethod === "password") {
-      // Password login
       if (!loginPassword) {
-        toast.error("Please enter your password");
+        toast.error("Enter your password");
         return;
       }
-      // Always try custom password login first (for users who signed up with OTP and set password)
-      // This will succeed for most users in OTP-only environments
       passwordLoginMutation.mutate({ email: loginIdentifier, password: loginPassword });
     } else {
-      // Email code login
       setPendingIdentifier(loginIdentifier);
-      requestEmailCodeMutation.mutate({
-        email: loginIdentifier,
-        purpose: "login",
-      });
+      requestEmailCodeMutation.mutate({ email: loginIdentifier, purpose: "login" });
     }
   };
 
@@ -322,11 +315,10 @@ export default function OTPLogin() {
     }
 
     if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long");
+      toast.error("Password must be at least 8 characters");
       return;
     }
 
-    // Call the password update mutation with email, code, and new password
     updatePasswordMutation.mutate({
       email: loginIdentifier,
       code: code,
@@ -338,7 +330,7 @@ export default function OTPLogin() {
     e.preventDefault();
     
     if (code.length !== 6) {
-      toast.error("Please enter the 6-digit code");
+      toast.error("Enter the 6-digit code");
       return;
     }
 
@@ -346,9 +338,7 @@ export default function OTPLogin() {
       identifier: pendingIdentifier,
       code,
       purpose: isResetMode ? "reset" : isLogin ? "login" : "signup",
-      // Include password for signup flow to store it in database
       password: !isLogin && !isResetMode ? signupPassword : undefined,
-      // Include username for signup flow
       username: !isLogin && !isResetMode ? signupUsername : undefined,
     });
   };
@@ -366,7 +356,7 @@ export default function OTPLogin() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 px-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <img src="/logo.jpg" alt="AmeriLend" className="h-40 w-auto mb-4" style={{ mixBlendMode: 'multiply' }} />
+          <img src="/logo.jpg" alt="AmeriLend" className="h-40 w-auto mb-4 mix-blend-multiply" />
           <h1 className="text-3xl font-bold text-[#0033A0]">AmeriLend</h1>
           <p className="text-gray-600 mt-2">Secure Authentication</p>
         </div>
