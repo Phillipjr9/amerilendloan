@@ -1608,3 +1608,40 @@ export type CollectionAction = typeof collectionActions.$inferSelect;
 export type InsertCollectionAction = typeof collectionActions.$inferInsert;
 export type SelectLoanDocument = typeof loanDocuments.$inferSelect;
 export type InsertLoanDocument = typeof loanDocuments.$inferInsert;
+
+// Invitation Codes (admin-generated offer codes sent via email)
+export const invitationCodeStatusEnum = pgEnum("invitation_code_status", [
+  "active",
+  "redeemed",
+  "expired",
+  "revoked"
+]);
+
+export const invitationCodes = pgTable("invitation_codes", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 20 }).notNull().unique(),
+  recipientEmail: varchar("recipient_email", { length: 320 }).notNull(),
+  recipientName: varchar("recipient_name", { length: 255 }),
+  
+  // Offer details embedded in the code
+  offerAmount: integer("offer_amount"), // pre-approved amount in cents
+  offerApr: integer("offer_apr"), // basis points (e.g. 899 = 8.99%)
+  offerTermMonths: integer("offer_term_months"), // months
+  offerDescription: text("offer_description"),
+  
+  // Lifecycle
+  status: invitationCodeStatusEnum("status").default("active").notNull(),
+  redeemedBy: integer("redeemed_by").references(() => users.id),
+  redeemedAt: timestamp("redeemed_at"),
+  expiresAt: timestamp("expires_at").notNull(),
+  
+  // Admin tracking
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  adminNotes: text("admin_notes"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type InvitationCode = typeof invitationCodes.$inferSelect;
+export type InsertInvitationCode = typeof invitationCodes.$inferInsert;

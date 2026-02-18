@@ -22,11 +22,14 @@ import {
   Sparkles,
   BadgeCheck,
   AlertCircle,
+  Ticket,
+  Gift,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 /* ─── offer generation helpers ─── */
 interface LoanOffer {
@@ -160,10 +163,70 @@ export default function CheckOffers() {
     );
   }
 
-  type Step = "form" | "checking" | "offers" | "no-offers";
+  type Step = "form" | "checking" | "offers" | "no-offers" | "code-offer";
   const [step, setStep] = useState<Step>("form");
   const [offers, setOffers] = useState<LoanOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<string | null>(null);
+
+  // "Have a code?" state
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [codeValidating, setCodeValidating] = useState(false);
+  const [codeOffer, setCodeOffer] = useState<any>(null);
+
+  const validateCodeQuery = trpc.invitations.validate.useQuery(
+    { code: inviteCode.trim() },
+    { enabled: false }
+  );
+
+  const redeemCodeMutation = trpc.invitations.redeem.useMutation({
+    onSuccess: () => {},
+    onError: () => {},
+  });
+
+  const handleValidateCode = async () => {
+    if (!inviteCode.trim()) {
+      toast.error("Please enter an invitation code");
+      return;
+    }
+    setCodeValidating(true);
+    try {
+      const result = await validateCodeQuery.refetch();
+      if (result.data?.valid && result.data.invitation) {
+        setCodeOffer(result.data.invitation);
+        setStep("code-offer");
+        toast.success("Code verified! Here's your personalized offer.");
+      } else {
+        toast.error(result.data?.message || "Invalid code");
+      }
+    } catch {
+      toast.error("Could not validate code. Please try again.");
+    } finally {
+      setCodeValidating(false);
+    }
+  };
+
+  const handleAcceptCodeOffer = async () => {
+    try {
+      await redeemCodeMutation.mutateAsync({ code: inviteCode.trim() });
+    } catch {
+      // non-blocking — code is already validated
+    }
+    localStorage.setItem(
+      "prequalificationData",
+      JSON.stringify({
+        fullName: codeOffer.recipientName || "",
+        invitationCode: codeOffer.code,
+        selectedOffer: {
+          amount: codeOffer.offerAmount ? codeOffer.offerAmount / 100 : undefined,
+          apr: codeOffer.offerApr ? codeOffer.offerApr / 100 : undefined,
+          term: codeOffer.offerTermMonths,
+          description: codeOffer.offerDescription,
+        },
+      })
+    );
+    setLocation("/apply");
+  };
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -445,6 +508,147 @@ export default function CheckOffers() {
   }
 
   /* ════════════════════════════════════
+     STEP: Code Offer (invitation code redeemed)
+     ════════════════════════════════════ */
+  if (step === "code-offer" && codeOffer) {
+    const amt = codeOffer.offerAmount ? codeOffer.offerAmount / 100 : null;
+    const apr = codeOffer.offerApr ? codeOffer.offerApr / 100 : null;
+    const term = codeOffer.offerTermMonths;
+    const monthly = amt && apr && term
+      ? (() => {
+          const r = apr / 100 / 12;
+          return r > 0 ? (amt * r) / (1 - Math.pow(1 + r, -term)) : amt / term;
+        })()
+      : null;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#f0f7f6] to-white">
+        <header className="bg-white border-b border-gray-100 sticky top-0 z-30">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <Link href="/">
+              <span className="text-xl font-bold text-[#0A2540]">
+                Ameri<span className="text-[#C9A227]">Lend</span>
+              </span>
+            </Link>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Shield className="w-4 h-4 text-green-600" />
+              Invitation verified
+            </div>
+          </div>
+        </header>
+
+        <div className="container mx-auto px-4 py-8 md:py-12 max-w-lg">
+          {/* Success banner */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 rounded-full px-5 py-2 text-sm font-medium mb-4">
+              <CheckCircle2 className="w-4 h-4" />
+              Invitation Code Verified
+            </div>
+            <h1 className="text-3xl font-bold text-[#0A2540] mb-2">
+              {codeOffer.recipientName ? `Welcome, ${codeOffer.recipientName}!` : "Your Exclusive Offer"}
+            </h1>
+            <p className="text-gray-500">
+              {codeOffer.offerDescription || "You've been invited with a personalized loan offer from AmeriLend."}
+            </p>
+          </div>
+
+          {/* Offer card */}
+          <Card className="shadow-xl border-2 border-[#C9A227]/40 bg-white mb-8">
+            <CardHeader className="text-center pb-2">
+              <div className="inline-flex items-center gap-1 bg-[#C9A227] text-white text-xs font-bold px-3 py-1 rounded-full mx-auto mb-2">
+                <Star className="w-3 h-3" /> Exclusive Offer
+              </div>
+              <CardTitle className="text-[#0A2540]">Your Pre-Approved Terms</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {amt && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">Loan Amount</p>
+                  <p className="text-4xl font-bold text-[#0A2540]">${amt.toLocaleString()}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 py-4 border-y">
+                {apr && (
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">APR</p>
+                    <p className="text-xl font-bold text-[#0A2540]">{apr.toFixed(2)}%</p>
+                  </div>
+                )}
+                {term && (
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500">Term</p>
+                    <p className="text-xl font-bold text-[#0A2540]">{term} months</p>
+                  </div>
+                )}
+              </div>
+
+              {monthly && (
+                <div className="text-center bg-green-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-600">Estimated Monthly Payment</p>
+                  <p className="text-3xl font-bold text-[#00875A]">
+                    ${monthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              )}
+
+              {!amt && !apr && !term && (
+                <div className="text-center py-4">
+                  <Gift className="w-10 h-10 mx-auto text-[#C9A227] mb-2" />
+                  <p className="text-gray-600">
+                    You have a special invitation to apply. Complete your application to see your personalized terms.
+                  </p>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-400 text-center">
+                Code: <span className="font-mono font-bold">{codeOffer.code}</span>
+                {codeOffer.expiresAt && (
+                  <> · Expires {new Date(codeOffer.expiresAt).toLocaleDateString()}</>
+                )}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* CTA */}
+          <div className="text-center space-y-4">
+            <Button
+              size="lg"
+              onClick={handleAcceptCodeOffer}
+              className="w-full bg-[#C9A227] hover:bg-[#b8922a] text-white font-semibold rounded-lg text-base h-12"
+            >
+              Continue to Application <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => { setStep("form"); setShowCodeInput(false); }}
+              className="w-full"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" /> Check Offers Without Code
+            </Button>
+          </div>
+
+          {/* Trust bar */}
+          <div className="mt-10 border-t pt-6 grid grid-cols-3 gap-4 text-center text-xs text-gray-400">
+            <div className="flex flex-col items-center gap-1">
+              <Shield className="w-4 h-4 text-green-600" />
+              <span>256-bit encryption</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <Clock className="w-4 h-4 text-blue-600" />
+              <span>Funds as fast as same day</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <DollarSign className="w-4 h-4 text-[#C9A227]" />
+              <span>No hidden fees</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ════════════════════════════════════
      STEP: Form
      ════════════════════════════════════ */
   return (
@@ -481,6 +685,51 @@ export default function CheckOffers() {
           <p className="text-gray-500 text-lg">
             Answer a few quick questions and see personalized offers in under 2 minutes.
           </p>
+        </div>
+
+        {/* ─── Have a Code? Section ─── */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowCodeInput(!showCodeInput)}
+            className="flex items-center gap-2 text-sm font-semibold text-[#C9A227] hover:text-[#b8922a] transition-colors"
+          >
+            <Ticket className="w-4 h-4" />
+            Have an invitation code?
+          </button>
+
+          {showCodeInput && (
+            <Card className="mt-3 border-[#C9A227]/30 bg-amber-50/50 shadow-md">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Gift className="w-5 h-5 text-[#C9A227]" />
+                  <p className="text-sm text-gray-700">
+                    Enter the code from your AmeriLend invitation email to see your personalized offer.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g. AL-XXXXXXXX"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                    className="font-mono text-center tracking-wider uppercase"
+                    maxLength={20}
+                    onKeyDown={(e) => e.key === "Enter" && handleValidateCode()}
+                  />
+                  <Button
+                    onClick={handleValidateCode}
+                    disabled={codeValidating || !inviteCode.trim()}
+                    className="bg-[#C9A227] hover:bg-[#b8922a] text-white px-6 shrink-0"
+                  >
+                    {codeValidating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Apply Code"
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Form card */}

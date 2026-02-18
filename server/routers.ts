@@ -1084,6 +1084,222 @@ const collectionsRouter = router({
     }),
 });
 
+// ============================================
+// INVITATION CODES ROUTER
+// ============================================
+function generateInvitationCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 for readability
+  let code = "AL-";
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+const invitationCodesRouter = router({
+  // Admin: create and send an invitation code
+  create: adminProcedure
+    .input(z.object({
+      recipientEmail: z.string().email(),
+      recipientName: z.string().min(1),
+      offerAmount: z.number().min(100).optional(), // cents
+      offerApr: z.number().min(0).optional(), // basis points
+      offerTermMonths: z.number().min(1).optional(),
+      offerDescription: z.string().optional(),
+      expiresInDays: z.number().min(1).max(365).default(30),
+      adminNotes: z.string().optional(),
+      sendEmail: z.boolean().default(true),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const dbConn = await getDb();
+      if (!dbConn) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const code = generateInvitationCode();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + input.expiresInDays);
+
+      const [invitation] = await dbConn
+        .insert(schema.invitationCodes)
+        .values({
+          code,
+          recipientEmail: input.recipientEmail,
+          recipientName: input.recipientName,
+          offerAmount: input.offerAmount || null,
+          offerApr: input.offerApr || null,
+          offerTermMonths: input.offerTermMonths || null,
+          offerDescription: input.offerDescription || null,
+          expiresAt,
+          createdBy: ctx.user.id,
+          adminNotes: input.adminNotes || null,
+        })
+        .returning();
+
+      // Attempt to send email
+      if (input.sendEmail) {
+        try {
+          const { sendInvitationCodeEmail } = await import("./_core/email");
+          if (typeof sendInvitationCodeEmail === "function") {
+            await sendInvitationCodeEmail(input.recipientEmail, input.recipientName, code, {
+              amount: input.offerAmount ? input.offerAmount / 100 : undefined,
+              apr: input.offerApr ? input.offerApr / 100 : undefined,
+              termMonths: input.offerTermMonths,
+              description: input.offerDescription || undefined,
+              expiresAt,
+            });
+          }
+        } catch (emailErr) {
+          console.warn("[Invitations] Email send failed (code still created):", emailErr);
+        }
+      }
+
+      return { success: true, data: invitation };
+    }),
+
+  // Admin: list all invitation codes
+  list: adminProcedure
+    .input(z.object({
+      status: z.enum(["active", "redeemed", "expired", "revoked"]).optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const dbConn = await getDb();
+      if (!dbConn) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const { desc } = await import("drizzle-orm");
+      let query = dbConn.select().from(schema.invitationCodes);
+
+      if (input?.status) {
+        query = query.where(eq(schema.invitationCodes.status, input.status)) as any;
+      }
+
+      const codes = await (query as any).orderBy(desc(schema.invitationCodes.createdAt));
+      return { success: true, data: codes };
+    }),
+
+  // Admin: revoke an invitation code
+  revoke: adminProcedure
+    .input(z.object({ codeId: z.number() }))
+    .mutation(async ({ input }) => {
+      const dbConn = await getDb();
+      if (!dbConn) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      await dbConn
+        .update(schema.invitationCodes)
+        .set({ status: "revoked", updatedAt: new Date() })
+        .where(eq(schema.invitationCodes.id, input.codeId));
+
+      return { success: true };
+    }),
+
+  // Admin: resend email for existing code
+  resend: adminProcedure
+    .input(z.object({ codeId: z.number() }))
+    .mutation(async ({ input }) => {
+      const dbConn = await getDb();
+      if (!dbConn) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [invitation] = await dbConn
+        .select()
+        .from(schema.invitationCodes)
+        .where(eq(schema.invitationCodes.id, input.codeId))
+        .limit(1);
+
+      if (!invitation) throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+
+      try {
+        const { sendInvitationCodeEmail } = await import("./_core/email");
+        if (typeof sendInvitationCodeEmail === "function") {
+          await sendInvitationCodeEmail(
+            invitation.recipientEmail,
+            invitation.recipientName || "Customer",
+            invitation.code,
+            {
+              amount: invitation.offerAmount ? invitation.offerAmount / 100 : undefined,
+              apr: invitation.offerApr ? invitation.offerApr / 100 : undefined,
+              termMonths: invitation.offerTermMonths ?? undefined,
+              description: invitation.offerDescription || undefined,
+              expiresAt: invitation.expiresAt,
+            }
+          );
+        }
+      } catch (err) {
+        console.warn("[Invitations] Resend email failed:", err);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to resend email" });
+      }
+
+      return { success: true };
+    }),
+
+  // Public: validate a code (user enters code on front-end)
+  validate: publicProcedure
+    .input(z.object({ code: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const dbConn = await getDb();
+      if (!dbConn) return { valid: false, message: "Service unavailable" };
+
+      const [invitation] = await dbConn
+        .select()
+        .from(schema.invitationCodes)
+        .where(eq(schema.invitationCodes.code, input.code.trim().toUpperCase()))
+        .limit(1);
+
+      if (!invitation) return { valid: false, message: "Invalid invitation code" };
+      if (invitation.status === "redeemed") return { valid: false, message: "This code has already been used" };
+      if (invitation.status === "revoked") return { valid: false, message: "This code has been revoked" };
+      if (invitation.status === "expired" || new Date() > invitation.expiresAt) return { valid: false, message: "This code has expired" };
+
+      return {
+        valid: true,
+        invitation: {
+          code: invitation.code,
+          recipientName: invitation.recipientName,
+          offerAmount: invitation.offerAmount,
+          offerApr: invitation.offerApr,
+          offerTermMonths: invitation.offerTermMonths,
+          offerDescription: invitation.offerDescription,
+          expiresAt: invitation.expiresAt,
+        },
+      };
+    }),
+
+  // Public/Protected: redeem a code (mark as used when user starts application)
+  redeem: publicProcedure
+    .input(z.object({ code: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const dbConn = await getDb();
+      if (!dbConn) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [invitation] = await dbConn
+        .select()
+        .from(schema.invitationCodes)
+        .where(eq(schema.invitationCodes.code, input.code.trim().toUpperCase()))
+        .limit(1);
+
+      if (!invitation || invitation.status !== "active" || new Date() > invitation.expiresAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired code" });
+      }
+
+      await dbConn
+        .update(schema.invitationCodes)
+        .set({
+          status: "redeemed",
+          redeemedBy: ctx.user?.id || null,
+          redeemedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.invitationCodes.id, invitation.id));
+
+      return {
+        success: true,
+        offer: {
+          amount: invitation.offerAmount,
+          apr: invitation.offerApr,
+          termMonths: invitation.offerTermMonths,
+          description: invitation.offerDescription,
+        },
+      };
+    }),
+});
+
 
 export const appRouter = router({
   system: systemRouter,
@@ -7767,6 +7983,7 @@ Format as JSON with array of applications including their recommendation.`;
   eSignature: eSignatureRouter,
   marketing: marketingRouter,
   collections: collectionsRouter,
+  invitations: invitationCodesRouter,
 });
 
 // Helper function to determine next steps based on application status

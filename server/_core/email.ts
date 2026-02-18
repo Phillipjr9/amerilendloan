@@ -4775,3 +4775,78 @@ The AmeriLend Team
 
   await sendEmail({ to: email, subject, text, html });
 }
+
+/**
+ * Send invitation code email to potential borrower
+ */
+export async function sendInvitationCodeEmail(
+  email: string,
+  recipientName: string,
+  code: string,
+  offer: {
+    amount?: number;
+    apr?: number;
+    termMonths?: number;
+    description?: string;
+    expiresAt: Date;
+  }
+): Promise<void> {
+  const subject = `You're Invited! Your Exclusive AmeriLend Offer Code: ${code}`;
+
+  const offerDetailsHtml = offer.amount
+    ? `
+      <div style="background: linear-gradient(135deg, #C9A227 0%, #e6c84d 100%); padding: 25px; margin: 20px 0; border-radius: 12px; color: white; text-align: center;">
+        <p style="margin: 0 0 5px; font-size: 14px; opacity: 0.9;">Pre-Approved Amount</p>
+        <p style="margin: 0; font-size: 36px; font-weight: bold;">$${offer.amount.toLocaleString()}</p>
+        ${offer.apr ? `<p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">As low as ${offer.apr.toFixed(2)}% APR</p>` : ""}
+        ${offer.termMonths ? `<p style="margin: 4px 0 0; font-size: 14px; opacity: 0.9;">${offer.termMonths}-month term</p>` : ""}
+      </div>
+    `
+    : "";
+
+  const text = `Hello ${recipientName}, you've been invited to apply at AmeriLend with code: ${code}. Visit https://amerilendloan.com/check-offers to redeem. Expires ${offer.expiresAt.toLocaleDateString()}.`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+      <div style="background-color: #0A2540; padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; color: #C9A227; font-size: 28px;">Ameri<span style="color: white;">Lend</span></h1>
+        <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;">Your Exclusive Invitation</p>
+      </div>
+
+      <div style="padding: 30px; background: white; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 18px;">Hello <strong>${recipientName}</strong>,</p>
+
+        <p>You've been personally invited to explore a loan offer from AmeriLend. Use your exclusive invitation code below to see your personalized terms.</p>
+
+        <div style="background-color: #f8f9fa; border: 2px dashed #C9A227; padding: 20px; margin: 20px 0; border-radius: 10px; text-align: center;">
+          <p style="margin: 0 0 5px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #666;">Your Invitation Code</p>
+          <p style="margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 3px; color: #0A2540; font-family: monospace;">${code}</p>
+        </div>
+
+        ${offerDetailsHtml}
+
+        ${offer.description ? `<p style="background: #f0f7f6; padding: 15px; border-radius: 8px; color: #0A2540; font-style: italic;">${offer.description}</p>` : ""}
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://amerilendloan.com/check-offers" style="display: inline-block; background-color: #C9A227; color: white; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Redeem Your Code</a>
+        </div>
+
+        <p style="font-size: 13px; color: #888; text-align: center;">
+          This code expires on <strong>${offer.expiresAt.toLocaleDateString()}</strong>.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+
+        <p style="font-size: 12px; color: #999; text-align: center;">
+          AmeriLend | <a href="https://amerilendloan.com" style="color: #C9A227;">amerilendloan.com</a><br />
+          Questions? Email us at support@amerilendloan.com or call (945) 212-1609
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
