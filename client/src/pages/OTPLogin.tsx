@@ -353,13 +353,14 @@ export default function OTPLogin() {
   const isLoading = requestEmailCodeMutation.isPending || verifyCodeMutation.isPending;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFBFC]">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#f0f7f6] to-white">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200/60 py-4">
-        <div className="container mx-auto px-4">
+      <header className="bg-white border-b border-gray-100 shadow-sm py-0">
+        <div className="container mx-auto px-4 h-16 flex items-center">
           <Link href="/">
             <a className="flex items-center gap-2">
-              <img src="/logo.jpg" alt="AmeriLend" className="h-10 w-auto" />
+              <img src="/images/logo-new.jpg" alt="AmeriLend" className="h-9 w-auto rounded" />
+              <span className="text-xl font-bold text-[#0A2540] hidden sm:inline">AmeriLend</span>
             </a>
           </Link>
         </div>

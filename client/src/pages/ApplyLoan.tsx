@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SubmissionAnimationOverlay } from "@/components/SubmissionAnimationOverlay";
 import { SkeletonApplyForm } from "@/components/SkeletonCard";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Loader2, Phone, ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, Loader2, Phone, ArrowLeft, Save, Eye, EyeOff, Calculator } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -871,16 +871,16 @@ export default function ApplyLoan() {
         <>
           <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
-        <div className="container mx-auto px-4 py-2 sm:py-2.5 md:py-3">
-          <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
             <Link href="/">
-              <a className="flex items-center flex-shrink-0">
+              <a className="flex items-center gap-2 flex-shrink-0">
                 <img
-                  src="/logo.jpg"
+                  src="/images/logo-new.jpg"
                   alt="AmeriLend"
-                  className="h-20 sm:h-24 md:h-28 w-auto object-contain brightness-105 contrast-110"
+                  className="h-9 w-auto rounded"
                 />
+                <span className="text-xl font-bold text-[#0A2540] hidden sm:inline">AmeriLend</span>
               </a>
             </Link>
             <div className="flex items-center gap-3">
@@ -893,13 +893,12 @@ export default function ApplyLoan() {
               </a>
               {isAuthenticated && (
                 <Link href="/dashboard">
-                  <Button variant="outline" className="border-[#0A2540] text-[#0A2540] px-3 py-1.5 text-xs">
+                  <Button variant="outline" className="border-[#0A2540] text-[#0A2540] px-3 py-1.5 text-xs rounded-full">
                     Dashboard
                   </Button>
                 </Link>
               )}
             </div>
-          </div>
         </div>
       </header>
 

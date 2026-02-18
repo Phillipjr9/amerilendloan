@@ -1,11 +1,11 @@
 {
-  "name": "AmeriLend Loan Platform",
+  "name": "AmeriLend — Personal Loans Made Easy",
   "short_name": "AmeriLend",
-  "description": "Professional loan management and application platform",
+  "description": "Apply online in minutes with no application fee. Fast approvals, transparent terms, and same-day funding.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4F46E5",
+  "theme_color": "#0A2540",
   "orientation": "portrait-primary",
   "icons": [
     {
