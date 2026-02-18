@@ -104,7 +104,7 @@ export default function Home() {
                 </Button>
               </Link>
             )}
-            <Link href="/apply">
+            <Link href="/check-offers">
               <Button size="sm" className="bg-[#C9A227] hover:bg-[#b8922a] text-white rounded-full px-6">
                 See My Loan Offers
               </Button>
@@ -148,7 +148,7 @@ export default function Home() {
                   </Button>
                 </Link>
               )}
-              <Link href="/apply">
+              <Link href="/check-offers">
                 <Button className="w-full bg-[#C9A227] hover:bg-[#b8922a] text-white rounded-full">
                   See My Loan Offers
                 </Button>
@@ -190,7 +190,7 @@ export default function Home() {
               </ul>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-                <Link href="/apply">
+                <Link href="/check-offers">
                   <Button size="lg" className="bg-[#C9A227] hover:bg-[#b8922a] text-white font-semibold rounded-full px-8 text-base shadow-md w-full sm:w-auto">
                     See My Loan Offers <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -296,7 +296,7 @@ export default function Home() {
           <p className="text-gray-600 text-lg leading-relaxed max-w-2xl mx-auto mb-10">
             Apply online in minutes, get a decision fast, and have funds deposited directly to your account.
           </p>
-          <Link href="/apply">
+          <Link href="/check-offers">
             <Button size="lg" className="bg-[#C9A227] hover:bg-[#b8922a] text-white font-semibold rounded-full px-10 text-base shadow-md">
               Check My Offers <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -456,7 +456,7 @@ export default function Home() {
           <p className="text-gray-300 text-lg mb-8 max-w-xl mx-auto">
             Checking your offers won't affect your credit score. Apply in minutes and get a decision fast.
           </p>
-          <Link href="/apply">
+          <Link href="/check-offers">
             <Button size="lg" className="bg-[#C9A227] hover:bg-[#b8922a] text-white font-semibold rounded-full px-10 text-base shadow-lg">
               See My Loan Offers <ArrowRight className="w-4 h-4 ml-2" />
             </Button>

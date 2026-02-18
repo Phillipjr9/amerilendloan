@@ -96,7 +96,7 @@ export default function Rates() {
             <Link href="/rates" className="hover:text-[#0A2540] transition-colors">Rates</Link>
             <Link href="/resources" className="hover:text-[#0A2540] transition-colors">Resources</Link>
             <Link href="/contact" className="hover:text-[#0A2540] transition-colors">Contact</Link>
-            <Link href="/apply">
+            <Link href="/check-offers">
               <Button size="sm" className="bg-[#C9A227] hover:bg-[#b8922a] text-white rounded-full px-6">
                 See My Loan Offers
               </Button>
@@ -118,7 +118,7 @@ export default function Rates() {
             <Link href="/rates" className="block py-2 text-gray-700 hover:text-[#0A2540]" onClick={() => setMobileMenuOpen(false)}>Rates</Link>
             <Link href="/resources" className="block py-2 text-gray-700 hover:text-[#0A2540]" onClick={() => setMobileMenuOpen(false)}>Resources</Link>
             <Link href="/contact" className="block py-2 text-gray-700 hover:text-[#0A2540]" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
-            <Link href="/apply">
+            <Link href="/check-offers">
               <Button className="w-full bg-[#C9A227] hover:bg-[#b8922a] text-white rounded-full">See My Loan Offers</Button>
             </Link>
           </div>
@@ -186,7 +186,7 @@ export default function Rates() {
                   </div>
                 </div>
 
-                <Link href="/apply">
+                <Link href="/check-offers">
                   <Button
                     className={`w-full rounded-full font-semibold ${
                       tier.highlight
@@ -324,7 +324,7 @@ export default function Rates() {
           <p className="text-gray-300 text-lg mb-8">
             Checking your rate is free and won't impact your credit score.
           </p>
-          <Link href="/apply">
+          <Link href="/check-offers">
             <Button size="lg" className="bg-[#C9A227] hover:bg-[#b8922a] text-white font-semibold rounded-full px-10 text-base shadow-md">
               Check My Rate <ArrowRight className="w-4 h-4 ml-2" />
             </Button>

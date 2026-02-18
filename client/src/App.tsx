@@ -12,7 +12,7 @@ import AdminDashboardFalcon from "./pages/AdminDashboardFalcon";
 import PaymentPage from "./pages/PaymentPage";
 import OTPLogin from "./pages/OTPLogin";
 import EnhancedPaymentPage from "./pages/EnhancedPaymentPage";
-import Prequalify from "./pages/Prequalify";
+import CheckOffers from "./pages/CheckOffers";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import LegalDocuments from "./pages/LegalDocuments";
@@ -54,7 +54,8 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
-      <Route path={"/prequalify"} component={Prequalify} />
+      <Route path={"/check-offers"} component={CheckOffers} />
+      <Route path={"/prequalify"} component={CheckOffers} />
       <Route path={"/apply"} component={ApplyLoan} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/user-dashboard"} component={UserDashboard} />
