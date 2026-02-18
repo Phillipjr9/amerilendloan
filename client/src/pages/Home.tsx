@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Menu,
   X,
-  Star,
   Phone,
   Mail,
   Clock,
@@ -18,28 +17,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import AiSupportWidget from "@/components/AiSupportWidget";
-
-/* ─── Featured Testimonials ─── */
-const testimonials = [
-  {
-    name: "Sarah M.",
-    location: "Austin, TX",
-    rating: 5,
-    text: "AmeriLend saved me when I needed emergency car repairs. Fast approval and same-day funding — exactly what I needed.",
-  },
-  {
-    name: "James T.",
-    location: "Phoenix, AZ",
-    rating: 5,
-    text: "Best lending experience I've ever had. The terms were clear, the team was helpful, and funds arrived within 24 hours.",
-  },
-  {
-    name: "Maria G.",
-    location: "Miami, FL",
-    rating: 5,
-    text: "I was worried about my credit score, but AmeriLend worked with me. They made the whole process simple and stress-free.",
-  },
-];
+import TestimonialsSection from "@/components/TestimonialsSection";
 
 /* ─── FAQ Data ─── */
 const faqs = [
@@ -465,33 +443,7 @@ export default function Home() {
       {/* ════════════════════════════════════════════════════
           TESTIMONIALS
          ════════════════════════════════════════════════════ */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] text-center mb-12">
-            What our customers say
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((t, i) => (
-              <div
-                key={i}
-                className="bg-[#f8f9fa] rounded-2xl p-6 flex flex-col"
-              >
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.rating }).map((_, s) => (
-                    <Star key={s} className="w-5 h-5 fill-[#C9A227] text-[#C9A227]" />
-                  ))}
-                </div>
-                <p className="text-gray-700 leading-relaxed flex-1 mb-4">"{t.text}"</p>
-                <div>
-                  <p className="font-semibold text-[#0A2540]">{t.name}</p>
-                  <p className="text-sm text-gray-500">{t.location}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSection />
 
       {/* ════════════════════════════════════════════════════
           BOTTOM CTA

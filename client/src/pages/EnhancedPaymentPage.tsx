@@ -14,6 +14,7 @@ import { Link, useLocation, useRoute } from "wouter";
 import { toast } from "sonner";
 import { PaymentAnimationOverlay } from "@/components/PaymentAnimationOverlay";
 import { SupportModal } from "@/components/SupportModal";
+import { SecuritySeal } from "@/components/SecuritySeal";
 
 // Declare Accept.js types
 declare global {
@@ -569,6 +570,11 @@ export default function EnhancedPaymentPage() {
                           Your card information is encrypted and processed securely. We accept Visa,
                           Mastercard, American Express, and Discover.
                         </p>
+                      </div>
+
+                      {/* Security Seal */}
+                      <div className="flex justify-center my-3">
+                        <SecuritySeal />
                       </div>
 
                       {/* Card Payment Form */}

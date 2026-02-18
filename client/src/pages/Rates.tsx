@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 const loanTiers = [
   {
@@ -66,10 +67,18 @@ export default function Rates() {
 
   document.title = "Rates & Terms | AmeriLend";
 
-  // Simple illustrative monthly payment (using 24.99% APR midpoint)
-  const monthlyRate = 0.2499 / 12;
-  const monthlyPayment =
-    (loanAmount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -loanTerm));
+  // Use tRPC server-side loan calculator
+  const calcQuery = trpc.loanCalculator.calculatePayment.useQuery(
+    { amount: loanAmount * 100, term: loanTerm, interestRate: 24.99 },
+  );
+
+  // Server result or fallback to local calculation
+  const serverData = calcQuery.data?.success ? calcQuery.data.data : null;
+  const localRate = 0.2499 / 12;
+  const localPayment = (loanAmount * localRate) / (1 - Math.pow(1 + localRate, -loanTerm));
+  const monthlyPayment = serverData?.monthlyPaymentDollars ?? localPayment;
+  const totalInterest = serverData?.totalInterestDollars ?? (localPayment * loanTerm - loanAmount);
+  const totalPayment = serverData?.totalPaymentDollars ?? (localPayment * loanTerm);
 
   return (
     <div className="min-h-screen bg-white text-gray-800">
@@ -257,7 +266,17 @@ export default function Rates() {
               <div className="text-4xl font-extrabold text-[#C9A227]">
                 ${monthlyPayment.toFixed(2)}
               </div>
-              <p className="text-xs text-gray-400 mt-2">
+              <div className="flex justify-center gap-6 mt-4 text-sm">
+                <div>
+                  <p className="text-gray-400">Total Interest</p>
+                  <p className="font-bold text-white">${totalInterest.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Total Repayment</p>
+                  <p className="font-bold text-white">${totalPayment.toFixed(2)}</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-3">
                 Based on illustrative 24.99% APR. Your actual rate may be lower.
               </p>
             </div>

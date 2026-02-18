@@ -12,6 +12,7 @@ import { Link, useLocation, useRoute } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { SkeletonPaymentCard, SkeletonDetailSection } from "@/components/SkeletonCard";
+import { SecuritySeal, TrustIndicators } from "@/components/SecuritySeal";
 
 // Declare Accept.js types
 declare global {
@@ -465,6 +466,11 @@ export default function PaymentPage() {
                     </p>
                   </div>
 
+                  {/* Security Seal */}
+                  <div className="flex justify-center mb-4">
+                    <SecuritySeal />
+                  </div>
+
                   {/* Accepted Cards */}
                   <div className="flex items-center justify-center gap-3 pb-4 border-b">
                     <span className="text-sm text-muted-foreground mr-2">We accept:</span>
@@ -678,6 +684,11 @@ export default function PaymentPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Trust Indicators */}
+      <div className="container mx-auto px-4 max-w-2xl mt-6 mb-2">
+        <TrustIndicators />
       </div>
 
       {/* Footer */}

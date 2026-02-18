@@ -905,6 +905,24 @@ export default function ApplyLoan() {
       {/* Progress Bar */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-6">
+          {/* Percentage display */}
+          <div className="max-w-3xl mx-auto mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-[#0A2540]">
+                Application Progress
+              </span>
+              <span className="text-sm font-bold text-[#C9A227]">
+                {Math.round(((currentStep - 1) / 6) * 100)}% Complete
+              </span>
+            </div>
+            <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#0A2540] to-[#C9A227] rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${Math.round(((currentStep - 1) / 6) * 100)}%` }}
+              />
+            </div>
+          </div>
+
           <div className="flex items-center justify-between max-w-3xl mx-auto mb-4">
             {[1, 2, 3, 4, 5, 6].map((step) => (
               <div key={step} className="flex items-center flex-1">

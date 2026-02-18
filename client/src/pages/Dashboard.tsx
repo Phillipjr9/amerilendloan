@@ -65,6 +65,7 @@ import PaymentHistoryAnalytics from "@/components/PaymentHistoryAnalytics";
 import AutoPaySettings from "@/components/AutoPaySettings";
 import PaymentMethodManager from "@/components/PaymentMethodManager";
 import { PaymentAnalyticsCharts } from "@/components/PaymentAnalyticsCharts";
+import { OnboardingTutorial, useOnboarding } from "@/components/OnboardingTutorial";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -78,6 +79,9 @@ export default function Dashboard() {
   
   const [expandedLoan, setExpandedLoan] = useState<number | null>(null);
   const [newMessage, setNewMessage] = useState("");
+
+  // Onboarding tutorial for first-time users
+  const onboarding = useOnboarding("amerilend_dashboard_onboarding");
   const [messageAttachment, setMessageAttachment] = useState<File | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
@@ -2177,6 +2181,40 @@ export default function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Onboarding Tutorial */}
+      <OnboardingTutorial
+        isOpen={onboarding.isOpen}
+        onClose={onboarding.skipTutorial}
+        onComplete={onboarding.markAsCompleted}
+        steps={[
+          {
+            id: "welcome",
+            title: "Welcome to AmeriLend!",
+            description: "Let's take a quick tour of your dashboard so you know where everything is.",
+          },
+          {
+            id: "sidebar",
+            title: "Navigation Sidebar",
+            description: "Use the sidebar to navigate between your loan overview, payment history, documents, and settings.",
+          },
+          {
+            id: "apply",
+            title: "Apply for a Loan",
+            description: "Ready to get started? Click 'Apply Now' in the sidebar or the button on your dashboard to submit a new loan application.",
+          },
+          {
+            id: "payments",
+            title: "Make Payments",
+            description: "Once your loan is approved, you can make processing fee payments via credit card or cryptocurrency right from your dashboard.",
+          },
+          {
+            id: "support",
+            title: "Need Help?",
+            description: "Use the AI Support chat in the bottom-right corner or call us at (800) 990-9130 for assistance anytime.",
+          },
+        ]}
+      />
     </>
   );
 }

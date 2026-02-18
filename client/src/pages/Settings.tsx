@@ -410,7 +410,7 @@ export default function Settings() {
         <div className="container mx-auto px-4 max-w-4xl">
           {/* Tabs */}
           <div className="flex gap-2 mb-6 border-b flex-wrap">
-            {["password", "email", "bank", "profile", "language", "notifications"].map((tab) => (
+            {["password", "email", "bank", "profile", "language", "notifications", "privacy"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -426,6 +426,7 @@ export default function Settings() {
                 {tab === "profile" && <User className="w-4 h-4 inline mr-2" />}
                 {tab === "language" && <Globe className="w-4 h-4 inline mr-2" />}
                 {tab === "notifications" && <Bell className="w-4 h-4 inline mr-2" />}
+                {tab === "privacy" && <Download className="w-4 h-4 inline mr-2" />}
                 {tab === "2fa" ? "2FA" : tab === "privacy" ? "Privacy & Data" : tab}
               </button>
             ))}
@@ -979,6 +980,83 @@ export default function Settings() {
                       Some legal documents may only be available in English.
                     </p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Privacy & Data Tab */}
+          {activeTab === "privacy" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl text-[#0A2540]">Privacy & Data</CardTitle>
+                <CardDescription>Manage your personal data and privacy preferences</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* GDPR Data Export */}
+                <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-semibold text-[#0A2540] mb-2 flex items-center gap-2">
+                    <Download className="w-5 h-5" /> Export Your Data
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Download a complete copy of your personal data including your profile, loan applications, payment history, rewards, and referrals. This is provided in compliance with GDPR and data portability regulations.
+                  </p>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        toast.info("Preparing your data export...");
+                        const res = await fetch("/api/trpc/dataExport.exportMyData", { credentials: "include" });
+                        const json = await res.json();
+                        const exportData = json?.result?.data?.json ?? json?.result?.data ?? json;
+                        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = `amerilend-data-export-${new Date().toISOString().split("T")[0]}.json`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        toast.success("Data exported successfully!");
+                      } catch (err) {
+                        toast.error("Failed to export data. Please try again.");
+                      }
+                    }}
+                    className="bg-[#0A2540] hover:bg-[#0d3a5c] text-white"
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Download My Data (JSON)
+                  </Button>
+                </div>
+
+                {/* Privacy Links */}
+                <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                  <h3 className="font-semibold text-[#0A2540] mb-3">Privacy Documents</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li>
+                      <a href="/legal/privacy-policy" target="_blank" className="text-blue-600 hover:underline">Privacy Policy</a>
+                    </li>
+                    <li>
+                      <a href="/legal/terms-of-service" target="_blank" className="text-blue-600 hover:underline">Terms of Service</a>
+                    </li>
+                    <li>
+                      <a href="/legal/truth-in-lending" target="_blank" className="text-blue-600 hover:underline">Truth in Lending Disclosure</a>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Account Closure */}
+                <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+                  <h3 className="font-semibold text-red-800 mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" /> Close Account
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    If you wish to close your account and have your data deleted, you can submit a closure request. Outstanding loans must be resolved first.
+                  </p>
+                  <Link href="/account-closure">
+                    <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-100">
+                      <Trash2 className="w-4 h-4 mr-2" /> Request Account Closure
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

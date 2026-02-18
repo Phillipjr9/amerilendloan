@@ -4052,6 +4052,37 @@ export const appRouter = router({
       return getAcceptJsConfig();
     }),
 
+    // Create a Stripe Payment Intent for processing fee
+    createStripePaymentIntent: protectedProcedure
+      .input(z.object({
+        loanApplicationId: z.number(),
+        amountCents: z.number().int().positive(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const { createStripePaymentIntent } = await import("./_core/stripe");
+          const amountDollars = input.amountCents / 100;
+          const result = await createStripePaymentIntent(amountDollars, "usd", {
+            userId: String(ctx.user.id),
+            loanApplicationId: String(input.loanApplicationId),
+            type: "processing_fee",
+          });
+          return result;
+        } catch (error) {
+          console.error("[Stripe] Error creating payment intent:", error);
+          return { success: false, error: "Failed to create Stripe payment intent" };
+        }
+      }),
+
+    // Check if Stripe is available (has valid keys configured)
+    getStripeConfig: publicProcedure.query(async () => {
+      const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || "";
+      return {
+        enabled: !!publishableKey,
+        publishableKey: publishableKey,
+      };
+    }),
+
     // Get supported cryptocurrencies with rates
     getSupportedCryptos: publicProcedure.query(async () => {
       return getSupportedCryptos();
