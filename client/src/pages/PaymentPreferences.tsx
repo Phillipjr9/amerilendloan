@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,7 +16,7 @@ import { Loader2, DollarSign, Calendar, TrendingUp, Info } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function PaymentPreferences() {
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const [allocationStrategy, setAllocationStrategy] = useState<string>("standard");
   const [enableBiweekly, setEnableBiweekly] = useState(false);
   const [biweeklyAmount, setBiweeklyAmount] = useState("");
@@ -28,10 +27,8 @@ export default function PaymentPreferences() {
   const [extraPaymentDay, setExtraPaymentDay] = useState("");
 
   // Fetch current preferences
-  const { data: preferences, isLoading } = useQuery({
-    queryKey: ["paymentPreferences"],
-    queryFn: () => trpc.paymentPreferences.getPreferences.query(),
-  });
+  const { data: preferencesData, isLoading } = trpc.paymentPreferences.getPreferences.useQuery({});
+  const preferences = (preferencesData as any)?.data;
 
   // Update form when preferences load
   useEffect(() => {
@@ -48,38 +45,28 @@ export default function PaymentPreferences() {
   }, [preferences]);
 
   // Update preferences mutation
-  const updateMutation = useMutation({
-    mutationFn: async () => {
-      return trpc.paymentPreferences.updatePreferences.mutate({
-        allocationStrategy: allocationStrategy as any,
-        biweeklyPayments: enableBiweekly,
-        biweeklyAmount: enableBiweekly && biweeklyAmount ? Math.round(parseFloat(biweeklyAmount) * 100) : undefined,
-        roundUpPayments: enableRoundUp,
-        roundUpTarget: enableRoundUp && roundUpTarget ? parseInt(roundUpTarget) : undefined,
-        autoExtraPayment,
-        extraPaymentAmount: autoExtraPayment && extraPaymentAmount ? Math.round(parseFloat(extraPaymentAmount) * 100) : undefined,
-        extraPaymentDay: autoExtraPayment && extraPaymentDay ? parseInt(extraPaymentDay) : undefined,
-      });
-    },
+  const updateMutation = trpc.paymentPreferences.updatePreferences.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["paymentPreferences"] });
-      toast({
-        title: "Preferences Updated",
-        description: "Your payment preferences have been saved successfully.",
-      });
+      utils.paymentPreferences.getPreferences.invalidate();
+      toast.success("Your payment preferences have been saved successfully.");
     },
     onError: (error: any) => {
-      toast({
-        title: "Update Failed",
-        description: error.message || "Failed to update payment preferences.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to update payment preferences.");
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMutation.mutate();
+    updateMutation.mutate({
+      allocationStrategy: allocationStrategy as any,
+      biweeklyPayments: enableBiweekly,
+      biweeklyAmount: enableBiweekly && biweeklyAmount ? Math.round(parseFloat(biweeklyAmount) * 100) : undefined,
+      roundUpPayments: enableRoundUp,
+      roundUpTarget: enableRoundUp && roundUpTarget ? parseInt(roundUpTarget) : undefined,
+      autoExtraPayment,
+      extraPaymentAmount: autoExtraPayment && extraPaymentAmount ? Math.round(parseFloat(extraPaymentAmount) * 100) : undefined,
+      extraPaymentDay: autoExtraPayment && extraPaymentDay ? parseInt(extraPaymentDay) : undefined,
+    } as any);
   };
 
   if (isLoading) {

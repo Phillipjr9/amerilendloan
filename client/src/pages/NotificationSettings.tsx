@@ -11,6 +11,7 @@ import {
   getNotificationPermissionState,
   subscribeToPushNotifications,
   unsubscribeFromPushNotifications,
+  getCurrentSubscription,
   sendTestNotification,
   registerServiceWorker,
 } from "@/lib/notifications";
@@ -27,62 +28,42 @@ export default function NotificationSettings() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user preferences
-  const { data: preferences, refetch } = trpc.notifications.getPreferences.useQuery();
+  // Fetch user preferences - cast to extended type since UI expects richer fields
+  const { data: rawPreferences, refetch } = trpc.notifications.getPreferences.useQuery();
+  const preferences = rawPreferences?.data as any;
 
   // Update preferences mutation
   const updatePreferencesMutation = trpc.notifications.updatePreferences.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Preferences updated",
-        description: "Your notification preferences have been saved.",
-      });
+      toast.success("Your notification preferences have been saved.");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     },
   });
 
   // Subscribe mutation
-  const subscribeMutation = trpc.notifications.subscribe.useMutation({
+  const subscribeMutation = trpc.pushNotifications.subscribe.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Subscribed",
-        description: "You will now receive push notifications.",
-      });
+      toast.success("You will now receive push notifications.");
       setIsSubscribed(true);
       refetch();
     },
-    onError: (error) => {
-      toast({
-        title: "Subscription failed",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      toast.error(error.message || "Subscription failed");
     },
   });
 
   // Unsubscribe mutation
-  const unsubscribeMutation = trpc.notifications.unsubscribe.useMutation({
+  const unsubscribeMutation = trpc.pushNotifications.unsubscribe.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Unsubscribed",
-        description: "You will no longer receive push notifications.",
-      });
+      toast.success("You will no longer receive push notifications.");
       setIsSubscribed(false);
       refetch();
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to unsubscribe");
     },
   });
 
@@ -127,11 +108,7 @@ export default function NotificationSettings() {
 
       await checkNotificationState();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to enable notifications",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to enable notifications");
     } finally {
       setIsLoading(false);
     }
@@ -145,15 +122,14 @@ export default function NotificationSettings() {
       await unsubscribeFromPushNotifications();
 
       // Remove subscription from server
-      await unsubscribeMutation.mutateAsync();
+      const currentSub = await getCurrentSubscription();
+      if (currentSub) {
+        await unsubscribeMutation.mutateAsync({ endpoint: currentSub.endpoint });
+      }
 
       await checkNotificationState();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to disable notifications",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to disable notifications");
     } finally {
       setIsLoading(false);
     }
@@ -165,16 +141,9 @@ export default function NotificationSettings() {
         "Test Notification",
         "This is a test notification from AmeriLend"
       );
-      toast({
-        title: "Test sent",
-        description: "Check your notifications!",
-      });
+      toast.success("Check your notifications!");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     }
   };
 

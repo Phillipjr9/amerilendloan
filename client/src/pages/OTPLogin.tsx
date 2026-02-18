@@ -164,40 +164,40 @@ export default function OTPLogin() {
 
   // Email existence checker
   const checkEmailMutation = trpc.auth.checkEmailExists.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.exists) {
         setExistingAccountInfo(data);
         setShowForgotPasswordOption(true);
         toast.info(data.message);
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error checking email:", error);
     },
   });
 
   // Phone existence checker
   const checkPhoneMutation = trpc.auth.checkPhoneExists.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.exists) {
         setExistingAccountInfo(data);
         toast.warning(data.message);
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error checking phone:", error);
     },
   });
 
   // SSN existence checker
   const checkSSNMutation = trpc.auth.checkSSNExists.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.exists) {
         toast.error(data.message || "This SSN is already registered");
         return;
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error checking SSN:", error);
     },
   });

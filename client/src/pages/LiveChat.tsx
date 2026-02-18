@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,60 +10,40 @@ import { useState, useEffect, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function LiveChat() {
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const [message, setMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Get or create active chat session
-  const { data: session, isLoading: sessionLoading } = useQuery({
-    queryKey: ["activeChat"],
-    queryFn: () => trpc.liveChat.getOrCreateSession.query(),
+  const { data: session, isLoading: sessionLoading } = trpc.liveChat.getOrCreateSession.useQuery(undefined, {
     refetchInterval: 5000, // Poll every 5 seconds for status updates
   });
 
   // Get messages for the session
-  const { data: messages, isLoading: messagesLoading } = useQuery({
-    queryKey: ["chatMessages", session?.id],
-    queryFn: () =>
-      session ? trpc.liveChat.getMessages.query({ sessionId: session.id }) : Promise.resolve([]),
-    enabled: !!session,
-    refetchInterval: 2000, // Poll every 2 seconds for new messages
-  });
+  const { data: messages, isLoading: messagesLoading } = trpc.liveChat.getMessages.useQuery(
+    { sessionId: (session as any)?.id ?? 0 },
+    {
+      enabled: !!(session as any)?.id,
+      refetchInterval: 2000, // Poll every 2 seconds for new messages
+    }
+  );
 
   // Send message mutation
-  const sendMutation = useMutation({
-    mutationFn: async (text: string) => {
-      if (!session) throw new Error("No active session");
-      return trpc.liveChat.sendMessage.mutate({
-        sessionId: session.id,
-        message: text,
-      });
-    },
+  const sendMutation = trpc.liveChat.sendMessage.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chatMessages"] });
+      utils.liveChat.getMessages.invalidate();
       setMessage("");
     },
     onError: (error: any) => {
-      toast({
-        title: "Failed to Send",
-        description: error.message || "Could not send message.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Could not send message.");
     },
   });
 
   // Close chat mutation
-  const closeMutation = useMutation({
-    mutationFn: async () => {
-      if (!session) throw new Error("No active session");
-      return trpc.liveChat.closeSession.mutate({ sessionId: session.id });
-    },
+  const closeMutation = trpc.liveChat.closeSession.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["activeChat"] });
-      toast({
-        title: "Chat Closed",
-        description: "This chat session has been closed.",
-      });
+      utils.liveChat.getOrCreateSession.invalidate();
+      toast.success("This chat session has been closed.");
     },
   });
 
@@ -77,8 +56,8 @@ export default function LiveChat() {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      sendMutation.mutate(message.trim());
+    if (message.trim() && (session as any)?.id) {
+      sendMutation.mutate({ sessionId: (session as any).id, message: message.trim() });
     }
   };
 
@@ -112,7 +91,7 @@ export default function LiveChat() {
                 Waiting for agent...
               </Badge>
             )}
-            {session?.status === "active" && session.agentId && (
+            {session?.status === "active" && session.assignedToAgentId && (
               <Badge variant="outline" className="bg-green-50">
                 <User className="h-3 w-3 mr-1" />
                 Connected to agent
@@ -129,7 +108,7 @@ export default function LiveChat() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => closeMutation.mutate()}
+              onClick={() => (session as any)?.id && closeMutation.mutate({ sessionId: (session as any).id })}
               disabled={closeMutation.isPending}
             >
               Close Chat
@@ -145,7 +124,7 @@ export default function LiveChat() {
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : messages && messages.length > 0 ? (
-              messages.map((msg) => (
+              messages.map((msg: any) => (
                 <div
                   key={msg.id}
                   className={`flex ${msg.isFromUser ? "justify-end" : "justify-start"}`}
@@ -232,7 +211,7 @@ export default function LiveChat() {
             </p>
             <Button
               onClick={() => {
-                queryClient.invalidateQueries({ queryKey: ["activeChat"] });
+                utils.liveChat.getOrCreateSession.invalidate();
                 window.location.reload();
               }}
             >

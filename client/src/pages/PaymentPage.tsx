@@ -208,7 +208,7 @@ export default function PaymentPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <SkeletonPaymentCard />
-              <SkeletonPaymentCard className="mt-4" />
+              <SkeletonPaymentCard />
             </div>
             <SkeletonDetailSection />
           </div>

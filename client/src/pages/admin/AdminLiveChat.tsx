@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,96 +18,64 @@ import { useState, useEffect, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function AdminLiveChat() {
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [cannedResponsesOpen, setCannedResponsesOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Get all active chat sessions
-  const { data: sessions, isLoading: sessionsLoading } = useQuery({
-    queryKey: ["adminActiveSessions"],
-    queryFn: () => trpc.liveChat.getActiveSessions.query(),
-    refetchInterval: 5000, // Poll every 5 seconds
-  });
-
-  // Get selected session details
-  const { data: selectedSession } = useQuery({
-    queryKey: ["chatSession", selectedSessionId],
-    queryFn: () =>
-      selectedSessionId
-        ? trpc.liveChat.getSession.query({ sessionId: selectedSessionId })
-        : Promise.resolve(null),
-    enabled: !!selectedSessionId,
+  const { data: sessions, isLoading: sessionsLoading } = trpc.liveChat.getActiveSessions.useQuery(undefined, {
     refetchInterval: 5000,
   });
 
+  // Get selected session details
+  const { data: selectedSession } = trpc.liveChat.getSession.useQuery(
+    { sessionId: selectedSessionId! },
+    {
+      enabled: !!selectedSessionId,
+      refetchInterval: 5000,
+    }
+  );
+
   // Get messages for selected session
-  const { data: messages } = useQuery({
-    queryKey: ["chatMessages", selectedSessionId],
-    queryFn: () =>
-      selectedSessionId
-        ? trpc.liveChat.getMessages.query({ sessionId: selectedSessionId })
-        : Promise.resolve([]),
-    enabled: !!selectedSessionId,
-    refetchInterval: 2000, // Poll every 2 seconds for new messages
-  });
+  const { data: messages } = trpc.liveChat.getMessages.useQuery(
+    { sessionId: selectedSessionId! },
+    {
+      enabled: !!selectedSessionId,
+      refetchInterval: 2000,
+    }
+  );
 
   // Get canned responses
-  const { data: cannedResponses } = useQuery({
-    queryKey: ["cannedResponses"],
-    queryFn: () => trpc.liveChat.getCannedResponses.query(),
-  });
+  const { data: cannedResponses } = trpc.liveChat.getCannedResponses.useQuery();
 
   // Assign chat to self
-  const assignMutation = useMutation({
-    mutationFn: async (sessionId: number) => {
-      return trpc.liveChat.assignToAgent.mutate({ sessionId });
-    },
+  const assignMutation = trpc.liveChat.assignToAgent.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminActiveSessions"] });
-      queryClient.invalidateQueries({ queryKey: ["chatSession"] });
-      toast({
-        title: "Chat Assigned",
-        description: "You are now handling this chat.",
-      });
+      utils.liveChat.getActiveSessions.invalidate();
+      utils.liveChat.getSession.invalidate();
+      toast.success("You are now handling this chat.");
     },
   });
 
   // Send message mutation
-  const sendMutation = useMutation({
-    mutationFn: async (text: string) => {
-      if (!selectedSessionId) throw new Error("No session selected");
-      return trpc.liveChat.sendMessage.mutate({
-        sessionId: selectedSessionId,
-        message: text,
-      });
-    },
+  const sendMutation = trpc.liveChat.sendMessage.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chatMessages"] });
+      utils.liveChat.getMessages.invalidate();
       setMessage("");
     },
     onError: (error: any) => {
-      toast({
-        title: "Failed to Send",
-        description: error.message || "Could not send message.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Could not send message.");
     },
   });
 
   // Close chat mutation
-  const closeMutation = useMutation({
-    mutationFn: async (sessionId: number) => {
-      return trpc.liveChat.closeSession.mutate({ sessionId });
-    },
+  const closeMutation = trpc.liveChat.closeSession.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminActiveSessions"] });
+      utils.liveChat.getActiveSessions.invalidate();
       setSelectedSessionId(null);
-      toast({
-        title: "Chat Closed",
-        description: "This chat session has been closed.",
-      });
+      toast.success("Chat session has been closed.");
     },
   });
 
@@ -122,7 +89,10 @@ export default function AdminLiveChat() {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      sendMutation.mutate(message.trim());
+      sendMutation.mutate({
+        sessionId: selectedSessionId!,
+        message: message.trim(),
+      });
     }
   };
 
@@ -158,7 +128,7 @@ export default function AdminLiveChat() {
           <ScrollArea className="h-[600px]">
             <div className="p-4 space-y-2">
               {sessions && sessions.length > 0 ? (
-                sessions.map((session) => (
+                sessions.map((session: any) => (
                   <Card
                     key={session.id}
                     className={`p-3 cursor-pointer transition-colors ${
@@ -226,7 +196,7 @@ export default function AdminLiveChat() {
                   {selectedSession.status === "waiting" && (
                     <Button
                       size="sm"
-                      onClick={() => assignMutation.mutate(selectedSession.id)}
+                      onClick={() => assignMutation.mutate({ sessionId: selectedSession.id })}
                       disabled={assignMutation.isPending}
                     >
                       {assignMutation.isPending ? (
@@ -240,7 +210,7 @@ export default function AdminLiveChat() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => closeMutation.mutate(selectedSession.id)}
+                    onClick={() => closeMutation.mutate({ sessionId: selectedSession.id })}
                     disabled={closeMutation.isPending}
                   >
                     Close Chat
@@ -252,7 +222,7 @@ export default function AdminLiveChat() {
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
                   {messages && messages.length > 0 ? (
-                    messages.map((msg) => (
+                    messages.map((msg: any) => (
                       <div
                         key={msg.id}
                         className={`flex ${msg.isFromUser ? "justify-start" : "justify-end"}`}
@@ -309,7 +279,7 @@ export default function AdminLiveChat() {
                         </DialogHeader>
                         <ScrollArea className="max-h-[400px]">
                           <div className="space-y-2">
-                            {cannedResponses?.map((response) => (
+                            {cannedResponses?.map((response: any) => (
                               <Card
                                 key={response.id}
                                 className="p-3 cursor-pointer hover:bg-muted/50"

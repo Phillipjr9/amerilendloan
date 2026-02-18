@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,7 +28,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 
 export default function MarketingCampaigns() {
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [campaignName, setCampaignName] = useState("");
   const [utmSource, setUtmSource] = useState("");
@@ -41,34 +40,17 @@ export default function MarketingCampaigns() {
   const [notes, setNotes] = useState("");
 
   // Get all campaigns
-  const { data: campaigns, isLoading } = useQuery({
-    queryKey: ["marketingCampaigns"],
-    queryFn: () => trpc.marketing.getCampaigns.query(),
-  });
+  const { data: campaigns, isLoading } = trpc.marketing.getCampaigns.useQuery();
 
   // Get campaign performance
-  const { data: performance } = useQuery({
-    queryKey: ["campaignPerformance"],
-    queryFn: () => trpc.marketing.getCampaignPerformance.query(),
-  });
+  const { data: performanceData } = trpc.marketing.getCampaignPerformance.useQuery({ campaignId: undefined as any });
+  const performance = (performanceData as any)?.data as any[] | undefined;
 
   // Create campaign mutation
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      return trpc.marketing.createCampaign.mutate({
-        name: campaignName,
-        utmSource,
-        utmMedium,
-        utmCampaign,
-        utmTerm: utmTerm || undefined,
-        utmContent: utmContent || undefined,
-        budget: budget ? Math.round(parseFloat(budget) * 100) : undefined,
-        notes: notes || undefined,
-      });
-    },
+  const createMutation = trpc.marketing.createCampaign.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["marketingCampaigns"] });
-      queryClient.invalidateQueries({ queryKey: ["campaignPerformance"] });
+      utils.marketing.getCampaigns.invalidate();
+      utils.marketing.getCampaignPerformance.invalidate();
       setCreateDialogOpen(false);
       setCampaignName("");
       setUtmSource("");
@@ -78,20 +60,25 @@ export default function MarketingCampaigns() {
       setUtmContent("");
       setBudget("");
       setNotes("");
-      toast.success("Campaign Created", {
-        description: "Marketing campaign has been created successfully.",
-      });
+      toast.success("Marketing campaign has been created successfully.");
     },
     onError: (error: any) => {
-      toast.error("Creation Failed", {
-        description: error.message || "Failed to create campaign.",
-      });
+      toast.error(error.message || "Failed to create campaign.");
     },
   });
 
   const handleCreateCampaign = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate();
+    createMutation.mutate({
+      campaignName,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm: utmTerm || undefined,
+      utmContent: utmContent || undefined,
+      budget: budget ? Math.round(parseFloat(budget) * 100) : undefined,
+      notes: notes || undefined,
+    } as any);
   };
 
   const generateTrackingUrl = (campaign: any) => {
@@ -140,7 +127,7 @@ export default function MarketingCampaigns() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Campaigns</p>
-                <p className="text-2xl font-bold">{campaigns?.length || 0}</p>
+                <p className="text-2xl font-bold">{(campaigns as any)?.data?.length || (campaigns as any)?.length || 0}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-blue-500" />
             </div>
@@ -151,7 +138,7 @@ export default function MarketingCampaigns() {
               <div>
                 <p className="text-sm text-muted-foreground">Total Visits</p>
                 <p className="text-2xl font-bold">
-                  {performance.reduce((sum, p) => sum + p.totalVisits, 0)}
+                  {(performance as any)?.reduce((sum: number, p: any) => sum + p.totalVisits, 0)}
                 </p>
               </div>
               <MousePointerClick className="h-8 w-8 text-green-500" />
@@ -163,7 +150,7 @@ export default function MarketingCampaigns() {
               <div>
                 <p className="text-sm text-muted-foreground">Total Signups</p>
                 <p className="text-2xl font-bold">
-                  {performance.reduce((sum, p) => sum + p.totalSignups, 0)}
+                  {(performance as any)?.reduce((sum: number, p: any) => sum + p.totalSignups, 0)}
                 </p>
               </div>
               <Users className="h-8 w-8 text-purple-500" />
@@ -175,7 +162,7 @@ export default function MarketingCampaigns() {
               <div>
                 <p className="text-sm text-muted-foreground">Applications</p>
                 <p className="text-2xl font-bold">
-                  {performance.reduce((sum, p) => sum + p.totalApplications, 0)}
+                  {(performance as any)?.reduce((sum: number, p: any) => sum + p.totalApplications, 0)}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-orange-500" />
@@ -355,9 +342,9 @@ export default function MarketingCampaigns() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {campaigns && campaigns.length > 0 ? (
-              campaigns.map((campaign) => {
-                const perf = performance?.find((p) => p.campaignId === campaign.id);
+            {((campaigns as any)?.data || campaigns) && ((campaigns as any)?.data || campaigns as any).length > 0 ? (
+              ((campaigns as any)?.data || campaigns as any).map((campaign: any) => {
+                const perf = (performance as any)?.find((p: any) => p.campaignId === campaign.id);
                 const conversionRate = perf?.totalVisits
                   ? ((perf.totalApplications / perf.totalVisits) * 100).toFixed(2)
                   : "0.00";

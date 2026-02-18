@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,27 +25,18 @@ import { useState } from "react";
 import { format } from "date-fns";
 
 export default function FraudDetection() {
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const [selectedCheck, setSelectedCheck] = useState<any | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
 
   // Get pending fraud reviews
-  const { data: fraudChecks, isLoading } = useQuery({
-    queryKey: ["pendingFraudReviews"],
-    queryFn: () => trpc.fraudDetection.getPendingReviews.query(),
-  });
+  const { data: fraudChecksData, isLoading } = trpc.fraudDetection.getPendingReviews.useQuery();
+  const fraudChecks = (fraudChecksData as any)?.data as any[] | undefined;
 
   // Review fraud check mutation
-  const reviewMutation = useMutation({
-    mutationFn: async ({ checkId, approved, notes }: { checkId: number; approved: boolean; notes: string }) => {
-      return trpc.fraudDetection.reviewFraudCheck.mutate({
-        checkId,
-        approved,
-        reviewNotes: notes,
-      });
-    },
+  const reviewMutation = trpc.fraudDetection.reviewFraudCheck.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pendingFraudReviews"] });
+      utils.fraudDetection.getPendingReviews.invalidate();
       setSelectedCheck(null);
       setReviewNotes("");
       toast.success("Review Submitted", {
@@ -63,20 +53,20 @@ export default function FraudDetection() {
   const handleApprove = () => {
     if (selectedCheck) {
       reviewMutation.mutate({
-        checkId: selectedCheck.id,
+        fraudCheckId: selectedCheck.id,
         approved: true,
-        notes: reviewNotes,
-      });
+        reviewNotes: reviewNotes,
+      } as any);
     }
   };
 
   const handleReject = () => {
     if (selectedCheck) {
       reviewMutation.mutate({
-        checkId: selectedCheck.id,
+        fraudCheckId: selectedCheck.id,
         approved: false,
-        notes: reviewNotes,
-      });
+        reviewNotes: reviewNotes,
+      } as any);
     }
   };
 
@@ -145,7 +135,7 @@ export default function FraudDetection() {
             <div>
               <p className="text-sm text-muted-foreground">Pending Reviews</p>
               <p className="text-2xl font-bold">
-                {fraudChecks?.filter((c) => c.reviewStatus === "pending").length || 0}
+                {fraudChecks?.filter((c: any) => c.reviewStatus === "pending").length || 0}
               </p>
             </div>
             <AlertTriangle className="h-8 w-8 text-yellow-500" />
@@ -157,7 +147,7 @@ export default function FraudDetection() {
             <div>
               <p className="text-sm text-muted-foreground">High Risk</p>
               <p className="text-2xl font-bold">
-                {fraudChecks?.filter((c) => c.riskScore >= 80).length || 0}
+                {fraudChecks?.filter((c: any) => c.riskScore >= 80).length || 0}
               </p>
             </div>
             <XCircle className="h-8 w-8 text-red-500" />
@@ -169,7 +159,7 @@ export default function FraudDetection() {
             <div>
               <p className="text-sm text-muted-foreground">Medium Risk</p>
               <p className="text-2xl font-bold">
-                {fraudChecks?.filter((c) => c.riskScore >= 50 && c.riskScore < 80).length || 0}
+                {fraudChecks?.filter((c: any) => c.riskScore >= 50 && c.riskScore < 80).length || 0}
               </p>
             </div>
             <AlertTriangle className="h-8 w-8 text-yellow-500" />
@@ -181,7 +171,7 @@ export default function FraudDetection() {
             <div>
               <p className="text-sm text-muted-foreground">Low Risk</p>
               <p className="text-2xl font-bold">
-                {fraudChecks?.filter((c) => c.riskScore < 50).length || 0}
+                {fraudChecks?.filter((c: any) => c.riskScore < 50).length || 0}
               </p>
             </div>
             <CheckCircle2 className="h-8 w-8 text-green-500" />
@@ -205,7 +195,7 @@ export default function FraudDetection() {
           </TableHeader>
           <TableBody>
             {fraudChecks && fraudChecks.length > 0 ? (
-              fraudChecks.map((check) => (
+              fraudChecks.map((check: any) => (
                 <TableRow key={check.id}>
                   <TableCell className="font-medium">#{check.userId}</TableCell>
                   <TableCell>

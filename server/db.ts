@@ -4164,14 +4164,18 @@ export async function createOrUpdatePaymentPreference(data: {
       .update(paymentPreferences)
       .set({
         ...data,
+        allocationStrategy: data.allocationStrategy as any,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(paymentPreferences.userId, data.userId))
       .returning();
     return result[0];
   } else {
     // Insert
-    const result = await db.insert(paymentPreferences).values(data).returning();
+    const result = await db.insert(paymentPreferences).values({
+      ...data,
+      allocationStrategy: data.allocationStrategy as any,
+    } as any).returning();
     return result[0];
   }
 }
@@ -4763,23 +4767,22 @@ export async function getOrCreateNotificationPreferences(userId: number) {
     return existing[0];
   }
 
-  // Create default preferences
-  const result = await db
-    .insert(notificationPreferences)
-    .values({
-      userId,
-      paymentReminders: true,
-      paymentConfirmations: true,
-      loanStatusUpdates: true,
-      documentNotifications: true,
-      promotionalNotifications: false,
-      emailEnabled: true,
-      smsEnabled: false,
-      emailDigest: false,
-    })
-    .returning();
+  // Create default preferences (one row per preference type)
+  const defaultTypes = ['payment_reminders', 'payment_confirmations', 'loan_status_updates', 'document_notifications', 'promotional_notifications'] as const;
+  const results = [];
+  for (const pType of defaultTypes) {
+    const row = await db
+      .insert(notificationPreferences)
+      .values({
+        userId,
+        preferenceType: pType as any,
+        enabled: pType !== 'promotional_notifications',
+      } as any)
+      .returning();
+    results.push(row[0]);
+  }
 
-  return result[0];
+  return results[0];
 }
 
 export async function updateNotificationPreferences(
@@ -4804,7 +4807,7 @@ export async function updateNotificationPreferences(
 
   const result = await db
     .update(notificationPreferences)
-    .set(updates)
+    .set(updates as any)
     .where(eq(notificationPreferences.userId, userId))
     .returning();
 
@@ -4864,10 +4867,10 @@ export async function updateUserNotificationPreferences(
   const result = await db
     .update(users)
     .set({
-      receiveEmailNotifications: updates.emailNotifications,
-      receiveSmsNotifications: updates.smsNotifications,
-      receivePushNotifications: updates.pushNotifications,
-    })
+      ...(updates.smsNotifications !== undefined && { receiveSmsNotifications: updates.smsNotifications }),
+      ...(updates.pushNotifications !== undefined && { receivePushNotifications: updates.pushNotifications }),
+      ...(updates.emailNotifications !== undefined && { receiveMarketingEmails: updates.emailNotifications }),
+    } as any)
     .where(eq(users.id, userId))
     .returning();
 

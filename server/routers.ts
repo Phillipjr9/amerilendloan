@@ -1929,7 +1929,7 @@ export const appRouter = router({
       .input(z.object({
         email: z.string().email(),
       }))
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         try {
           const user = await db.getUserByEmail(input.email);
           
@@ -1967,7 +1967,7 @@ export const appRouter = router({
       .input(z.object({
         phone: z.string().min(10).max(15),
       }))
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         try {
           // Search for user by phone number in the database
           const db_instance = await db.getDb();
@@ -1975,9 +1975,7 @@ export const appRouter = router({
             throw new Error("Database not available");
           }
 
-          const result = await db_instance.query.users.findFirst({
-            where: (fields) => eq(fields.phoneNumber, input.phone),
-          });
+          const [result] = await db_instance.select().from((await import("../drizzle/schema")).users).where(eq((await import("../drizzle/schema")).users.phoneNumber, input.phone)).limit(1);
 
           if (!result) {
             return {
@@ -2010,7 +2008,7 @@ export const appRouter = router({
       .input(z.object({
         ssn: z.string().regex(/^\d{9}$/),
       }))
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         try {
           // Search for any loan application with this SSN
           const db_instance = await db.getDb();
@@ -2018,9 +2016,7 @@ export const appRouter = router({
             throw new Error("Database not available");
           }
 
-          const applications = await db_instance.query.loanApplications.findFirst({
-            where: (fields) => eq(fields.ssn, input.ssn),
-          });
+          const [applications] = await db_instance.select().from((await import("../drizzle/schema")).loanApplications).where(eq((await import("../drizzle/schema")).loanApplications.ssn, input.ssn)).limit(1);
 
           if (!applications) {
             return {

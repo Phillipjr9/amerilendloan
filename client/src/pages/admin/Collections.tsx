@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,7 +35,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 
 export default function Collections() {
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [actionType, setActionType] = useState("email");
@@ -46,73 +45,51 @@ export default function Collections() {
   const [promiseDate, setPromiseDate] = useState("");
 
   // Get active delinquencies
-  const { data: delinquencies, isLoading } = useQuery({
-    queryKey: ["activeDelinquencies"],
-    queryFn: () => trpc.collections.getActiveDelinquencies.query(),
-  });
+  const { data: delinquenciesData, isLoading } = trpc.collections.getActiveDelinquencies.useQuery();
+  const delinquencies = (delinquenciesData as any)?.data;
 
   // Get collection actions for selected record
-  const { data: actions } = useQuery({
-    queryKey: ["collectionActions", selectedRecord?.id],
-    queryFn: () =>
-      selectedRecord
-        ? trpc.collections.getCollectionActions.query({ delinquencyRecordId: selectedRecord.id })
-        : Promise.resolve([]),
-    enabled: !!selectedRecord,
-  });
+  const { data: actionsData } = trpc.collections.getCollectionActions.useQuery(
+    { delinquencyRecordId: selectedRecord?.id ?? 0 },
+    { enabled: !!selectedRecord }
+  );
+  const actions = (actionsData as any)?.data;
 
   // Record collection action mutation
-  const actionMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedRecord) throw new Error("No record selected");
-      return trpc.collections.recordCollectionAction.mutate({
-        delinquencyRecordId: selectedRecord.id,
-        actionType,
-        outcome: actionOutcome,
-        notes: actionNotes,
-      });
-    },
+  const actionMutation = trpc.collections.recordCollectionAction.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["activeDelinquencies"] });
-      queryClient.invalidateQueries({ queryKey: ["collectionActions"] });
+      utils.collections.getActiveDelinquencies.invalidate();
+      utils.collections.getCollectionActions.invalidate();
       setActionDialogOpen(false);
       setActionType("email");
       setActionNotes("");
       setActionOutcome("");
-      toast.success("Action Recorded", {
-        description: "Collection action has been logged successfully.",
-      });
+      toast.success("Collection action has been logged successfully.");
     },
     onError: (error: any) => {
-      toast.error("Failed to Record", {
-        description: error.message || "Failed to record collection action.",
-      });
+      toast.error(error.message || "Failed to record collection action.");
     },
   });
 
   // Update promise to pay mutation
-  const promiseMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedRecord) throw new Error("No record selected");
-      return trpc.collections.updatePromiseToPay.mutate({
-        delinquencyRecordId: selectedRecord.id,
-        promiseDate: new Date(promiseDate),
-        promiseAmount: Math.round(parseFloat(promiseAmount) * 100),
-      });
-    },
+  const promiseMutation = trpc.collections.updatePromiseToPay.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["activeDelinquencies"] });
+      utils.collections.getActiveDelinquencies.invalidate();
       setPromiseAmount("");
       setPromiseDate("");
-      toast.success("Promise Updated", {
-        description: "Promise to pay has been recorded.",
-      });
+      toast.success("Promise to pay has been recorded.");
     },
   });
 
   const handleRecordAction = (e: React.FormEvent) => {
     e.preventDefault();
-    actionMutation.mutate();
+    if (!selectedRecord) return;
+    actionMutation.mutate({
+      delinquencyRecordId: selectedRecord.id,
+      actionType,
+      outcome: actionOutcome,
+      notes: actionNotes,
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -171,7 +148,7 @@ export default function Collections() {
             <div>
               <p className="text-sm text-muted-foreground">90+ Days</p>
               <p className="text-2xl font-bold">
-                {delinquencies?.filter((d) => d.status === "days_90").length || 0}
+                {delinquencies?.filter((d: any) => d.status === "days_90").length || 0}
               </p>
             </div>
             <AlertTriangle className="h-8 w-8 text-red-500" />
@@ -183,7 +160,7 @@ export default function Collections() {
             <div>
               <p className="text-sm text-muted-foreground">In Settlement</p>
               <p className="text-2xl font-bold">
-                {delinquencies?.filter((d) => d.status === "in_settlement").length || 0}
+                {delinquencies?.filter((d: any) => d.status === "in_settlement").length || 0}
               </p>
             </div>
             <DollarSign className="h-8 w-8 text-blue-500" />
@@ -195,7 +172,7 @@ export default function Collections() {
             <div>
               <p className="text-sm text-muted-foreground">Charged Off</p>
               <p className="text-2xl font-bold">
-                {delinquencies?.filter((d) => d.status === "charged_off").length || 0}
+                {delinquencies?.filter((d: any) => d.status === "charged_off").length || 0}
               </p>
             </div>
             <AlertTriangle className="h-8 w-8 text-gray-500" />
@@ -220,7 +197,7 @@ export default function Collections() {
           </TableHeader>
           <TableBody>
             {delinquencies && delinquencies.length > 0 ? (
-              delinquencies.map((record) => (
+              delinquencies.map((record: any) => (
                 <TableRow key={record.id}>
                   <TableCell className="font-medium">#{record.userId}</TableCell>
                   <TableCell>#{record.loanApplicationId}</TableCell>
@@ -354,7 +331,11 @@ export default function Collections() {
                 <Button
                   className="mt-3"
                   size="sm"
-                  onClick={() => promiseMutation.mutate()}
+                  onClick={() => selectedRecord && promiseMutation.mutate({
+                    delinquencyRecordId: selectedRecord.id,
+                    promiseDate: new Date(promiseDate),
+                    promiseAmount: Math.round(parseFloat(promiseAmount) * 100),
+                  })}
                   disabled={!promiseAmount || !promiseDate || promiseMutation.isPending}
                 >
                   Record Promise
@@ -375,7 +356,7 @@ export default function Collections() {
 
                 {actions && actions.length > 0 ? (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {actions.map((action) => (
+                    {actions.map((action: any) => (
                       <Card key={action.id} className="p-3">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">

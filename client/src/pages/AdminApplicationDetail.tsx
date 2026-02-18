@@ -48,7 +48,7 @@ export default function AdminApplicationDetail() {
   );
 
   const getBankPasswordQuery = trpc.loans.adminGetBankPassword.useQuery(
-    { applicationId },
+    { applicationId: applicationId! },
     { 
       enabled: false, // Only fetch when showBankCredentials is true
     }

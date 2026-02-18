@@ -140,7 +140,7 @@ export async function subscribeToPushNotifications(vapidPublicKey: string): Prom
     }
 
     // Subscribe to push notifications
-    const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+    const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey) as any;
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey,
@@ -214,9 +214,8 @@ export async function sendTestNotification(title: string, body: string): Promise
       body,
       icon: '/icons/icon-192x192.png',
       badge: '/icons/badge-72x72.png',
-      vibrate: [200, 100, 200],
       tag: 'test-notification',
-    });
+    } as any);
   } catch (error) {
     console.error('Failed to send test notification:', error);
     throw error;

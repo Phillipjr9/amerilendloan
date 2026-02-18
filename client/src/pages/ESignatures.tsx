@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,7 +27,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 
 export default function ESignatures() {
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [selectedLoanId, setSelectedLoanId] = useState("");
   const [documentTitle, setDocumentTitle] = useState("");
@@ -38,31 +37,15 @@ export default function ESignatures() {
   const [signerName, setSignerName] = useState("");
 
   // Get user's loans
-  const { data: loans, isLoading: loansLoading } = useQuery({
-    queryKey: ["userLoans"],
-    queryFn: () => trpc.loans.getUserApplications.query(),
-  });
+  const { data: loans, isLoading: loansLoading } = trpc.loans.myApplications.useQuery();
 
   // Get e-signature documents
-  const { data: documents, isLoading: documentsLoading } = useQuery({
-    queryKey: ["eSignatureDocuments"],
-    queryFn: () => trpc.eSignature.getUserDocuments.query(),
-  });
+  const { data: documents, isLoading: documentsLoading } = trpc.eSignature.getUserDocuments.useQuery();
 
   // Request signature mutation
-  const requestMutation = useMutation({
-    mutationFn: async () => {
-      return trpc.eSignature.requestSignature.mutate({
-        loanApplicationId: selectedLoanId ? parseInt(selectedLoanId) : undefined,
-        documentTitle,
-        documentDescription,
-        documentType,
-        signerEmail,
-        signerName,
-      });
-    },
+  const requestMutation = trpc.eSignature.requestSignature.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["eSignatureDocuments"] });
+      utils.eSignature.getUserDocuments.invalidate();
       setRequestDialogOpen(false);
       setSelectedLoanId("");
       setDocumentTitle("");
@@ -70,23 +53,23 @@ export default function ESignatures() {
       setDocumentType("loan_agreement");
       setSignerEmail("");
       setSignerName("");
-      toast({
-        title: "Signature Requested",
-        description: "The signature request has been sent.",
-      });
+      toast.success("Signature request has been sent.");
     },
     onError: (error: any) => {
-      toast({
-        title: "Request Failed",
-        description: error.message || "Failed to send signature request.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to send signature request.");
     },
   });
 
   const handleRequestSignature = (e: React.FormEvent) => {
     e.preventDefault();
-    requestMutation.mutate();
+    requestMutation.mutate({
+      loanApplicationId: selectedLoanId ? parseInt(selectedLoanId) : undefined,
+      documentTitle,
+      documentDescription,
+      documentType,
+      signerEmail,
+      signerName,
+    } as any);
   };
 
   const getStatusBadge = (status: string) => {
@@ -134,7 +117,7 @@ export default function ESignatures() {
     );
   }
 
-  const activeLoans = loans?.filter((loan) => 
+  const activeLoans = (loans as any)?.filter((loan: any) => 
     loan.status === "approved" || loan.status === "pending"
   ) || [];
 
@@ -220,7 +203,7 @@ export default function ESignatures() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">No loan</SelectItem>
-                          {activeLoans.map((loan) => (
+                          {activeLoans.map((loan: any) => (
                             <SelectItem key={loan.id} value={loan.id.toString()}>
                               {loan.loanType} - ${(loan.requestedAmount / 100).toLocaleString()}
                             </SelectItem>
@@ -323,9 +306,9 @@ export default function ESignatures() {
           <h2 className="text-xl font-semibold">Your Documents</h2>
         </div>
         <div className="p-4">
-          {documents && documents.length > 0 ? (
+              {documents && (documents as any).length > 0 ? (
             <div className="space-y-4">
-              {documents.map((doc) => (
+              {(documents as any).map((doc: any) => (
                 <Card key={doc.id} className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

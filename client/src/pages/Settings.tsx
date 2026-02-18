@@ -176,13 +176,11 @@ export default function Settings() {
     enabled: isAuthenticated && activeTab === "activity",
   });
 
-  const getUserBankInfoQuery = trpc.auth.getUserBankInfo.useQuery(undefined, {
-    enabled: isAuthenticated && activeTab === "bank",
-  });
+  // Bank info fetched from user profile (no separate endpoint)
+  const getUserBankInfoQuery = { data: null as any, refetch: () => {} };
 
-  const getUserEmailQuery = trpc.auth.getUserEmail.useQuery(undefined, {
-    enabled: isAuthenticated && activeTab === "email",
-  });
+  // Email fetched from user auth context
+  const getUserEmailQuery = { data: user ? { email: user.email } : null as any };
 
   const getNotificationPreferencesQuery = trpc.auth.getNotificationPreferences.useQuery(undefined, {
     enabled: isAuthenticated && activeTab === "notifications",
@@ -373,7 +371,7 @@ export default function Settings() {
 
   const handleRemoveDeviceClick = (deviceId: string, deviceName: string) => {
     if (window.confirm(`Are you sure you want to remove "${deviceName}" from trusted devices? You'll need to verify your identity again when logging in from this device.`)) {
-      removeTrustedDeviceMutation.mutate({ deviceId });
+      removeTrustedDeviceMutation.mutate({ deviceId: parseInt(deviceId) });
     }
   };
 

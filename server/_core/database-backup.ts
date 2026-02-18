@@ -49,6 +49,10 @@ export async function createBackup(): Promise<string | null> {
     ensureBackupDir();
     
     const db = await getDb();
+    if (!db) {
+      console.error("[Backup] Database connection not available");
+      return null;
+    }
     const backupData: Record<string, any[]> = {};
     
     // Export all critical tables
@@ -161,6 +165,10 @@ export async function restoreBackup(backupFilePath: string): Promise<boolean> {
     }
     
     const db = await getDb();
+    if (!db) {
+      console.error("[Restore] Database connection not available");
+      return false;
+    }
     const backupContent = fs.readFileSync(backupFilePath, "utf-8");
     const backup = JSON.parse(backupContent);
     

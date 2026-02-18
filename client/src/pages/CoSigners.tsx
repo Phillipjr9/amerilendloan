@@ -1,4 +1,3 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,7 +26,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 
 export default function CoSigners() {
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedLoanId, setSelectedLoanId] = useState("");
   const [coSignerEmail, setCoSignerEmail] = useState("");
@@ -35,29 +34,16 @@ export default function CoSigners() {
   const [liabilitySplit, setLiabilitySplit] = useState("50");
 
   // Get user's loans
-  const { data: loans, isLoading: loansLoading } = useQuery({
-    queryKey: ["userLoans"],
-    queryFn: () => trpc.loans.getUserApplications.query(),
-  });
+  const { data: loans, isLoading: loansLoading } = trpc.loans.myApplications.useQuery();
 
   // Get pending co-signer invitations
-  const { data: invitations, isLoading: invitationsLoading } = useQuery({
-    queryKey: ["coSignerInvitations"],
-    queryFn: () => trpc.coSigners.getInvitations.query(),
-  });
+  const { data: invitationsData, isLoading: invitationsLoading } = trpc.coSigners.getInvitations.useQuery();
+  const invitations = (invitationsData as any)?.data as any[] | undefined;
 
   // Send invitation mutation
-  const inviteMutation = useMutation({
-    mutationFn: async () => {
-      return trpc.coSigners.sendInvitation.mutate({
-        loanApplicationId: parseInt(selectedLoanId),
-        coSignerEmail,
-        coSignerName,
-        liabilityPercentage: parseInt(liabilitySplit),
-      });
-    },
+  const inviteMutation = trpc.coSigners.sendInvitation.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coSignerInvitations"] });
+      utils.coSigners.getInvitations.invalidate();
       setInviteDialogOpen(false);
       setSelectedLoanId("");
       setCoSignerEmail("");
@@ -75,12 +61,9 @@ export default function CoSigners() {
   });
 
   // Cancel invitation mutation
-  const cancelMutation = useMutation({
-    mutationFn: async (invitationId: number) => {
-      return trpc.coSigners.cancelInvitation.mutate({ invitationId });
-    },
+  const cancelMutation = trpc.coSigners.cancelInvitation.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["coSignerInvitations"] });
+      utils.coSigners.getInvitations.invalidate();
       toast.success("Invitation Cancelled", {
         description: "The co-signer invitation has been cancelled.",
       });
@@ -89,7 +72,12 @@ export default function CoSigners() {
 
   const handleSendInvitation = (e: React.FormEvent) => {
     e.preventDefault();
-    inviteMutation.mutate();
+    inviteMutation.mutate({
+      loanApplicationId: parseInt(selectedLoanId),
+      coSignerEmail,
+      coSignerName,
+      liabilityPercentage: parseInt(liabilitySplit),
+    } as any);
   };
 
   const getStatusBadge = (status: string) => {
@@ -130,7 +118,7 @@ export default function CoSigners() {
     );
   }
 
-  const activeLoans = loans?.filter((loan) => 
+  const activeLoans = (loans as any)?.filter((loan: any) => 
     loan.status === "approved" || loan.status === "pending"
   ) || [];
 
@@ -200,7 +188,7 @@ export default function CoSigners() {
                           <SelectValue placeholder="Choose a loan" />
                         </SelectTrigger>
                         <SelectContent>
-                          {activeLoans.map((loan) => (
+                          {activeLoans.map((loan: any) => (
                             <SelectItem key={loan.id} value={loan.id.toString()}>
                               {loan.loanType} - ${(loan.requestedAmount / 100).toLocaleString()} ({loan.status})
                             </SelectItem>
@@ -290,7 +278,7 @@ export default function CoSigners() {
         <div className="p-4">
           {invitations && invitations.length > 0 ? (
             <div className="space-y-4">
-              {invitations.map((invitation) => (
+              {invitations.map((invitation: any) => (
                 <Card key={invitation.id} className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -320,7 +308,7 @@ export default function CoSigners() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => cancelMutation.mutate(invitation.id)}
+                        onClick={() => cancelMutation.mutate({ invitationId: invitation.id })}
                         disabled={cancelMutation.isPending}
                       >
                         Cancel
