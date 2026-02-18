@@ -303,6 +303,7 @@ export default function CheckOffers() {
         creditScore: formData.creditScore,
         employmentStatus: formData.employmentStatus,
         state: formData.state,
+        loanPurpose: formData.loanPurpose,
         selectedOffer: offer,
       })
     );

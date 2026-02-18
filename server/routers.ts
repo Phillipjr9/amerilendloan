@@ -2722,7 +2722,7 @@ export const appRouter = router({
         fullName: z.string().min(1),
         email: z.string().email(),
         phone: z.string().min(10),
-        password: z.string().min(8),
+        password: z.string().min(8).optional(),
         dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         ssn: z.string().regex(/^\d{3}-\d{2}-\d{4}$/),
         street: z.string().min(1),
@@ -5279,9 +5279,14 @@ export const appRouter = router({
     adminInitiate: protectedProcedure
       .input(z.object({
         loanApplicationId: z.number(),
-        accountHolderName: z.string().min(1),
-        accountNumber: z.string().min(1),
-        routingNumber: z.string().min(9),
+        disbursementMethod: z.enum(["bank_transfer", "check", "debit_card", "paypal", "crypto"]).default("bank_transfer"),
+        // Bank transfer fields (required for bank_transfer)
+        accountHolderName: z.string().optional(),
+        accountNumber: z.string().optional(),
+        routingNumber: z.string().optional(),
+        // Check fields
+        mailingAddress: z.string().optional(),
+        // Generic
         adminNotes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -5323,15 +5328,34 @@ export const appRouter = router({
           });
         }
 
+        // Validate required fields based on disbursement method
+        const method = input.disbursementMethod || application.disbursementMethod || "bank_transfer";
+        if (method === "bank_transfer") {
+          if (!input.accountHolderName || !input.accountNumber || !input.routingNumber) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Bank transfer requires account holder name, account number, and routing number",
+            });
+          }
+        }
+        if (method === "check" && !input.mailingAddress && !application.street) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Check disbursement requires a mailing address",
+          });
+        }
+
         // Create disbursement record
         await db.createDisbursement({
           loanApplicationId: input.loanApplicationId,
           userId: application.userId,
           amount: application.approvedAmount!,
-          accountHolderName: input.accountHolderName,
-          accountNumber: input.accountNumber,
-          routingNumber: input.routingNumber,
-          adminNotes: input.adminNotes,
+          accountHolderName: input.accountHolderName || application.fullName,
+          accountNumber: input.accountNumber || "",
+          routingNumber: input.routingNumber || "",
+          adminNotes: input.adminNotes
+            ? `[${method.replace("_", " ")}] ${input.adminNotes}`
+            : `Disbursement via ${method.replace("_", " ")}`,
           status: "pending",
           initiatedBy: ctx.user.id,
         });
@@ -5344,8 +5368,9 @@ export const appRouter = router({
         // Send disbursement notification email to user
         const user = await db.getUserById(application.userId);
         if (user?.email) {
+          const estimatedDays = method === "check" ? 7 : method === "bank_transfer" ? 2 : 3;
           const estimatedDate = new Date();
-          estimatedDate.setDate(estimatedDate.getDate() + 2); // Estimated 2 business days
+          estimatedDate.setDate(estimatedDate.getDate() + estimatedDays);
           await sendApplicationDisbursedNotificationEmail(
             user.email,
             user.name || user.email,

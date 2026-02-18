@@ -324,6 +324,37 @@ export default function ApplyLoan() {
     esignAccepted: false,
   });
 
+  // Consume prequalificationData from CheckOffers flow
+  useEffect(() => {
+    const prequalRaw = localStorage.getItem("prequalificationData");
+    if (prequalRaw) {
+      try {
+        const prequal = JSON.parse(prequalRaw);
+        setFormData((prev: typeof formData) => {
+          const updates: Partial<typeof formData> = {};
+          if (prequal.fullName) updates.fullName = prequal.fullName;
+          if (prequal.email) updates.email = prequal.email;
+          if (prequal.selectedOffer?.amount) updates.requestedAmount = String(prequal.selectedOffer.amount);
+          if (prequal.selectedOffer?.term) updates.desiredTerm = String(prequal.selectedOffer.term);
+          if (prequal.loanPurpose) updates.loanPurpose = prequal.loanPurpose;
+          if (prequal.creditScore) updates.creditScore = String(prequal.creditScore);
+          if (prequal.annualIncome) updates.monthlyIncome = String(Math.round(Number(prequal.annualIncome) / 12));
+          if (prequal.employmentStatus) updates.employmentStatus = prequal.employmentStatus as any;
+          if (prequal.state) updates.state = prequal.state;
+          if (prequal.invitationCode) {
+            // Store invitation code for tracking
+            (window as any).__amerilend_invitation_code = prequal.invitationCode;
+          }
+          return { ...prev, ...updates };
+        });
+        localStorage.removeItem("prequalificationData");
+        toast.success("Your pre-qualification info has been applied!");
+      } catch (e) {
+        console.error("Failed to parse prequalificationData:", e);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (savedDraft) {
       setCurrentStep(savedDraft.step);

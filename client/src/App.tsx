@@ -91,6 +91,8 @@ function Router() {
       <Route path={"/pay-fee"} component={PayFee} />
       <Route path={"/otp-login"} component={OTPLogin} />
       <Route path={"/login"} component={OTPLogin} />
+      <Route path={"/signup"} component={OTPLogin} />
+      <Route path={"/register"} component={OTPLogin} />
       <Route path="/about" component={About} />
       <Route path="/how-it-works" component={HowItWorksPage} />
       <Route path="/rates" component={Rates} />
