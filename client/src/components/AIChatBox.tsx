@@ -142,6 +142,13 @@ export function AIChatBox({
     }
   };
 
+  // Auto-scroll when new messages arrive (assistant responses)
+  useEffect(() => {
+    if (displayMessages.length > 0) {
+      scrollToBottom();
+    }
+  }, [displayMessages.length, isLoading]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedInput = input.trim();
@@ -307,6 +314,7 @@ export function AIChatBox({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="flex-1 max-h-32 resize-none min-h-9"
+          maxLength={2000}
           rows={1}
         />
         <Button

@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import geoip from 'geoip-lite';
 import { Request } from 'express';
 import * as db from '../db';
+import { sendSuspiciousActivityAlert } from './email';
 
 /**
  * Common validation schemas to prevent injection attacks
@@ -414,8 +415,23 @@ export async function logLoginActivity(
     const suspiciousCheck = await isSuspiciousLocation(userId, location);
     if (suspiciousCheck.suspicious) {
       console.log(`[Security] ⚠️ Suspicious login for user ${userId}: ${suspiciousCheck.reason}`);
-      // TODO: Send email notification to user about suspicious login
-      // await sendSuspiciousLoginAlert(userId, location, suspiciousCheck.reason);
+      // Send email notification to user about suspicious login
+      try {
+        const user = await db.getUserById(userId);
+        if (user?.email) {
+          const locationStr = location.city && location.country
+            ? `${location.city}, ${location.country}`
+            : location.country || 'Unknown location';
+          await sendSuspiciousActivityAlert(
+            user.email,
+            user.name || user.email,
+            `Suspicious login detected from ${locationStr}. Reason: ${suspiciousCheck.reason}`,
+            ipAddress
+          );
+        }
+      } catch (emailErr) {
+        console.error('[Security] Failed to send suspicious login alert email:', emailErr);
+      }
     }
   }
 }
