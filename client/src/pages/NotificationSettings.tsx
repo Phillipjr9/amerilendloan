@@ -28,9 +28,9 @@ export default function NotificationSettings() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user preferences - cast to extended type since UI expects richer fields
+  // Fetch user preferences from user_notification_settings table
   const { data: rawPreferences, refetch } = trpc.notifications.getPreferences.useQuery();
-  const preferences = rawPreferences?.data as any;
+  const preferences = rawPreferences?.data;
 
   // Update preferences mutation
   const updatePreferencesMutation = trpc.notifications.updatePreferences.useMutation({

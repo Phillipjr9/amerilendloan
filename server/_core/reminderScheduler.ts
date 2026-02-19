@@ -21,6 +21,19 @@ import {
 let reminderInterval: NodeJS.Timeout | null = null;
 
 /**
+ * Helper: Check if a user has email reminders enabled
+ */
+async function isEmailReminderEnabled(userId: number): Promise<boolean> {
+  try {
+    const prefs = await db.getUserNotificationPreferences(userId);
+    // If prefs null or emailEnabled is true (default), allow
+    return prefs?.emailEnabled !== false;
+  } catch {
+    return true; // Default to enabled if we can't read prefs
+  }
+}
+
+/**
  * Check for incomplete loan applications (pending status for 24+ hours)
  */
 async function checkIncompleteApplications() {
@@ -41,6 +54,8 @@ async function checkIncompleteApplications() {
       if (createdAt < twentyFourHoursAgo) {
         const user = await db.getUserById(app.userId);
         if (user && user.email) {
+          // Respect user's email notification preferences
+          if (!(await isEmailReminderEnabled(app.userId))) continue;
           const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Valued Customer';
           
           try {
@@ -97,6 +112,8 @@ async function checkUnpaidFees() {
         if (approvedAt < sixHoursAgo) {
           const user = await db.getUserById(app.userId);
           if (user && user.email) {
+            // Respect user's email notification preferences
+            if (!(await isEmailReminderEnabled(app.userId))) continue;
             const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Valued Customer';
             
             try {
@@ -158,6 +175,8 @@ async function checkPendingDisbursements() {
           if (feePaidAt < twelveHoursAgo) {
             const user = await db.getUserById(app.userId);
             if (user && user.email) {
+              // Respect user's email notification preferences
+              if (!(await isEmailReminderEnabled(app.userId))) continue;
               const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Valued Customer';
               
               try {
@@ -219,6 +238,8 @@ async function checkIncompleteDocuments() {
         if (createdAt < twentyFourHoursAgo) {
           const user = await db.getUserById(app.userId);
           if (user && user.email) {
+            // Respect user's email notification preferences
+            if (!(await isEmailReminderEnabled(app.userId))) continue;
             const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Valued Customer';
             
             const missingDocs = [];
@@ -279,6 +300,8 @@ async function checkInactiveUsers() {
       if (userApps.length === 0 && createdAt < sevenDaysAgo && createdAt > thirtyDaysAgo) {
         // User registered 7+ days ago but no application yet
         if (user.email) {
+          // Respect user's email notification preferences
+          if (!(await isEmailReminderEnabled(user.id))) continue;
           const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Valued Customer';
           
           try {

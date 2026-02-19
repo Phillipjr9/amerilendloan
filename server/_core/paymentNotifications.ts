@@ -4,7 +4,7 @@
  * Respects user preferences for notification channels
  */
 
-import { getUserById, getNotificationPreferences } from "../db";
+import { getUserById, getUserNotificationPreferences } from "../db";
 import {
   sendPaymentDueReminderEmail,
   sendPaymentOverdueAlertEmail,
@@ -39,11 +39,12 @@ export async function notifyPaymentDueReminder(
 
     // Check email notification preferences
     try {
-      const prefs = await getNotificationPreferences(userId);
-      const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
+      const prefs = await getUserNotificationPreferences(userId);
+      const emailEnabled = prefs?.emailEnabled ?? true;
+      const paymentRemindersOn = prefs?.paymentReminders ?? true;
       
-      // Send email if preference is enabled (default to enabled if not set)
-      if (emailPrefEnabled || prefs.length === 0) {
+      // Send email if both email channel and payment reminders are enabled
+      if (emailEnabled && paymentRemindersOn) {
         const daysUntilDue = Math.max(0, Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
         await sendPaymentDueReminderEmail(
           user.email,
@@ -88,13 +89,13 @@ export async function notifyPaymentOverdue(
     const errors: string[] = [];
     
     // Get notification preferences
-    const prefs = await getNotificationPreferences(userId);
-    const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
-    const smsPrefEnabled = prefs.some(p => p.preferenceType === "sms" && p.enabled);
+    const prefs = await getUserNotificationPreferences(userId);
+    const emailEnabled = prefs?.emailEnabled ?? true;
+    const smsEnabled = prefs?.smsEnabled ?? false;
 
     // Send email
     try {
-      if (emailPrefEnabled || prefs.length === 0) {
+      if (emailEnabled) {
         await sendPaymentOverdueAlertEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
@@ -112,7 +113,7 @@ export async function notifyPaymentOverdue(
     }
 
     // Send SMS (only if enabled and phone available)
-    if (user.phoneNumber && smsPrefEnabled) {
+    if (user.phoneNumber && smsEnabled) {
       try {
         await sendPaymentOverdueAlertSMS(
           user.phoneNumber,
@@ -155,13 +156,13 @@ export async function notifyDelinquency(
     const errors: string[] = [];
     
     // Get notification preferences
-    const prefs = await getNotificationPreferences(userId);
-    const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
-    const smsPrefEnabled = prefs.some(p => p.preferenceType === "sms" && p.enabled);
+    const prefs = await getUserNotificationPreferences(userId);
+    const emailEnabled = prefs?.emailEnabled ?? true;
+    const smsEnabled = prefs?.smsEnabled ?? false;
 
     // Send email - even more urgent
     try {
-      if (emailPrefEnabled || prefs.length === 0) {
+      if (emailEnabled) {
         await sendPaymentOverdueAlertEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
@@ -224,13 +225,14 @@ export async function notifyPaymentReceived(
     const errors: string[] = [];
     
     // Get notification preferences
-    const prefs = await getNotificationPreferences(userId);
-    const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
-    const smsPrefEnabled = prefs.some(p => p.preferenceType === "sms" && p.enabled);
+    const prefs = await getUserNotificationPreferences(userId);
+    const emailEnabled = prefs?.emailEnabled ?? true;
+    const smsEnabled = prefs?.smsEnabled ?? false;
+    const confirmationsOn = prefs?.paymentConfirmations ?? true;
 
     // Send email
     try {
-      if (emailPrefEnabled || prefs.length === 0) {
+      if (emailEnabled && confirmationsOn) {
         await sendPaymentReceivedEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
@@ -248,7 +250,7 @@ export async function notifyPaymentReceived(
     }
 
     // Send SMS if user opted in for confirmation SMS (less common)
-    if (user.phoneNumber && smsPrefEnabled) {
+    if (user.phoneNumber && smsEnabled) {
       try {
         await sendPaymentReceivedSMS(
           user.phoneNumber,
@@ -289,13 +291,13 @@ export async function notifyPaymentFailed(
     const errors: string[] = [];
     
     // Get notification preferences
-    const prefs = await getNotificationPreferences(userId);
-    const emailPrefEnabled = prefs.some(p => p.preferenceType === "email_updates" && p.enabled);
-    const smsPrefEnabled = prefs.some(p => p.preferenceType === "sms" && p.enabled);
+    const prefs = await getUserNotificationPreferences(userId);
+    const emailEnabled = prefs?.emailEnabled ?? true;
+    const smsEnabled = prefs?.smsEnabled ?? false;
 
     // Send email
     try {
-      if (emailPrefEnabled || prefs.length === 0) {
+      if (emailEnabled) {
         await sendPaymentFailedEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
@@ -312,7 +314,7 @@ export async function notifyPaymentFailed(
     }
 
     // Send SMS if phone available and SMS alerts enabled
-    if (user.phoneNumber && smsPrefEnabled) {
+    if (user.phoneNumber && smsEnabled) {
       try {
         await sendPaymentFailedSMS(
           user.phoneNumber,

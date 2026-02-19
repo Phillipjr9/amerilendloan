@@ -3486,26 +3486,51 @@ export async function getAllDisbursedLoans() {
 }
 
 /**
- * Get user notification preferences
+ * Get user notification preferences from user_notification_settings table
+ * Returns flat boolean object matching the NotificationSettings page fields
  */
 export async function getUserNotificationPreferences(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
 
-  const { users } = await import("../drizzle/schema");
+  const { userNotificationSettings } = await import("../drizzle/schema");
 
   const result = await db
     .select()
-    .from(users)
-    .where(eq(users.id, userId))
+    .from(userNotificationSettings)
+    .where(eq(userNotificationSettings.userId, userId))
     .limit(1);
 
-  if (!result || result.length === 0) return null;
+  if (result && result.length > 0) {
+    const s = result[0];
+    return {
+      paymentReminders: s.paymentReminders,
+      paymentConfirmations: s.paymentConfirmations,
+      loanStatusUpdates: s.loanStatusUpdates,
+      documentNotifications: s.documentNotifications,
+      promotionalNotifications: s.promotionalNotifications,
+      emailEnabled: s.emailEnabled,
+      smsEnabled: s.smsEnabled,
+      emailDigest: s.emailDigest,
+    };
+  }
 
-  // For now, return a default object. Later we can add a preferences table
+  // Create default row and return defaults
+  try {
+    await db.insert(userNotificationSettings).values({ userId } as any);
+  } catch {
+    // Row may already exist from race condition — ignore
+  }
+
   return {
-    disablePaymentReminders: false,
-    disableEmailNotifications: false,
+    paymentReminders: true,
+    paymentConfirmations: true,
+    loanStatusUpdates: true,
+    documentNotifications: true,
+    promotionalNotifications: false,
+    emailEnabled: true,
+    smsEnabled: false,
+    emailDigest: false,
   };
 }
 
@@ -4875,15 +4900,29 @@ export async function updateNotificationPreferences(
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
-  const { notificationPreferences } = await import("../drizzle/schema");
+  const { userNotificationSettings } = await import("../drizzle/schema");
 
-  // Ensure preferences exist first
-  await getOrCreateNotificationPreferences(userId);
+  // Ensure a row exists for this user
+  const existing = await db
+    .select()
+    .from(userNotificationSettings)
+    .where(eq(userNotificationSettings.userId, userId))
+    .limit(1);
 
+  if (existing.length === 0) {
+    // Insert row with updates applied
+    const row = await db
+      .insert(userNotificationSettings)
+      .values({ userId, ...updates, updatedAt: new Date() } as any)
+      .returning();
+    return row[0];
+  }
+
+  // Update the existing row
   const result = await db
-    .update(notificationPreferences)
-    .set(updates as any)
-    .where(eq(notificationPreferences.userId, userId))
+    .update(userNotificationSettings)
+    .set({ ...updates, updatedAt: new Date() } as any)
+    .where(eq(userNotificationSettings.userId, userId))
     .returning();
 
   return result[0];
@@ -4933,23 +4972,19 @@ export async function getAllTaxDocuments(taxYear?: number, userId?: number) {
 
 export async function updateUserNotificationPreferences(
   userId: number,
-  updates: { emailNotifications?: boolean; smsNotifications?: boolean; pushNotifications?: boolean }
+  updates: Partial<{
+    paymentReminders: boolean;
+    paymentConfirmations: boolean;
+    loanStatusUpdates: boolean;
+    documentNotifications: boolean;
+    promotionalNotifications: boolean;
+    emailEnabled: boolean;
+    smsEnabled: boolean;
+    emailDigest: boolean;
+  }>
 ) {
-  const db = await getDb();
-  if (!db) throw new Error("Database connection failed");
-  const { users } = await import("../drizzle/schema");
-
-  const result = await db
-    .update(users)
-    .set({
-      ...(updates.smsNotifications !== undefined && { receiveSmsNotifications: updates.smsNotifications }),
-      ...(updates.pushNotifications !== undefined && { receivePushNotifications: updates.pushNotifications }),
-      ...(updates.emailNotifications !== undefined && { receiveMarketingEmails: updates.emailNotifications }),
-    } as any)
-    .where(eq(users.id, userId))
-    .returning();
-
-  return result[0];
+  // Delegate to the unified function that uses user_notification_settings table
+  return updateNotificationPreferences(userId, updates);
 }
 
 export async function getCoSignerInvitationsByUser(userId: number) {

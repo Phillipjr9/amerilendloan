@@ -660,12 +660,17 @@ const notificationsRouter = router({
 
   updatePreferences: protectedProcedure
     .input(z.object({
-      emailNotifications: z.boolean().optional(),
-      smsNotifications: z.boolean().optional(),
-      pushNotifications: z.boolean().optional(),
+      paymentReminders: z.boolean().optional(),
+      paymentConfirmations: z.boolean().optional(),
+      loanStatusUpdates: z.boolean().optional(),
+      documentNotifications: z.boolean().optional(),
+      promotionalNotifications: z.boolean().optional(),
+      emailEnabled: z.boolean().optional(),
+      smsEnabled: z.boolean().optional(),
+      emailDigest: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const updated = await db.updateUserNotificationPreferences(ctx.user.id, input);
+      const updated = await db.updateNotificationPreferences(ctx.user.id, input);
       return { success: true, data: updated };
     }),
 });

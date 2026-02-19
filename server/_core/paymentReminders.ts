@@ -53,7 +53,7 @@ export async function checkAndSendPaymentReminders() {
         
         // Check if user has disabled reminders
         const userPreferences = await getUserNotificationPreferences(loan.userId);
-        if (userPreferences?.disablePaymentReminders) {
+        if (userPreferences && !userPreferences.paymentReminders) {
           continue;
         }
         
