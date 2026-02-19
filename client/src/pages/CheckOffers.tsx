@@ -174,10 +174,7 @@ export default function CheckOffers() {
   const [codeValidating, setCodeValidating] = useState(false);
   const [codeOffer, setCodeOffer] = useState<any>(null);
 
-  const validateCodeQuery = trpc.invitations.validate.useQuery(
-    { code: inviteCode.trim() },
-    { enabled: false }
-  );
+  const utils = trpc.useUtils();
 
   const redeemCodeMutation = trpc.invitations.redeem.useMutation({
     onSuccess: () => {},
@@ -185,19 +182,21 @@ export default function CheckOffers() {
   });
 
   const handleValidateCode = async () => {
-    if (!inviteCode.trim()) {
+    const code = inviteCode.trim();
+    if (!code) {
       toast.error("Please enter an invitation code");
       return;
     }
     setCodeValidating(true);
     try {
-      const result = await validateCodeQuery.refetch();
-      if (result.data?.valid && result.data.invitation) {
-        setCodeOffer(result.data.invitation);
+      // Use fetch() with explicit input to avoid stale query key issues
+      const result = await utils.invitations.validate.fetch({ code });
+      if (result?.valid && result.invitation) {
+        setCodeOffer(result.invitation);
         setStep("code-offer");
         toast.success("Code verified! Here's your personalized offer.");
       } else {
-        toast.error(result.data?.message || "Invalid code");
+        toast.error(result?.message || "Invalid code");
       }
     } catch {
       toast.error("Could not validate code. Please try again.");
