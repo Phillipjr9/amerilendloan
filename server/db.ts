@@ -364,10 +364,10 @@ export async function getUserByEmailOrPhone(identifier: string) {
     return undefined;
   }
 
-  // Try to find by email first, or by loginMethod (phone for OTP users)
+  // Try to find by email first, then by phone number
   const result = await db.select()
     .from(users)
-    .where(or(eq(users.email, identifier), eq(users.loginMethod, identifier)))
+    .where(or(eq(users.email, identifier), eq(users.phoneNumber, identifier)))
     .limit(1);
   
   return result.length > 0 ? result[0] : undefined;

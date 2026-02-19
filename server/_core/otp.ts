@@ -217,6 +217,7 @@ export async function sendOTPEmail(email: string, code: string, purpose: "signup
  */
 export async function sendOTPPhone(phone: string, code: string, purpose: "signup" | "login" | "reset"): Promise<void> {
   await sendOTPSMS(phone, code, purpose);
+  // sendOTPSMS logs the code to console as a dev fallback even if Twilio isn't configured
 }
 
 /**

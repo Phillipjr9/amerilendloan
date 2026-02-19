@@ -2424,12 +2424,14 @@ export const appRouter = router({
     // Request OTP code for signup or login via phone
     requestPhoneCode: publicProcedure
       .input(z.object({
-        phone: z.string().min(10),
+        phone: z.string().min(10).max(20).regex(/^\+?[0-9\s\-()]+$/, "Invalid phone number format"),
         purpose: z.enum(["signup", "login", "reset"]),
       }))
       .mutation(async ({ input }) => {
-        const code = await createOTP(input.phone, input.purpose, "phone");
-        await sendOTPPhone(input.phone, code, input.purpose);
+        // Normalize phone: strip non-digit chars except leading +
+        const phone = input.phone.replace(/[^\d+]/g, '');
+        const code = await createOTP(phone, input.purpose, "phone");
+        await sendOTPPhone(phone, code, input.purpose);
         return { success: true };
       }),
 

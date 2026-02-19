@@ -51,7 +51,7 @@ export async function sendSMS(to: string, message: string): Promise<{ success: b
 /**
  * Send OTP code via SMS
  */
-export async function sendOTPSMS(phone: string, code: string, purpose: "signup" | "login" | "reset"): Promise<void> {
+export async function sendOTPSMS(phone: string, code: string, purpose: "signup" | "login" | "reset"): Promise<{ success: boolean; error?: string }> {
   const purposeText = purpose === "reset" ? "account recovery" : purpose;
   const message = `Your AmeriLend ${purposeText} verification code is: ${code}. This code will expire in 10 minutes.`;
   
@@ -59,7 +59,6 @@ export async function sendOTPSMS(phone: string, code: string, purpose: "signup" 
   
   if (!result.success) {
     console.error(`Failed to send OTP SMS to ${phone}:`, result.error);
-    // Log but don't throw - we'll still log to console as fallback
   }
   
   // Also log to console for development
@@ -73,6 +72,8 @@ export async function sendOTPSMS(phone: string, code: string, purpose: "signup" 
   Expires in: 10 minutes
 ═══════════════════════════════════════
   `);
+
+  return result;
 }
 
 /**
