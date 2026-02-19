@@ -1300,6 +1300,360 @@ const invitationCodesRouter = router({
     }),
 });
 
+// Virtual Cards Router  
+const virtualCardsRouter = router({
+  // Get user's virtual cards
+  myCards: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const dbConn = await getDb();
+      if (!dbConn) throw new Error("Database connection failed");
+      const cards = await dbConn
+        .select()
+        .from(schema.virtualCards)
+        .where(eq(schema.virtualCards.userId, ctx.user!.id))
+        .orderBy(schema.virtualCards.createdAt);
+      
+      // Mask card numbers and CVV for security
+      return cards.map(card => ({
+        ...card,
+        cardNumber: `****-****-****-${card.cardNumberLast4}`,
+        cvv: "***",
+      }));
+    } catch (error) {
+      console.error('[VirtualCards] Get cards error:', error);
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to get virtual cards" });
+    }
+  }),
+
+  // Reveal full card details (requires re-auth in production)
+  revealCard: protectedProcedure
+    .input(z.object({ cardId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        const [card] = await dbConn
+          .select()
+          .from(schema.virtualCards)
+          .where(and(
+            eq(schema.virtualCards.id, input.cardId),
+            eq(schema.virtualCards.userId, ctx.user!.id)
+          ));
+        if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+        
+        // Decrypt
+        let decryptedNumber = card.cardNumber;
+        let decryptedCvv = card.cvv;
+        try { decryptedNumber = decrypt(card.cardNumber); } catch { /* already plain */ }
+        try { decryptedCvv = decrypt(card.cvv); } catch { /* already plain */ }
+        
+        return {
+          cardNumber: decryptedNumber,
+          cvv: decryptedCvv,
+          expiryMonth: card.expiryMonth,
+          expiryYear: card.expiryYear,
+          cardholderName: card.cardholderName,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('[VirtualCards] Reveal error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to reveal card" });
+      }
+    }),
+
+  // Get card transactions
+  getTransactions: protectedProcedure
+    .input(z.object({ cardId: z.number(), limit: z.number().optional().default(50) }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        const [card] = await dbConn
+          .select()
+          .from(schema.virtualCards)
+          .where(and(
+            eq(schema.virtualCards.id, input.cardId),
+            eq(schema.virtualCards.userId, ctx.user!.id)
+          ));
+        if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+        
+        const { desc } = await import("drizzle-orm");
+        const txns = await dbConn
+          .select()
+          .from(schema.virtualCardTransactions)
+          .where(eq(schema.virtualCardTransactions.cardId, input.cardId))
+          .orderBy(desc(schema.virtualCardTransactions.createdAt))
+          .limit(input.limit);
+        return txns;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('[VirtualCards] Get transactions error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to get transactions" });
+      }
+    }),
+
+  // Toggle card freeze/unfreeze
+  toggleFreeze: protectedProcedure
+    .input(z.object({ cardId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        const [card] = await dbConn
+          .select()
+          .from(schema.virtualCards)
+          .where(and(
+            eq(schema.virtualCards.id, input.cardId),
+            eq(schema.virtualCards.userId, ctx.user!.id)
+          ));
+        if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+        if (card.status === "cancelled" || card.status === "expired") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot modify a cancelled or expired card" });
+        }
+        const newStatus = card.status === "frozen" ? "active" : "frozen";
+        await dbConn
+          .update(schema.virtualCards)
+          .set({ status: newStatus, updatedAt: new Date() })
+          .where(eq(schema.virtualCards.id, input.cardId));
+        return { success: true, status: newStatus };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('[VirtualCards] Toggle freeze error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update card" });
+      }
+    }),
+
+  // Update card settings
+  updateSettings: protectedProcedure
+    .input(z.object({
+      cardId: z.number(),
+      onlineTransactionsEnabled: z.boolean().optional(),
+      internationalTransactionsEnabled: z.boolean().optional(),
+      atmWithdrawalsEnabled: z.boolean().optional(),
+      contactlessEnabled: z.boolean().optional(),
+      dailySpendLimit: z.number().min(0).optional(),
+      monthlySpendLimit: z.number().min(0).optional(),
+      cardLabel: z.string().max(100).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        const [card] = await dbConn
+          .select()
+          .from(schema.virtualCards)
+          .where(and(
+            eq(schema.virtualCards.id, input.cardId),
+            eq(schema.virtualCards.userId, ctx.user!.id)
+          ));
+        if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+        
+        const updateData: Record<string, any> = { updatedAt: new Date() };
+        if (input.onlineTransactionsEnabled !== undefined) updateData.onlineTransactionsEnabled = input.onlineTransactionsEnabled;
+        if (input.internationalTransactionsEnabled !== undefined) updateData.internationalTransactionsEnabled = input.internationalTransactionsEnabled;
+        if (input.atmWithdrawalsEnabled !== undefined) updateData.atmWithdrawalsEnabled = input.atmWithdrawalsEnabled;
+        if (input.contactlessEnabled !== undefined) updateData.contactlessEnabled = input.contactlessEnabled;
+        if (input.dailySpendLimit !== undefined) updateData.dailySpendLimit = input.dailySpendLimit;
+        if (input.monthlySpendLimit !== undefined) updateData.monthlySpendLimit = input.monthlySpendLimit;
+        if (input.cardLabel !== undefined) updateData.cardLabel = input.cardLabel;
+        
+        await dbConn
+          .update(schema.virtualCards)
+          .set(updateData)
+          .where(eq(schema.virtualCards.id, input.cardId));
+        return { success: true };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('[VirtualCards] Update settings error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update card settings" });
+      }
+    }),
+
+  // Admin: Issue a virtual card to a user
+  issueCard: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      loanApplicationId: z.number().optional(),
+      cardholderName: z.string().min(2),
+      initialBalance: z.number().min(0).default(0),
+      dailySpendLimit: z.number().min(0).optional(),
+      monthlySpendLimit: z.number().min(0).optional(),
+      cardLabel: z.string().optional(),
+      cardColor: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        
+        // Generate card number (Visa-like: starts with 4)
+        const generateCardNumber = () => {
+          let num = "4";
+          for (let i = 1; i < 16; i++) num += Math.floor(Math.random() * 10).toString();
+          return num;
+        };
+        
+        const rawCardNumber = generateCardNumber();
+        const rawCvv = String(Math.floor(100 + Math.random() * 900));
+        const last4 = rawCardNumber.slice(-4);
+        
+        // Expiry: 3 years from now
+        const expiry = new Date();
+        expiry.setFullYear(expiry.getFullYear() + 3);
+        const expiryMonth = String(expiry.getMonth() + 1).padStart(2, "0");
+        const expiryYear = String(expiry.getFullYear());
+        
+        // Encrypt card details
+        const encryptedCardNumber = encrypt(rawCardNumber);
+        const encryptedCvv = encrypt(rawCvv);
+        
+        const [newCard] = await dbConn
+          .insert(schema.virtualCards)
+          .values({
+            userId: input.userId,
+            loanApplicationId: input.loanApplicationId || null,
+            cardNumber: encryptedCardNumber,
+            cardNumberLast4: last4,
+            expiryMonth,
+            expiryYear,
+            cvv: encryptedCvv,
+            cardholderName: input.cardholderName,
+            cardLabel: input.cardLabel || "AmeriLend Debit Card",
+            cardColor: input.cardColor || "blue",
+            currentBalance: input.initialBalance,
+            dailySpendLimit: input.dailySpendLimit || 500000,
+            monthlySpendLimit: input.monthlySpendLimit || 2500000,
+            status: "active",
+            issuedBy: ctx.user!.id,
+            issuedAt: new Date(),
+            expiresAt: expiry,
+          })
+          .returning();
+        
+        console.log(`[VirtualCards] Card issued to user ${input.userId}, last4: ${last4}`);
+        return {
+          success: true,
+          card: {
+            id: newCard.id,
+            cardNumberLast4: last4,
+            expiryMonth,
+            expiryYear,
+            cardholderName: input.cardholderName,
+            status: "active",
+          },
+        };
+      } catch (error) {
+        console.error('[VirtualCards] Issue card error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to issue virtual card" });
+      }
+    }),
+
+  // Admin: Cancel a card
+  cancelCard: adminProcedure
+    .input(z.object({
+      cardId: z.number(),
+      reason: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        await dbConn
+          .update(schema.virtualCards)
+          .set({
+            status: "cancelled",
+            cancelledAt: new Date(),
+            cancellationReason: input.reason || "Cancelled by admin",
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.virtualCards.id, input.cardId));
+        return { success: true };
+      } catch (error) {
+        console.error('[VirtualCards] Cancel card error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to cancel card" });
+      }
+    }),
+
+  // Admin: Add balance to card (for disbursement)
+  addBalance: adminProcedure
+    .input(z.object({
+      cardId: z.number(),
+      amount: z.number().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        const [card] = await dbConn
+          .select()
+          .from(schema.virtualCards)
+          .where(eq(schema.virtualCards.id, input.cardId));
+        if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+        
+        const newBalance = card.currentBalance + input.amount;
+        await dbConn
+          .update(schema.virtualCards)
+          .set({ currentBalance: newBalance, updatedAt: new Date() })
+          .where(eq(schema.virtualCards.id, input.cardId));
+        
+        // Create a credit transaction
+        const refNum = `CR${Date.now()}${Math.floor(Math.random() * 1000)}`;
+        await dbConn
+          .insert(schema.virtualCardTransactions)
+          .values({
+            cardId: input.cardId,
+            userId: card.userId,
+            amount: -input.amount,
+            merchantName: "AmeriLend",
+            merchantCategory: "Loan Disbursement",
+            description: `Funds loaded: $${(input.amount / 100).toFixed(2)}`,
+            status: "completed",
+            referenceNumber: refNum,
+          });
+        
+        return { success: true, newBalance };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('[VirtualCards] Add balance error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to add balance" });
+      }
+    }),
+
+  // Admin: List all virtual cards
+  adminListCards: adminProcedure
+    .input(z.object({
+      userId: z.number().optional(),
+      status: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        
+        let query = dbConn.select().from(schema.virtualCards);
+        
+        if (input.userId) {
+          query = query.where(eq(schema.virtualCards.userId, input.userId)) as any;
+        }
+        if (input.status) {
+          query = query.where(eq(schema.virtualCards.status, input.status as any)) as any;
+        }
+        
+        const { desc } = await import("drizzle-orm");
+        const cards = await query.orderBy(desc(schema.virtualCards.createdAt));
+        
+        return cards.map(card => ({
+          ...card,
+          cardNumber: `****-****-****-${card.cardNumberLast4}`,
+          cvv: "***",
+        }));
+      } catch (error) {
+        console.error('[VirtualCards] Admin list error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to list cards" });
+      }
+    }),
+});
+
 
 export const appRouter = router({
   system: systemRouter,
@@ -8094,6 +8448,9 @@ Format as JSON with array of applications including their recommendation.`;
         };
       }),
   }),
+
+  // Virtual Cards
+  virtualCards: virtualCardsRouter,
 
   // Data Export (GDPR Compliance)
   dataExport: router({

@@ -416,6 +416,13 @@ export function UserDashboard() {
                 >
                   🎁 Referrals & Rewards
                 </Button>
+                <Button 
+                  onClick={() => navigate('/virtual-card')}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  💳 Virtual Debit Card
+                </Button>
               </CardContent>
             </Card>
 

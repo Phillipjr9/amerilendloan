@@ -43,6 +43,7 @@ import Collections from "./pages/admin/Collections";
 import FinancialTools from "./pages/FinancialTools";
 import ESignatures from "./pages/ESignatures";
 import MarketingCampaigns from "./pages/admin/MarketingCampaigns";
+import AdminVirtualCards from "./pages/admin/AdminVirtualCards";
 import NotificationSettings from "./pages/NotificationSettings";
 import About from "./pages/About";
 import HowItWorksPage from "./pages/HowItWorks";
@@ -50,6 +51,7 @@ import Rates from "./pages/Rates";
 import Contact from "./pages/Contact";
 import Resources from "./pages/Resources";
 import ArticlePage from "./pages/ArticlePage";
+import VirtualDebitCard from "./pages/VirtualDebitCard";
 
 function Router() {
   return (
@@ -75,6 +77,7 @@ function Router() {
       <Route path={"/chat"} component={LiveChat} />
       <Route path={"/co-signers"} component={CoSigners} />
       <Route path={"/financial-tools"} component={FinancialTools} />
+      <Route path={"/virtual-card"} component={VirtualDebitCard} />
       <Route path={"/e-signatures"} component={ESignatures} />
       <Route path={"/notification-settings"} component={NotificationSettings} />
       <Route path={"/settings"} component={Settings} />
@@ -88,6 +91,7 @@ function Router() {
       <Route path={"/admin/fraud"} component={FraudDetection} />
       <Route path={"/admin/collections"} component={Collections} />
       <Route path={"/admin/marketing"} component={MarketingCampaigns} />
+      <Route path={"/admin/virtual-cards"} component={AdminVirtualCards} />
       <Route path={"/payment/:id"} component={PaymentPage} />
       <Route path={"/pay-fee"} component={PayFee} />
       <Route path={"/otp-login"} component={OTPLogin} />

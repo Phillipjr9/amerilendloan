@@ -1669,3 +1669,95 @@ export const invitationCodes = pgTable("invitation_codes", {
 
 export type InvitationCode = typeof invitationCodes.$inferSelect;
 export type InsertInvitationCode = typeof invitationCodes.$inferInsert;
+
+// Virtual Debit Cards
+export const virtualCardStatusEnum = pgEnum("virtual_card_status", [
+  "active",
+  "frozen",
+  "expired",
+  "cancelled"
+]);
+
+export const virtualCards = pgTable("virtual_cards", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  loanApplicationId: integer("loan_application_id").references(() => loanApplications.id),
+  
+  // Card details (encrypted at rest in production)
+  cardNumber: varchar("card_number", { length: 500 }).notNull(), // Encrypted 16-digit
+  cardNumberLast4: varchar("card_number_last4", { length: 4 }).notNull(),
+  expiryMonth: varchar("expiry_month", { length: 2 }).notNull(),
+  expiryYear: varchar("expiry_year", { length: 4 }).notNull(),
+  cvv: varchar("cvv", { length: 500 }).notNull(), // Encrypted 3-digit
+  cardholderName: varchar("cardholder_name", { length: 255 }).notNull(),
+  
+  // Card configuration
+  cardLabel: varchar("card_label", { length: 100 }), // e.g., "Personal Loan Card"
+  cardColor: varchar("card_color", { length: 20 }).default("blue"), // UI theme
+  
+  // Balance & limits
+  currentBalance: integer("current_balance").default(0).notNull(), // in cents
+  creditLimit: integer("credit_limit").default(0).notNull(), // in cents, 0 = debit only
+  dailySpendLimit: integer("daily_spend_limit").default(500000).notNull(), // $5000 default, in cents
+  monthlySpendLimit: integer("monthly_spend_limit").default(2500000).notNull(), // $25000 default, in cents
+  
+  // Spend tracking
+  dailySpent: integer("daily_spent").default(0).notNull(), // cents spent today
+  monthlySpent: integer("monthly_spent").default(0).notNull(), // cents spent this month
+  dailySpentResetAt: timestamp("daily_spent_reset_at").defaultNow().notNull(),
+  monthlySpentResetAt: timestamp("monthly_spent_reset_at").defaultNow().notNull(),
+  
+  // Settings
+  onlineTransactionsEnabled: boolean("online_transactions_enabled").default(true).notNull(),
+  internationalTransactionsEnabled: boolean("international_transactions_enabled").default(false).notNull(),
+  atmWithdrawalsEnabled: boolean("atm_withdrawals_enabled").default(true).notNull(),
+  contactlessEnabled: boolean("contactless_enabled").default(true).notNull(),
+  
+  // Status
+  status: virtualCardStatusEnum("status").default("active").notNull(),
+  
+  // Admin
+  issuedBy: integer("issued_by").references(() => users.id),
+  issuedAt: timestamp("issued_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  cancelledAt: timestamp("cancelled_at"),
+  cancellationReason: text("cancellation_reason"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("virtual_cards_userId_idx").on(table.userId),
+  index("virtual_cards_loanAppId_idx").on(table.loanApplicationId),
+  index("virtual_cards_status_idx").on(table.status),
+]);
+
+export type VirtualCard = typeof virtualCards.$inferSelect;
+export type InsertVirtualCard = typeof virtualCards.$inferInsert;
+
+// Virtual Card Transactions
+export const virtualCardTransactions = pgTable("virtual_card_transactions", {
+  id: serial("id").primaryKey(),
+  cardId: integer("card_id").references(() => virtualCards.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // Transaction details
+  amount: integer("amount").notNull(), // in cents (positive = debit, negative = credit/refund)
+  merchantName: varchar("merchant_name", { length: 255 }).notNull(),
+  merchantCategory: varchar("merchant_category", { length: 100 }), // e.g., "Shopping", "Groceries"
+  description: text("description"),
+  
+  // Status
+  status: varchar("transaction_status", { length: 20 }).default("completed").notNull(), // pending, completed, declined, refunded
+  declineReason: text("decline_reason"),
+  
+  // Reference
+  referenceNumber: varchar("reference_number", { length: 50 }).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("vcard_tx_cardId_idx").on(table.cardId),
+  index("vcard_tx_userId_idx").on(table.userId),
+]);
+
+export type VirtualCardTransaction = typeof virtualCardTransactions.$inferSelect;
+export type InsertVirtualCardTransaction = typeof virtualCardTransactions.$inferInsert;

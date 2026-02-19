@@ -39,7 +39,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-gray-100 text-gray-800 border-gray-300",
 };
 
-type ViewType = "dashboard" | "applications" | "tracking" | "verification" | "support" | "audit" | "fees" | "crypto" | "workflows" | "payments" | "invitations";
+type ViewType = "dashboard" | "applications" | "tracking" | "verification" | "support" | "audit" | "fees" | "crypto" | "workflows" | "payments" | "invitations" | "virtual_cards";
 
 export default function AdminDashboardFalcon() {
   const [, setLocation] = useLocation();
@@ -395,6 +395,7 @@ export default function AdminDashboardFalcon() {
     { id: "invitations" as ViewType, icon: Send, label: "Invitations" },
     { id: "fees" as ViewType, icon: Settings, label: "Fee Settings" },
     { id: "crypto" as ViewType, icon: Wallet, label: "Crypto Wallet" },
+    { id: "virtual_cards" as ViewType, icon: CreditCard, label: "Virtual Cards" },
   ];
 
   return (
@@ -1261,6 +1262,26 @@ export default function AdminDashboardFalcon() {
                 </CardHeader>
                 <CardContent>
                   <CryptoWalletSettings />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Virtual Cards View */}
+          {currentView === "virtual_cards" && (
+            <div className="space-y-6">
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle>Virtual Debit Cards</CardTitle>
+                  <CardDescription>Issue and manage virtual debit cards for borrowers</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-4">
+                    <p className="text-gray-500 mb-4">Manage virtual cards from the dedicated admin page</p>
+                    <Button onClick={() => setLocation('/admin/virtual-cards')} className="gap-2">
+                      <CreditCard className="w-4 h-4" /> Open Virtual Cards Manager
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
