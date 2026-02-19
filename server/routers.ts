@@ -3720,17 +3720,13 @@ export const appRouter = router({
     }),
 
     // Admin: Update fee configuration
-    adminUpdate: protectedProcedure
+    adminUpdate: adminProcedure
       .input(z.object({
         calculationMode: z.enum(["percentage", "fixed"]),
         percentageRate: z.number().int().min(150).max(1000).optional(), // 1.5% - 10%
         fixedFeeAmount: z.number().int().min(150).max(1000).optional(), // $1.50 - $10.00
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN" });
-        }
-
         // Validate that the appropriate field is provided
         if (input.calculationMode === "percentage" && !input.percentageRate) {
           throw new TRPCError({ 

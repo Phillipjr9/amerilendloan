@@ -2223,7 +2223,7 @@ export async function sendCryptoPaymentInstructionsEmail(
           <h3 style="color: #0033A0; margin-top: 30px;">📋 Step-by-Step Instructions</h3>
           <div style="background-color: #f0f8ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
             <ol style="margin: 0; padding-left: 20px; line-height: 2;">
-              <li><strong>Open your crypto wallet</strong> (Coinbase, Trust Wallet, etc.)</li>
+              <li><strong>Open your crypto wallet</strong> (Trust Wallet, MetaMask, etc.)</li>
               <li><strong>Send EXACTLY ${cryptoAmount} ${cryptoCurrency}</strong> to the address above</li>
               <li><strong>Copy your transaction hash</strong> after sending</li>
               <li><strong>Submit the transaction hash</strong> in your dashboard</li>

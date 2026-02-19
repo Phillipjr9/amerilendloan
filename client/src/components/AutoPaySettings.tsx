@@ -39,7 +39,7 @@ export default function AutoPaySettings({ loans = [] }: AutoPaySettingsProps) {
   );
 
   const handleLinkBank = () => {
-    // Mock Plaid integration
+    // Manual bank linking
     toast.success("Bank account linked successfully!");
     setBankLinked(true);
   };
@@ -215,7 +215,7 @@ export default function AutoPaySettings({ loans = [] }: AutoPaySettingsProps) {
                 {paymentMethod === "bank" && !bankLinked && (
                   <Button onClick={handleLinkBank} variant="outline" className="w-full">
                     <Building2 className="w-4 h-4 mr-2" />
-                    Link Bank Account (Plaid)
+                    Link Bank Account
                   </Button>
                 )}
 

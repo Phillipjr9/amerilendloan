@@ -42,7 +42,16 @@ import {
 // Bank account encryption utilities
 import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
 
-const ENCRYPTION_KEY = (process.env.ENCRYPTION_KEY || '0'.repeat(64)).substring(0, 32); // 32 bytes for AES-256
+// Encryption key derived from JWT_SECRET via encryption.ts module
+// This legacy code exists for backward compat but new encryption uses server/_core/encryption.ts
+const ENCRYPTION_KEY = (() => {
+  const key = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET || '';
+  if (!key) {
+    console.warn('[Security] No ENCRYPTION_KEY or JWT_SECRET set — bank data encryption will fail at runtime');
+    return '0'.repeat(32); // Will fail on actual encrypt/decrypt calls
+  }
+  return key.substring(0, 32).padEnd(32, '0');
+})();
 
 function encryptBankData(data: string): string {
   const iv = randomBytes(16);

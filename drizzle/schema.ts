@@ -738,11 +738,11 @@ export const userAddresses = pgTable("userAddresses", {
 export type UserAddress = typeof userAddresses.$inferSelect;
 export type InsertUserAddress = typeof userAddresses.$inferInsert;
 
-// Bank accounts (Plaid/MX integration)
+// Bank accounts (manual entry)
 export const bankAccounts = pgTable("bankAccounts", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
-  plaidAccountId: varchar("plaidAccountId", { length: 255 }), // from Plaid
+  plaidAccountId: varchar("plaidAccountId", { length: 255 }), // legacy field, unused
   bankName: varchar("bankName", { length: 255 }).notNull(),
   accountType: varchar("accountType", { length: 20 }).notNull(), // "checking", "savings", "money_market"
   accountNumber: varchar("accountNumber", { length: 50 }).notNull(), // masked display

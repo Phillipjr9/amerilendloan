@@ -1,6 +1,7 @@
 /**
  * Cryptocurrency payment integration
- * Supports BTC, ETH, USDT payments via Coinbase Commerce or similar gateway
+ * Supports BTC, ETH, USDT, USDC payments via manual wallet transfers
+ * Admin can update wallet addresses anytime from the dashboard
  */
 
 import { verifyCryptoTransactionWeb3, getNetworkStatus, TxVerificationResult } from "./web3-verification";
@@ -11,11 +12,9 @@ import { verifyCryptoTransactionWeb3, getNetworkStatus, TxVerificationResult } f
 export type CryptoCurrency = "BTC" | "ETH" | "USDT" | "USDC";
 
 /**
- * Crypto payment configuration
+ * Crypto payment configuration (manual wallet-based)
  */
 export interface CryptoPaymentConfig {
-  apiKey: string;
-  webhookSecret: string;
   environment: "sandbox" | "production";
 }
 
@@ -24,8 +23,6 @@ export interface CryptoPaymentConfig {
  */
 export function getCryptoPaymentConfig(): CryptoPaymentConfig {
   return {
-    apiKey: process.env.COINBASE_COMMERCE_API_KEY || "",
-    webhookSecret: process.env.COINBASE_COMMERCE_WEBHOOK_SECRET || "",
     environment: (process.env.CRYPTO_PAYMENT_ENVIRONMENT as "sandbox" | "production") || "production",
   };
 }
@@ -121,57 +118,17 @@ export async function createCryptoCharge(
 }> {
   const config = getCryptoPaymentConfig();
 
-  // Note: We don't require config.apiKey for direct wallet payments
-  // Only needed if using Coinbase Commerce integration
-
   try {
     // Convert USD to crypto
     const cryptoAmount = await convertUSDToCrypto(amount, currency);
 
-    // Get real wallet address for this cryptocurrency
+    // Get real wallet address for this cryptocurrency (from DB or env)
     const paymentAddress = getCryptoWalletAddress(currency);
     const chargeId = `charge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    /*
-    // Production implementation with Coinbase Commerce:
-    const response = await fetch("https://api.commerce.coinbase.com/charges", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CC-Api-Key": config.apiKey,
-        "X-CC-Version": "2018-03-22",
-      },
-      body: JSON.stringify({
-        name: description,
-        description,
-        pricing_type: "fixed_price",
-        local_price: {
-          amount: (amount / 100).toFixed(2),
-          currency: "USD",
-        },
-        metadata,
-      }),
-    });
-
-    const data = await response.json();
-    
-    if (data.data) {
-      const charge = data.data;
-      const selectedCrypto = charge.pricing[currency];
-      
-      return {
-        success: true,
-        chargeId: charge.id,
-        cryptoAmount: selectedCrypto.amount,
-        paymentAddress: charge.addresses[currency],
-        qrCodeUrl: `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${currency}:${charge.addresses[currency]}?amount=${selectedCrypto.amount}`,
-        expiresAt: new Date(charge.expires_at),
-      };
-    }
-    */
-
-    // Return real payment data with your wallet address
+    // Return payment data with admin-configured wallet address
+    // User sends crypto manually, admin verifies on blockchain and approves
     return {
       success: true,
       chargeId,
@@ -318,20 +275,20 @@ export async function checkNetworkStatus(
 }
 
 /**
- * Validate crypto payment webhook
+ * Validate crypto payment webhook (unused — admin manually verifies)
  */
 export function validateCryptoWebhook(
   signature: string,
   payload: string
 ): boolean {
-  const config = getCryptoPaymentConfig();
+  const crypto = require("crypto");
+  const secret = process.env.CRYPTO_WEBHOOK_SECRET;
   
-  if (!config.webhookSecret) {
+  if (!secret) {
     return false;
   }
 
-  const crypto = require("crypto");
-  const hmac = crypto.createHmac("sha256", config.webhookSecret);
+  const hmac = crypto.createHmac("sha256", secret);
   hmac.update(payload);
   const computedSignature = hmac.digest("hex");
 
@@ -339,21 +296,22 @@ export function validateCryptoWebhook(
 }
 
 /**
- * Get real cryptocurrency wallet address from environment
+ * Get cryptocurrency wallet address from environment or DB
+ * Admin can change these anytime from the admin dashboard
  */
 function getCryptoWalletAddress(currency: CryptoCurrency): string {
-  // Use real wallet addresses from environment variables
+  // Use wallet addresses from environment variables (DB override happens in router)
   const walletAddresses: Record<CryptoCurrency, string> = {
     BTC: process.env.CRYPTO_BTC_ADDRESS || "",
     ETH: process.env.CRYPTO_ETH_ADDRESS || "",
-    USDT: process.env.CRYPTO_USDT_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "", // USDT is ERC-20
-    USDC: process.env.CRYPTO_USDC_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "", // USDC is ERC-20
+    USDT: process.env.CRYPTO_USDT_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "",
+    USDC: process.env.CRYPTO_USDC_ADDRESS || process.env.CRYPTO_ETH_ADDRESS || "",
   };
 
   const address = walletAddresses[currency];
   
   if (!address) {
-    throw new Error(`No wallet address configured for ${currency}`);
+    throw new Error(`No wallet address configured for ${currency}. Please ask the admin to set wallet addresses in the dashboard.`);
   }
   
   return address;
