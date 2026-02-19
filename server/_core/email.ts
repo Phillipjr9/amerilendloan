@@ -4850,3 +4850,74 @@ export async function sendInvitationCodeEmail(
 
   await sendEmail({ to: email, subject, text, html });
 }
+
+/**
+ * Send account deletion request confirmation email
+ */
+export async function sendAccountDeletionRequestEmail(
+  email: string,
+  userName: string,
+  reason?: string,
+  ipAddress?: string
+): Promise<void> {
+  const subject = "Account Deletion Request Received";
+  const requestDate = new Date().toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/New_York'
+  });
+
+  const text = `
+Hello ${userName},
+
+We received your account deletion request on ${requestDate}.
+
+${reason ? `Reason: ${reason}` : ''}
+${ipAddress ? `Request IP: ${ipAddress}` : ''}
+
+If you did not request this, please contact support immediately at support@amerilendloan.com or call (945) 212-1609.
+
+Your account and associated data will be reviewed and processed according to our data retention policy.
+
+AmeriLend Team
+  `.trim();
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
+        ${getEmailHeader()}
+        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
+          <h2 style="color: #C9A227; margin-top: 0;">Account Deletion Request</h2>
+          <p>Dear ${userName},</p>
+          <p>We have received your account deletion request. Here are the details:</p>
+
+          <div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <p style="margin: 5px 0;"><strong>Date:</strong> ${requestDate}</p>
+            ${reason ? `<p style="margin: 5px 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
+            ${ipAddress ? `<p style="margin: 5px 0;"><strong>IP Address:</strong> ${ipAddress}</p>` : ''}
+          </div>
+
+          <p><strong>If you did not make this request</strong>, please contact our support team immediately:</p>
+          <ul>
+            <li>Email: <a href="mailto:support@amerilendloan.com">support@amerilendloan.com</a></li>
+            <li>Phone: (945) 212-1609</li>
+          </ul>
+
+          <p>Your account and associated data will be reviewed and processed according to our data retention policy. Any outstanding loan obligations will still need to be fulfilled.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}

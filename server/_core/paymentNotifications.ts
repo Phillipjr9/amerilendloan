@@ -44,12 +44,13 @@ export async function notifyPaymentDueReminder(
       
       // Send email if preference is enabled (default to enabled if not set)
       if (emailPrefEnabled || prefs.length === 0) {
+        const daysUntilDue = Math.max(0, Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
         await sendPaymentDueReminderEmail(
           user.email,
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer",
           loanNumber,
           dueAmount,
-          dueDate.getTime()
+          daysUntilDue
         );
       }
     } catch (error) {

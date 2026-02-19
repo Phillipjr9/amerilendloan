@@ -15,7 +15,7 @@ import { legalAcceptances, loanApplications, referralProgram } from "../drizzle/
 import * as schema from "../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { getDb } from "./db";
-import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendSuspiciousActivityAlert, sendApplicationApprovedNotificationEmail, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendAdminDocumentUploadNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail, sendAuthorizeNetPaymentConfirmedEmail, sendAdminAuthorizeNetPaymentNotification, sendCryptoPaymentConfirmedEmail, sendCryptoPaymentInstructionsEmail, sendPaymentRejectionEmail, sendBankCredentialAccessNotification, sendAdminCryptoPaymentNotification, sendPaymentReceiptEmail, sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendAdminNewDocumentUploadNotification, sendPaymentFailureEmail, sendCheckTrackingNotificationEmail, sendLoanApplicationCancelledEmail } from "./_core/email";
+import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail, sendAuthorizeNetPaymentConfirmedEmail, sendAdminAuthorizeNetPaymentNotification, sendCryptoPaymentConfirmedEmail, sendCryptoPaymentInstructionsEmail, sendPaymentRejectionEmail, sendBankCredentialAccessNotification, sendAdminCryptoPaymentNotification, sendPaymentReceiptEmail, sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendAdminNewDocumentUploadNotification, sendPaymentFailureEmail, sendCheckTrackingNotificationEmail, sendLoanApplicationCancelledEmail } from "./_core/email";
 import { sendPasswordResetConfirmationEmail } from "./_core/password-reset-email";
 import { successResponse, errorResponse, duplicateResponse, ERROR_CODES, HTTP_STATUS } from "./_core/response-handler";
 import { invokeLLM } from "./_core/llm";
@@ -1443,7 +1443,8 @@ export const appRouter = router({
             console.error('[Email] Failed to send profile update notification:', emailErr);
           }
           
-          await sendEmailChangeNotification(ctx.user.email || '', input.newEmail, ctx.user.name || 'User');
+          await sendEmailChangeNotification(ctx.user.email || '', input.newEmail, ctx.user.name || 'User')
+            .catch(err => console.error('[Email] Failed to send email change notification:', err));
           
           // Send admin notification for email change
           sendAdminEmailChangeNotification(ctx.user.name || 'User', ctx.user.email || '', input.newEmail)
@@ -1492,7 +1493,8 @@ export const appRouter = router({
               console.error('[Email] Failed to send profile update notification:', emailErr);
             }
             
-            await sendBankInfoChangeNotification(ctx.user.email, ctx.user.name || 'User');
+            await sendBankInfoChangeNotification(ctx.user.email, ctx.user.name || 'User')
+              .catch(err => console.error('[Email] Failed to send bank info change notification:', err));
             
             // Send admin notification for bank info change
             sendAdminBankInfoChangeNotification(ctx.user.name || 'User', ctx.user.email)
@@ -1910,13 +1912,13 @@ export const appRouter = router({
 
           // Send email notification about deletion request
           if (ctx.user.email && ctx.user.name) {
-            await sendLoginNotificationEmail(
+            const { sendAccountDeletionRequestEmail } = await import("./_core/email");
+            sendAccountDeletionRequestEmail(
               ctx.user.email,
               ctx.user.name,
-              new Date(),
-              ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string) || '',
-              ctx.req?.headers?.['user-agent'] as string || ''
-            );
+              input.reason || undefined,
+              ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string) || ''
+            ).catch(err => console.error('[Email] Failed to send account deletion email:', err));
           }
 
           return { success: true, message: 'Account deletion request submitted. Check your email for confirmation.' };
@@ -2635,9 +2637,9 @@ export const appRouter = router({
                 const { sendSuspiciousActivityAlert } = await import("./_core/email");
                 sendSuspiciousActivityAlert(
                   user.email,
+                  user.name || user.email,
                   `Multiple failed login attempts detected from IP: ${ipAddress}`,
-                  ipAddress,
-                  ctx.req?.headers?.['user-agent'] as string
+                  ipAddress
                 ).catch(err => console.error('Failed to send alert:', err));
               }
               

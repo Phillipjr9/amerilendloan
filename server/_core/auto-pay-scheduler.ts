@@ -187,6 +187,8 @@ async function processIndividualAutoPay(setting: any) {
     loan.trackingNumber,
     setting.amount || 0,
     'card',
+    paymentDetails.cardLast4,
+    paymentDetails.cardBrand,
     chargeResult.transactionId!
   );
 
