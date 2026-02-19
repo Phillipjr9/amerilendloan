@@ -298,7 +298,7 @@ export default function PaymentPage() {
           <div className="container mx-auto px-4 py-4 flex items-center justify-between h-32">
             <Link href="/">
               <div className="flex items-center gap-3 cursor-pointer">
-                <img src="/logo.jpg" alt="AmeriLend" className="h-32 w-auto" style={{ mixBlendMode: 'multiply' }} />
+                <img src="/logo.jpg" alt="AmeriLend" className="h-32 w-auto mix-blend-multiply" />
               </div>
             </Link>
           </div>
@@ -358,7 +358,7 @@ export default function PaymentPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between h-32">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer">
-              <img src="/logo.jpg" alt="AmeriLend" className="h-32 w-auto" style={{ mixBlendMode: 'multiply' }} />
+              <img src="/logo.jpg" alt="AmeriLend" className="h-32 w-auto mix-blend-multiply" />
             </div>
           </Link>
           <Link href="/dashboard">

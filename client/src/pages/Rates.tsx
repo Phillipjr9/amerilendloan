@@ -220,12 +220,13 @@ export default function Rates() {
             {/* Amount Slider */}
             <div className="mb-8">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">Loan Amount</label>
+                <label htmlFor="loan-amount-slider" className="text-sm font-medium text-gray-700">Loan Amount</label>
                 <span className="text-2xl font-extrabold text-[#0A2540]">
                   ${loanAmount.toLocaleString()}
                 </span>
               </div>
               <input
+                id="loan-amount-slider"
                 type="range"
                 min={500}
                 max={15000}

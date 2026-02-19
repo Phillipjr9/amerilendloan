@@ -93,8 +93,9 @@ export default function SavingsCalculator() {
                   <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
                     <div className="flex-1 grid grid-cols-3 gap-2">
                       <div>
-                        <label className="text-xs text-gray-400">Balance</label>
+                        <label htmlFor={`debt-balance-${index}`} className="text-xs text-gray-400">Balance</label>
                         <input
+                          id={`debt-balance-${index}`}
                           type="number"
                           value={debt.balance}
                           onChange={(e) => updateDebt(index, "balance", Number(e.target.value))}
@@ -102,8 +103,9 @@ export default function SavingsCalculator() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-400">APR %</label>
+                        <label htmlFor={`debt-rate-${index}`} className="text-xs text-gray-400">APR %</label>
                         <input
+                          id={`debt-rate-${index}`}
                           type="number"
                           step="0.01"
                           value={debt.rate}
@@ -112,8 +114,9 @@ export default function SavingsCalculator() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-400">Min Payment</label>
+                        <label htmlFor={`debt-minpay-${index}`} className="text-xs text-gray-400">Min Payment</label>
                         <input
+                          id={`debt-minpay-${index}`}
                           type="number"
                           value={debt.minPayment}
                           onChange={(e) => updateDebt(index, "minPayment", Number(e.target.value))}
