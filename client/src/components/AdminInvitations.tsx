@@ -60,8 +60,29 @@ const statusIcons: Record<string, typeof CheckCircle2> = {
   revoked: Ban,
 };
 
+// Infer a full name from the local part of an email address
+// e.g. john.doe@gmail.com → "John Doe", sarah_wilson@co.com → "Sarah Wilson"
+function inferNameFromEmail(email: string): string {
+  const local = email.split("@")[0];
+  // Split on dots, underscores, hyphens, or camelCase boundaries
+  const parts = local
+    .replace(/([a-z])([A-Z])/g, "$1 $2") // camelCase → separate words
+    .split(/[._\-+]+/)
+    .filter(Boolean);
+
+  // Filter out parts that look like pure numbers (e.g. john.doe123 → skip "123")
+  const nameParts = parts.filter((p) => /[a-zA-Z]/.test(p));
+
+  if (nameParts.length === 0) return local;
+
+  return nameParts
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join(" ");
+}
+
 // Parse emails from text: supports comma, semicolon, newline separated
-// Also detects "Name <email>" and "email (Name)" patterns
+// Detects "Name <email>", "email (Name)", and plain email patterns
+// Automatically infers full names from email addresses (e.g. john.doe@gmail.com → John Doe)
 function parseEmailEntries(text: string): { email: string; name: string }[] {
   const results: { email: string; name: string }[] = [];
   const seen = new Set<string>();
@@ -77,7 +98,7 @@ function parseEmailEntries(text: string): { email: string; name: string }[] {
       const name = angleBracket[1].trim().replace(/^["']|["']$/g, "");
       if (!seen.has(email) && isValidEmail(email)) {
         seen.add(email);
-        results.push({ email, name: name || email.split("@")[0] });
+        results.push({ email, name: name || inferNameFromEmail(email) });
       }
       continue;
     }
@@ -89,16 +110,16 @@ function parseEmailEntries(text: string): { email: string; name: string }[] {
       const name = parenName[2].trim();
       if (!seen.has(email) && isValidEmail(email)) {
         seen.add(email);
-        results.push({ email, name: name || email.split("@")[0] });
+        results.push({ email, name: name || inferNameFromEmail(email) });
       }
       continue;
     }
 
-    // Pattern: plain email
+    // Pattern: plain email — infer full name from local part
     const emailOnly = part.trim().toLowerCase();
     if (!seen.has(emailOnly) && isValidEmail(emailOnly)) {
       seen.add(emailOnly);
-      results.push({ email: emailOnly, name: emailOnly.split("@")[0] });
+      results.push({ email: emailOnly, name: inferNameFromEmail(emailOnly) });
     }
   }
 
