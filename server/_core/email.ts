@@ -1167,7 +1167,8 @@ export async function sendAdminNewApplicationNotification(
   requestedAmount: number,
   loanType: string,
   phone: string,
-  employmentStatus: string
+  employmentStatus: string,
+  applicationId?: number
 ): Promise<void> {
   const formattedAmount = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -1175,96 +1176,130 @@ export async function sendAdminNewApplicationNotification(
     minimumFractionDigits: 0,
   }).format(requestedAmount / 100);
 
-  const subject = `New Loan Application - AmeriLend [${trackingNumber}]`;
-  const text = `A new loan application has been submitted.\n\nApplicant Information:\nName: ${fullName}\nEmail: ${email}\nPhone: ${phone}\nTracking Number: ${trackingNumber}\n\nApplication Details:\nLoan Type: ${loanType}\nRequested Amount: ${formattedAmount}\nEmployment Status: ${employmentStatus}\n\nAction Required:\nPlease review this application in your admin dashboard.`;
+  const subject = `🆕 New Loan Application - ${fullName} - ${formattedAmount} [${trackingNumber}]`;
+  const text = `A new loan application has been submitted.\n\nApplicant: ${fullName}\nEmail: ${email}\nPhone: ${phone}\nTracking: ${trackingNumber}\nLoan Type: ${loanType}\nAmount: ${formattedAmount}\nEmployment: ${employmentStatus}\n\nPlease review and take action.`;
+
+  // Generate approve/reject action tokens if applicationId is available
+  let approveUrl = "";
+  let rejectUrl = "";
+  if (applicationId) {
+    try {
+      const { generateAdminActionToken } = await import("./admin-email-actions");
+      const approveToken = generateAdminActionToken(applicationId, "approve");
+      const rejectToken = generateAdminActionToken(applicationId, "reject");
+      const baseUrl = COMPANY_INFO.website;
+      approveUrl = `${baseUrl}/api/admin-action/approve/${approveToken}`;
+      rejectUrl = `${baseUrl}/api/admin-action/reject/${rejectToken}`;
+    } catch (err) {
+      console.error("[Email] Failed to generate admin action tokens:", err);
+    }
+  }
+
+  const actionButtonsHtml = approveUrl && rejectUrl ? `
+          <!-- Quick Action Buttons -->
+          <div style="margin: 30px 0; padding: 24px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; border: 1px solid #bbf7d0; text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 13px; color: #166534; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">⚡ Quick Actions from Email</p>
+            <p style="margin: 0 0 18px 0; font-size: 13px; color: #6B7280;">Take action instantly — no dashboard login required</p>
+            <div style="display: inline-block;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${approveUrl}" style="height:44px;v-text-anchor:middle;width:180px;" arcsize="18%" strokecolor="#059669" fillcolor="#059669">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">✅ Approve</center>
+              </v:roundrect>
+              <![endif]-->
+              <a href="${approveUrl}" style="display: inline-block; padding: 12px 32px; background-color: #059669; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 8px; margin: 0 8px;">✅ Approve Application</a>
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${rejectUrl}" style="height:44px;v-text-anchor:middle;width:180px;" arcsize="18%" strokecolor="#DC2626" fillcolor="#DC2626">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">❌ Reject</center>
+              </v:roundrect>
+              <![endif]-->
+              <a href="${rejectUrl}" style="display: inline-block; padding: 12px 32px; background-color: #DC2626; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 8px; margin: 0 8px;">❌ Reject Application</a>
+            </div>
+            <p style="margin: 14px 0 0 0; font-size: 11px; color: #9CA3AF;">Links expire in 72 hours. Rejection will prompt for a reason.</p>
+          </div>
+  ` : "";
 
   const html = `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; background-color: #f9f9f9; }
-          .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-          .header { text-align: center; margin-bottom: 30px; }
-          .section { margin: 20px 0; }
-          .label { color: #0033A0; font-weight: bold; }
-          .alert { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
-          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-          th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
-          th { background-color: #f5f5f5; font-weight: bold; color: #0033A0; }
-          .cta-button { display: inline-block; background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; margin-top: 15px; }
-        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
         ${getEmailHeader()}
-        <div class="container">
-          <div class="header">
-            <h1 style="color: #0033A0; margin: 0;">New Loan Application Received</h1>
-            <p style="color: #666; margin-top: 5px;">Action required from administration</p>
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+          <!-- Alert Banner -->
+          <div style="background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%); padding: 16px 24px; text-align: center;">
+            <p style="margin: 0; color: #ffffff; font-size: 15px; font-weight: 700;">🔔 NEW APPLICATION REQUIRES YOUR REVIEW</p>
           </div>
 
-          <div class="alert">
-            <strong>⚠️ A new loan application has been submitted and requires review.</strong>
-          </div>
+          <div style="padding: 30px;">
+            <!-- Application Summary Card -->
+            <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #bfdbfe;">
+              <div style="text-align: center; margin-bottom: 16px;">
+                <span style="display: inline-block; background-color: #0033A0; color: #ffffff; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px;">TRACKING: ${trackingNumber}</span>
+              </div>
+              <div style="text-align: center;">
+                <p style="margin: 0 0 4px 0; font-size: 32px; font-weight: 800; color: #0033A0;">${formattedAmount}</p>
+                <p style="margin: 0; font-size: 14px; color: #6B7280;">${loanType.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} Loan</p>
+              </div>
+            </div>
 
-          <div class="section">
-            <h2 style="color: #0033A0; border-bottom: 2px solid #0033A0; padding-bottom: 10px;">Applicant Information</h2>
-            <table>
+            <!-- Applicant Details -->
+            <h2 style="margin: 0 0 16px 0; font-size: 16px; color: #111827; border-bottom: 2px solid #0033A0; padding-bottom: 8px;">👤 Applicant Information</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
               <tr>
-                <td><span class="label">Name:</span></td>
-                <td>${fullName}</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #6B7280; font-size: 13px; width: 140px;">Full Name</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #111827; font-size: 14px; font-weight: 600;">${fullName}</td>
               </tr>
               <tr>
-                <td><span class="label">Email:</span></td>
-                <td>${email}</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #6B7280; font-size: 13px;">Email</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #111827; font-size: 14px;"><a href="mailto:${email}" style="color: #0033A0; text-decoration: none;">${email}</a></td>
               </tr>
               <tr>
-                <td><span class="label">Phone:</span></td>
-                <td>${phone}</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #6B7280; font-size: 13px;">Phone</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #111827; font-size: 14px;"><a href="tel:${phone}" style="color: #0033A0; text-decoration: none;">${phone}</a></td>
               </tr>
               <tr>
-                <td><span class="label">Tracking Number:</span></td>
-                <td><strong>${trackingNumber}</strong></td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #6B7280; font-size: 13px;">Employment</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #111827; font-size: 14px;">${employmentStatus.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 12px; color: #6B7280; font-size: 13px;">Submitted</td>
+                <td style="padding: 10px 12px; color: #111827; font-size: 14px;">${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</td>
               </tr>
             </table>
-          </div>
 
-          <div class="section">
-            <h2 style="color: #0033A0; border-bottom: 2px solid #0033A0; padding-bottom: 10px;">Loan Application Details</h2>
-            <table>
-              <tr>
-                <td><span class="label">Loan Type:</span></td>
-                <td>${loanType.replace("_", " ").charAt(0).toUpperCase() + loanType.slice(1).replace("_", " ")}</td>
-              </tr>
-              <tr>
-                <td><span class="label">Requested Amount:</span></td>
-                <td><strong>${formattedAmount}</strong></td>
-              </tr>
-              <tr>
-                <td><span class="label">Employment Status:</span></td>
-                <td>${employmentStatus.replace("_", " ")}</td>
-              </tr>
-            </table>
-          </div>
+            ${actionButtonsHtml}
 
-          <div class="section" style="background-color: #f9f9f9; padding: 20px; border-radius: 4px; margin-top: 20px;">
-            <h3 style="margin-top: 0; color: #0033A0;">Next Steps:</h3>
-            <ol style="color: #555;">
-              <li>Review the applicant's information and documentation</li>
-              <li>Conduct credit and employment verification</li>
-              <li>Make an approval/rejection decision</li>
-              <li>Notify the applicant of the decision</li>
-            </ol>
-          </div>
+            <!-- Dashboard Link -->
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${COMPANY_INFO.website}/admin" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #0033A0 0%, #0050d4 100%); color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 8px;">📊 Open Admin Dashboard</a>
+            </div>
 
-          <div style="text-align: center; margin-top: 30px;">
-            <p>
-              <a href="${COMPANY_INFO.website}/admin" class="cta-button">Review in Admin Dashboard</a>
-            </p>
-          </div>
+            <!-- Next Steps -->
+            <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-top: 20px;">
+              <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #374151;">📋 Review Checklist</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 6px 0; font-size: 13px; color: #6B7280; vertical-align: top; width: 24px;">1.</td>
+                  <td style="padding: 6px 0; font-size: 13px; color: #6B7280;">Verify applicant identity and documentation</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-size: 13px; color: #6B7280; vertical-align: top;">2.</td>
+                  <td style="padding: 6px 0; font-size: 13px; color: #6B7280;">Review credit history and employment status</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-size: 13px; color: #6B7280; vertical-align: top;">3.</td>
+                  <td style="padding: 6px 0; font-size: 13px; color: #6B7280;">Approve or reject using buttons above or via dashboard</td>
+                </tr>
+              </table>
+            </div>
 
-          <p style="margin-top: 30px; color: #666; font-size: 14px;">This is an automated notification. Please do not reply to this email.</p>
+            <p style="margin: 24px 0 0 0; color: #9CA3AF; font-size: 12px; text-align: center;">This is an automated admin notification. Do not forward this email — it contains secure action links.</p>
+          </div>
         </div>
         ${getEmailFooter()}
       </body>

@@ -3524,7 +3524,8 @@ export const appRouter = router({
               input.requestedAmount,
               input.loanType,
               input.phone,
-              input.employmentStatus
+              input.employmentStatus,
+              loanAppId || undefined
             );
           } catch (adminEmailError) {
             console.error("[Application Submit] Failed to send admin notification:", adminEmailError);

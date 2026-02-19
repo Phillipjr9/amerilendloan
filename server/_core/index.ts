@@ -24,6 +24,7 @@ import { startBackupScheduler, stopBackupScheduler } from "./database-backup";
 import { healthCheck, readinessCheck, livenessCheck, metricsEndpoint } from "./health-checks";
 import { apiLimiter, authLimiter, paymentLimiter, uploadLimiter } from "./rate-limiting";
 import { handleFileUpload, handleFileDownload, upload } from "./upload-handler";
+import { registerAdminEmailActionRoutes } from "./admin-email-actions";
 
 // Validate critical environment variables at startup
 function validateEnvironment() {
@@ -250,6 +251,9 @@ async function startServer() {
       }
     },
   });
+
+  // Admin email action routes (approve/reject from email)
+  registerAdminEmailActionRoutes(app);
 
   // Document upload endpoint
   app.post("/api/upload-document", upload.single("file"), async (req, res) => {
