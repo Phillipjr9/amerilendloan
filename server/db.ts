@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { asc, desc, eq, or, and, sql, ilike, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import type postgres from "postgres";
@@ -405,7 +406,6 @@ export async function checkDuplicateAccount(dateOfBirth: string, ssn: string) {
   if (!db) throw new Error("Database not available");
   
   // Hash the SSN for lookup (matches the hash stored during submission)
-  const crypto = await import('crypto');
   const ssnHash = crypto.createHash('sha256').update(ssn).digest('hex');
   
   // Check for existing applications with same DOB and SSN hash

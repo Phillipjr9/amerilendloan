@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { COOKIE_NAME, SESSION_COOKIE_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -2809,7 +2810,6 @@ export const appRouter = router({
             throw new Error("Database not available");
           }
 
-          const crypto = await import('crypto');
           // Format SSN for hash: normalize to XXX-XX-XXXX format
           const formattedSsn = `${input.ssn.slice(0,3)}-${input.ssn.slice(3,5)}-${input.ssn.slice(5)}`;
           const ssnHash = crypto.createHash('sha256').update(formattedSsn).digest('hex');
@@ -3454,7 +3454,7 @@ export const appRouter = router({
             phone: input.phone,
             dateOfBirth: input.dateOfBirth,
             ssn: encrypt(input.ssn), // Encrypt SSN at rest
-            ssnHash: (await import('crypto')).createHash('sha256').update(input.ssn).digest('hex'), // Hash for lookups
+            ssnHash: crypto.createHash('sha256').update(input.ssn).digest('hex'), // Hash for lookups
             street: input.street,
             city: input.city,
             state: input.state,
