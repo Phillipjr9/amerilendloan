@@ -28,8 +28,8 @@ export function useAuth(options?: UseAuthOptions) {
       // First, clear the user data from cache
       utils.auth.me.setData(undefined, null);
       
-      // Clear any local storage items
-      localStorage.removeItem("manus-runtime-user-info");
+      // Clear ALL local storage
+      localStorage.clear();
       
       // Call the logout mutation
       await logoutMutation.mutateAsync();
@@ -37,8 +37,15 @@ export function useAuth(options?: UseAuthOptions) {
       // Invalidate all queries to clear cache
       await utils.invalidate();
       
-      // Clear session storage as well
+      // Clear session storage
       sessionStorage.clear();
+      
+      // Clear all client-side cookies (consent cookies, preferences, etc.)
+      document.cookie.split(';').forEach((c) => {
+        const name = c.split('=')[0].trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+      });
       
       // Force a full page reload to home page (clears all state)
       window.location.href = "/";
@@ -46,8 +53,12 @@ export function useAuth(options?: UseAuthOptions) {
       // Even if logout fails, clear local data and redirect
       console.error("Logout error:", error);
       utils.auth.me.setData(undefined, null);
-      localStorage.removeItem("manus-runtime-user-info");
+      localStorage.clear();
       sessionStorage.clear();
+      document.cookie.split(';').forEach((c) => {
+        const name = c.split('=')[0].trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      });
       await utils.invalidate();
       window.location.href = "/";
     }

@@ -1868,27 +1868,10 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       
-      // Clear cookie with all possible variations to ensure it works on all devices
-      // Clear with domain-specific settings
-      ctx.res.clearCookie(COOKIE_NAME, {
-        ...cookieOptions,
-        path: '/',
-        maxAge: 0,
-      });
-      
-      // Clear without domain
-      ctx.res.clearCookie(COOKIE_NAME, {
-        path: '/',
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        maxAge: 0,
-      });
-      
-      // Clear with minimal settings (for mobile compatibility)
-      ctx.res.clearCookie(COOKIE_NAME, {
-        path: '/',
-      });
+      // Clear session cookie with all possible variations for maximum compatibility
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, path: '/', maxAge: 0 });
+      ctx.res.clearCookie(COOKIE_NAME, { path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 0 });
+      ctx.res.clearCookie(COOKIE_NAME, { path: '/' });
       
       // Set expired cookie explicitly
       ctx.res.cookie(COOKIE_NAME, '', {
@@ -1898,7 +1881,14 @@ export const appRouter = router({
         expires: new Date(0),
       });
       
-      console.log('[Auth] User logged out successfully');
+      // Clear any other app cookies (consent, preferences, etc.)
+      const cookiesToClear = ['cookie_consent', 'cookie_preferences', 'app_consent', 'consent_accepted', 'theme_preference'];
+      for (const cookieName of cookiesToClear) {
+        ctx.res.clearCookie(cookieName, { path: '/' });
+        ctx.res.clearCookie(cookieName, { path: '/', httpOnly: false, secure: true, sameSite: 'lax' });
+      }
+      
+      console.log('[Auth] User logged out successfully - all cookies cleared');
       return {
         success: true,
       } as const;
@@ -1956,7 +1946,7 @@ export const appRouter = router({
             userId,
             activityType: 'password_changed',
             description: 'User changed their password',
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
           
@@ -1987,7 +1977,7 @@ export const appRouter = router({
             userId,
             activityType: 'email_changed',
             description: `Email changed from ${ctx.user.email} to ${input.newEmail}`,
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
           
@@ -2061,7 +2051,7 @@ export const appRouter = router({
             userId,
             activityType: 'bank_info_updated',
             description: `Bank account updated for ${input.bankAccountHolderName}`,
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
           
@@ -2129,7 +2119,7 @@ export const appRouter = router({
             userId: tokenRecord.userId,
             activityType: 'email_changed',
             description: `Email verified and changed to ${tokenRecord.newEmail}`,
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
 
@@ -2167,7 +2157,7 @@ export const appRouter = router({
             userId: ctx.user.id,
             activityType: 'settings_changed',
             description: `2FA requested for ${input.operationType} change`,
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
 
@@ -2213,7 +2203,7 @@ export const appRouter = router({
             userId: ctx.user.id,
             activityType: 'settings_changed',
             description: 'Session terminated',
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
 
@@ -2321,7 +2311,7 @@ export const appRouter = router({
             userId: ctx.user.id,
             activityType: 'profile_updated',
             description: 'User profile information updated',
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
 
@@ -2381,7 +2371,7 @@ export const appRouter = router({
             userId: ctx.user.id,
             activityType: 'settings_changed',
             description: `2FA enabled with method: ${input.method}`,
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
 
@@ -2421,7 +2411,7 @@ export const appRouter = router({
             userId: ctx.user.id,
             activityType: 'settings_changed',
             description: '2FA disabled',
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
 
@@ -2462,7 +2452,7 @@ export const appRouter = router({
             userId: ctx.user.id,
             activityType: 'settings_changed',
             description: `Trusted device removed: ${input.deviceId}`,
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
 
@@ -2488,7 +2478,7 @@ export const appRouter = router({
             userId: ctx.user.id,
             activityType: 'settings_changed',
             description: `Account deletion requested. Reason: ${input.reason || 'Not provided'}`,
-            ipAddress: ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string),
+            ipAddress: getClientIP(ctx.req),
             userAgent: ctx.req?.headers?.['user-agent'] as string,
           });
 
@@ -2499,7 +2489,7 @@ export const appRouter = router({
               ctx.user.email,
               ctx.user.name,
               input.reason || undefined,
-              ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string) || ''
+              getClientIP(ctx.req)
             ).catch(err => console.error('[Email] Failed to send account deletion email:', err));
           }
 
@@ -3207,7 +3197,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         try {
-          const ipAddress = ctx.req?.ip || (ctx.req?.headers?.['x-forwarded-for'] as string) || 'Unknown';
+          const ipAddress = getClientIP(ctx.req);
           
           // Record the login attempt
           await db.recordLoginAttempt(input.email, ipAddress, input.successful);

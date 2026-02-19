@@ -49,24 +49,38 @@ export const COMPANY_INFO = {
  */
 export function getEmailFooter(): string {
   return `
-    <div style="background-color: #f5f5f5; border-top: 3px solid #0033A0; padding: 25px 20px; margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
-      <p style="margin: 8px 0; font-weight: bold; font-size: 18px; color: #0033A0;">${COMPANY_INFO.name}</p>
-      <p style="margin: 8px 0; color: #555; font-size: 13px;">${COMPANY_INFO.address.formatted}</p>
-      
-      <div style="margin: 15px 0;">
-        <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0; text-decoration: none; font-weight: 500;">${COMPANY_INFO.contact.email}</a>
-        <span style="margin: 0 10px; color: #ccc;">|</span>
-        <a href="tel:${COMPANY_INFO.contact.phoneFormatted.replace(/\D/g, '')}" style="color: #0033A0; text-decoration: none; font-weight: 500;">${COMPANY_INFO.contact.phone}</a>
+    <div style="background: linear-gradient(135deg, #001a4d 0%, #0033A0 100%); padding: 40px 30px; text-align: center; color: #ffffff;">
+      <!-- Social Links -->
+      <div style="margin-bottom: 20px;">
+        <a href="${COMPANY_INFO.social.facebook}" style="display: inline-block; margin: 0 8px; width: 36px; height: 36px; background-color: rgba(255,255,255,0.15); border-radius: 50%; line-height: 36px; text-decoration: none; font-size: 16px; color: #fff;">f</a>
+        <a href="${COMPANY_INFO.social.twitter}" style="display: inline-block; margin: 0 8px; width: 36px; height: 36px; background-color: rgba(255,255,255,0.15); border-radius: 50%; line-height: 36px; text-decoration: none; font-size: 16px; color: #fff;">𝕏</a>
+        <a href="${COMPANY_INFO.social.instagram}" style="display: inline-block; margin: 0 8px; width: 36px; height: 36px; background-color: rgba(255,255,255,0.15); border-radius: 50%; line-height: 36px; text-decoration: none; font-size: 14px; color: #fff;">📷</a>
+        <a href="${COMPANY_INFO.social.linkedin}" style="display: inline-block; margin: 0 8px; width: 36px; height: 36px; background-color: rgba(255,255,255,0.15); border-radius: 50%; line-height: 36px; text-decoration: none; font-size: 16px; color: #fff;">in</a>
       </div>
+
+      <!-- Contact Info -->
+      <div style="margin-bottom: 20px;">
+        <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #FFA500; text-decoration: none; font-weight: 600; font-size: 14px;">${COMPANY_INFO.contact.email}</a>
+        <span style="margin: 0 12px; color: rgba(255,255,255,0.3);">|</span>
+        <a href="tel:${COMPANY_INFO.contact.phoneFormatted.replace(/\D/g, '')}" style="color: #FFA500; text-decoration: none; font-weight: 600; font-size: 14px;">${COMPANY_INFO.contact.phone}</a>
+      </div>
+
+      <!-- Address -->
+      <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.7); font-size: 12px; line-height: 1.6;">
+        ${COMPANY_INFO.address.formatted}
+      </p>
       
-      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-        <p style="margin: 6px 0; color: #999; font-size: 11px;">
+      <!-- Divider -->
+      <div style="border-top: 1px solid rgba(255,255,255,0.15); padding-top: 20px; margin-top: 5px;">
+        <p style="margin: 0 0 8px 0; color: rgba(255,255,255,0.5); font-size: 11px;">
           © ${new Date().getFullYear()} ${COMPANY_INFO.name}. All rights reserved.
         </p>
-        <p style="margin: 8px 0; color: #999; font-size: 11px;">
-          <a href="${COMPANY_INFO.website}/legal/privacy-policy" style="color: #0033A0; text-decoration: none;">Privacy Policy</a>
-          <span style="margin: 0 8px; color: #ccc;">•</span>
-          <a href="${COMPANY_INFO.website}/legal/terms-of-service" style="color: #0033A0; text-decoration: none;">Terms of Service</a>
+        <p style="margin: 0; font-size: 11px;">
+          <a href="${COMPANY_INFO.website}/legal/privacy-policy" style="color: rgba(255,255,255,0.6); text-decoration: none;">Privacy Policy</a>
+          <span style="margin: 0 6px; color: rgba(255,255,255,0.3);">•</span>
+          <a href="${COMPANY_INFO.website}/legal/terms-of-service" style="color: rgba(255,255,255,0.6); text-decoration: none;">Terms of Service</a>
+          <span style="margin: 0 6px; color: rgba(255,255,255,0.3);">•</span>
+          <a href="${COMPANY_INFO.website}" style="color: rgba(255,255,255,0.6); text-decoration: none;">Visit Website</a>
         </p>
       </div>
     </div>
@@ -78,13 +92,12 @@ export function getEmailFooter(): string {
  */
 export function getEmailHeader(): string {
   return `
-    <div style="background-color: #ffffff; padding: 35px 20px; text-align: center; border-bottom: 4px solid #FFA500;">
-      <div style="margin-bottom: 15px;">
-        <img src="${COMPANY_INFO.logo.url}" alt="${COMPANY_INFO.logo.alt}" style="height: 110px; max-width: 90%; object-fit: contain;">
+    <div style="background: linear-gradient(135deg, #001a4d 0%, #0033A0 60%, #0050d4 100%); padding: 40px 20px 30px; text-align: center;">
+      <div style="margin-bottom: 12px;">
+        <img src="${COMPANY_INFO.logo.url}" alt="${COMPANY_INFO.logo.alt}" style="height: 80px; max-width: 80%; object-fit: contain; border-radius: 8px;">
       </div>
-      <h1 style="color: #0033A0; margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 0.5px;">AmeriLend</h1>
-      <p style="color: #666; margin: 10px 0 0 0; font-size: 14px; font-weight: 500;">💼 Trusted Lending Solutions</p>
-      <p style="color: #999; margin: 5px 0 0 0; font-size: 12px;">Making Dreams Possible</p>
+      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">AmeriLend</h1>
+      <p style="color: #FFA500; margin: 8px 0 0 0; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">Trusted Lending Solutions</p>
     </div>
   `;
 }

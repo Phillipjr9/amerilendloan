@@ -1,5 +1,6 @@
 import { Request } from "express";
 import { getDb, createAuditLog } from "../db";
+import { getClientIP } from "./ipUtils";
 
 export enum AuditEventType {
   // Authentication events
@@ -99,7 +100,7 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
 // Helper to extract request metadata
 export function extractRequestMetadata(req: Request): Pick<AuditLogEntry, 'ipAddress' | 'userAgent'> {
   return {
-    ipAddress: req.ip || req.headers['x-forwarded-for'] as string || 'unknown',
+    ipAddress: getClientIP(req),
     userAgent: req.headers['user-agent'] || 'unknown',
   };
 }

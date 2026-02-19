@@ -159,19 +159,30 @@ export async function sendOTPEmail(email: string, code: string, purpose: "signup
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${subject}</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
-        ${getEmailHeader()}
-        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
-          <h2 style="color: #0033A0; margin-top: 0;">${title}</h2>
-          <p>${message}</p>
-          <div style="background-color: #0033A0; color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0; font-size: 14px;">Your verification code is:</p>
-            <p style="margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 2px;">${code}</p>
+      <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f0f2f5;">
+        <div style="background-color: #ffffff; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.08);">
+          ${getEmailHeader()}
+          <div style="padding: 35px 30px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #0033A0; margin: 0 0 8px 0; font-size: 22px; font-weight: 700;">${title}</h2>
+              <p style="color: #666; margin: 0; font-size: 14px;">${message}</p>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #001a4d 0%, #0033A0 100%); color: white; padding: 28px; border-radius: 14px; text-align: center; margin: 24px 0; box-shadow: 0 4px 15px rgba(0,51,160,0.3);">
+              <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 1px;">Your verification code</p>
+              <p style="margin: 0; font-size: 40px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">${code}</p>
+            </div>
+            
+            <div style="text-align: center; margin: 20px 0;">
+              <p style="color: #6b7280; font-size: 13px; margin: 0;">⏱ This code expires in <strong>10 minutes</strong></p>
+            </div>
+            
+            <div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 10px; padding: 14px 18px; margin-top: 24px; text-align: center;">
+              <p style="margin: 0; color: #92400e; font-size: 13px;">🔒 If you didn't request this code, you can safely ignore this email.</p>
+            </div>
           </div>
-          <p style="color: #999; font-size: 12px; text-align: center;">This code will expire in 10 minutes.</p>
-          <p style="color: #999; font-size: 12px; text-align: center;">If you didn't request this code, please ignore this email.</p>
+          ${getEmailFooter()}
         </div>
-        ${getEmailFooter()}
       </body>
     </html>
   `;
@@ -204,30 +215,63 @@ export async function sendLoanApplicationReceivedEmail(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${subject}</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
-        ${getEmailHeader()}
-        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
-          <h2 style="color: #0033A0; margin-top: 0;">Application Received!</h2>
-          <p>Dear ${fullName},</p>
-          <p>Thank you for submitting your loan application to AmeriLend. We've received your application and our team is reviewing it.</p>
-          
-          <div style="background-color: white; border-left: 4px solid #0033A0; padding: 15px; margin: 20px 0;">
-            <h3 style="margin-top: 0; color: #0033A0;">Application Details</h3>
-            <p style="margin: 5px 0;"><strong>Tracking Number:</strong> ${trackingNumber}</p>
-            <p style="margin: 5px 0;"><strong>Requested Amount:</strong> $${formattedAmount}</p>
-            <p style="margin: 5px 0;"><strong>Status:</strong> Under Review</p>
+      <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f0f2f5;">
+        <div style="background-color: #ffffff; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.08);">
+          ${getEmailHeader()}
+          <div style="padding: 35px 30px;">
+            <!-- Success Icon -->
+            <div style="text-align: center; margin-bottom: 20px;">
+              <div style="display: inline-block; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px;">📋</div>
+              <h2 style="color: #0033A0; margin: 12px 0 5px 0; font-size: 22px; font-weight: 700;">Application Received!</h2>
+              <p style="color: #888; margin: 0; font-size: 13px;">Your loan application is now being reviewed</p>
+            </div>
+
+            <p style="color: #444; font-size: 15px;">Hi <strong>${fullName}</strong>,</p>
+            <p style="color: #555; font-size: 14px;">Thank you for applying with AmeriLend. We've received your application and our underwriting team is reviewing it.</p>
+            
+            <!-- Application Details Card -->
+            <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px;">Tracking Number</td>
+                  <td style="padding: 10px 0; color: #0033A0; font-size: 16px; font-weight: 700; font-family: 'Courier New', monospace; text-align: right;">${trackingNumber}</td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #e2e8f0;"></td></tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px;">Requested Amount</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-size: 16px; font-weight: 700; text-align: right;">$${formattedAmount}</td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #e2e8f0;"></td></tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px;">Status</td>
+                  <td style="padding: 10px 0; text-align: right;">
+                    <span style="background-color: #FFA500; color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">Under Review</span>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Next Steps -->
+            <div style="margin: 24px 0;">
+              <p style="color: #0033A0; font-weight: 700; font-size: 15px; margin: 0 0 14px 0;">What happens next?</p>
+              <div style="display: flex; align-items: flex-start; margin-bottom: 12px;">
+                <div style="min-width: 28px; height: 28px; background: #0033A0; color: #fff; border-radius: 50%; text-align: center; line-height: 28px; font-size: 13px; font-weight: 700; margin-right: 12px;">1</div>
+                <p style="margin: 4px 0 0 0; color: #555; font-size: 14px;">Our team reviews your application within <strong>24 hours</strong></p>
+              </div>
+              <div style="display: flex; align-items: flex-start; margin-bottom: 12px;">
+                <div style="min-width: 28px; height: 28px; background: #0033A0; color: #fff; border-radius: 50%; text-align: center; line-height: 28px; font-size: 13px; font-weight: 700; margin-right: 12px;">2</div>
+                <p style="margin: 4px 0 0 0; color: #555; font-size: 14px;">You'll receive an email with our decision</p>
+              </div>
+              <div style="display: flex; align-items: flex-start;">
+                <div style="min-width: 28px; height: 28px; background: #0033A0; color: #fff; border-radius: 50%; text-align: center; line-height: 28px; font-size: 13px; font-weight: 700; margin-right: 12px;">3</div>
+                <p style="margin: 4px 0 0 0; color: #555; font-size: 14px;">Track real-time status on your <a href="${COMPANY_INFO.website}/dashboard" style="color: #0033A0; font-weight: 600; text-decoration: none;">dashboard</a></p>
+              </div>
+            </div>
+
+            <p style="color: #888; font-size: 13px; margin-top: 24px; text-align: center;">Questions? Contact us at <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0; text-decoration: none; font-weight: 600;">${COMPANY_INFO.contact.email}</a> or <a href="tel:${COMPANY_INFO.contact.phoneFormatted.replace(/\D/g, '')}" style="color: #0033A0; text-decoration: none; font-weight: 600;">${COMPANY_INFO.contact.phone}</a></p>
           </div>
-
-          <h3 style="color: #0033A0;">What's Next?</h3>
-          <ul style="padding-left: 20px;">
-            <li>Our team will review your application within 24 hours</li>
-            <li>You'll receive an email notification once a decision is made</li>
-            <li>You can track your application status in your dashboard</li>
-          </ul>
-
-          <p style="margin-top: 30px;">If you have any questions, please don't hesitate to contact our support team at <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #0033A0;">${COMPANY_INFO.contact.email}</a> or call us at ${COMPANY_INFO.contact.phone}.</p>
+          ${getEmailFooter()}
         </div>
-        ${getEmailFooter()}
       </body>
     </html>
   `;
@@ -454,7 +498,13 @@ export async function sendLoanApplicationCancelledEmail(
 }
 
 /**
- * Send login notification email
+ * In-memory deduplication for login notification emails.
+ * Prevents sending multiple login alerts to the same user within 2 minutes.
+ */
+const recentLoginNotifications = new Map<string, number>();
+
+/**
+ * Send login notification email (deduplicated — max once per 2 minutes per user)
  */
 export async function sendLoginNotificationEmail(
   email: string,
@@ -463,6 +513,20 @@ export async function sendLoginNotificationEmail(
   ipAddress?: string,
   userAgent?: string
 ): Promise<void> {
+  // Deduplicate: skip if we sent a login notification to this email in the last 2 minutes
+  const now = Date.now();
+  const lastSent = recentLoginNotifications.get(email);
+  if (lastSent && now - lastSent < 120_000) {
+    console.log(`[Email] Skipping duplicate login notification for ${email} (sent ${Math.round((now - lastSent) / 1000)}s ago)`);
+    return;
+  }
+  recentLoginNotifications.set(email, now);
+  // Prune old entries every 50 entries to prevent memory leak
+  if (recentLoginNotifications.size > 50) {
+    for (const [key, ts] of recentLoginNotifications) {
+      if (now - ts > 120_000) recentLoginNotifications.delete(key);
+    }
+  }
   const formattedTime = loginTime.toLocaleString('en-US', { 
     weekday: 'long',
     year: 'numeric',
@@ -507,65 +571,84 @@ export async function sendLoginNotificationEmail(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${subject}</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0;">
-        ${getEmailHeader()}
-        <div style="background-color: #f9f9f9; padding: 30px; border-left: 1px solid #ddd; border-right: 1px solid #ddd;">
-          <div style="background-color: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px; margin-bottom: 20px;">
-            <h2 style="color: #0c5460; margin-top: 0; font-size: 18px;">
-              🔒 Security Alert: New Login Detected
-            </h2>
+      <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f0f2f5;">
+        <div style="background-color: #ffffff; border-radius: 0; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.08);">
+          ${getEmailHeader()}
+          
+          <div style="padding: 35px 30px;">
+            <!-- Security Badge -->
+            <div style="text-align: center; margin-bottom: 25px;">
+              <div style="display: inline-block; background: linear-gradient(135deg, #e8f4fd 0%, #d1ecf1 100%); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px; margin-bottom: 10px;">🔒</div>
+              <h2 style="color: #0033A0; margin: 10px 0 5px 0; font-size: 22px; font-weight: 700;">New Login Detected</h2>
+              <p style="color: #888; margin: 0; font-size: 13px;">We noticed a new sign-in to your account</p>
+            </div>
+            
+            <p style="color: #444; font-size: 15px;">Hi <strong>${fullName}</strong>,</p>
+            <p style="color: #555; font-size: 14px;">A new login was recorded on your AmeriLend account. Here are the details:</p>
+            
+            <!-- Login Details Card -->
+            <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; width: 110px; vertical-align: top;">
+                    <span style="display: inline-block; width: 20px;">🕐</span> Time
+                  </td>
+                  <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${formattedTime} EST</td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #e2e8f0;"></td></tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; vertical-align: top;">
+                    <span style="display: inline-block; width: 20px;">📍</span> Location
+                  </td>
+                  <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${locationInfo}</td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #e2e8f0;"></td></tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; vertical-align: top;">
+                    <span style="display: inline-block; width: 20px;">💻</span> Device
+                  </td>
+                  <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${deviceInfo} · ${browserInfo}</td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #e2e8f0;"></td></tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; vertical-align: top;">
+                    <span style="display: inline-block; width: 20px;">🌐</span> IP
+                  </td>
+                  <td style="padding: 10px 0; color: #1e293b; font-size: 14px; font-family: 'Courier New', monospace;">${ipAddress || 'Unknown'}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 12px; margin: 28px 0;">
+              <div style="flex: 1; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; border-radius: 10px; padding: 16px; text-align: center;">
+                <p style="margin: 0; font-size: 15px; font-weight: 700; color: #065f46;">✓ Was this you?</p>
+                <p style="margin: 6px 0 0 0; color: #047857; font-size: 13px;">No action needed!</p>
+              </div>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1px solid #fecaca; border-radius: 10px; padding: 16px; text-align: center; margin-bottom: 24px;">
+              <p style="margin: 0; font-size: 15px; font-weight: 700; color: #991b1b;">⚠ Didn't recognize this?</p>
+              <p style="margin: 6px 0 0 0; color: #b91c1c; font-size: 13px;">
+                Contact us immediately at <a href="mailto:${COMPANY_INFO.contact.email}" style="color: #b91c1c; font-weight: 600;">${COMPANY_INFO.contact.email}</a>
+                or call <a href="tel:${COMPANY_INFO.contact.phoneFormatted.replace(/\D/g, '')}" style="color: #b91c1c; font-weight: 600;">${COMPANY_INFO.contact.phone}</a>
+              </p>
+            </div>
+
+            <!-- Security Tips -->
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              <p style="color: #0033A0; font-weight: 700; font-size: 14px; margin: 0 0 12px 0;">🛡 Security Tips</p>
+              <table style="width: 100%;">
+                <tr><td style="padding: 4px 0; color: #6b7280; font-size: 13px;">• Never share your verification codes with anyone</td></tr>
+                <tr><td style="padding: 4px 0; color: #6b7280; font-size: 13px;">• Use a strong, unique password for your account</td></tr>
+                <tr><td style="padding: 4px 0; color: #6b7280; font-size: 13px;">• Always log out on shared or public devices</td></tr>
+                <tr><td style="padding: 4px 0; color: #6b7280; font-size: 13px;">• Report suspicious activity immediately</td></tr>
+              </table>
+            </div>
           </div>
           
-          <p>Dear ${fullName},</p>
-          <p>We detected a new login to your AmeriLend account. Please review the details below:</p>
-          
-          <div style="background-color: white; border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 5px;">
-            <h3 style="margin-top: 0; color: #0033A0; font-size: 16px;">Login Details</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; color: #666; width: 120px;"><strong>Time:</strong></td>
-                <td style="padding: 8px 0;">${formattedTime} EST</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;"><strong>Location:</strong></td>
-                <td style="padding: 8px 0;">📍 ${locationInfo}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;"><strong>IP Address:</strong></td>
-                <td style="padding: 8px 0;">${ipAddress || 'Unknown'}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;"><strong>Device:</strong></td>
-                <td style="padding: 8px 0;">${deviceInfo}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;"><strong>Browser:</strong></td>
-                <td style="padding: 8px 0;">${browserInfo}</td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; margin: 20px 0; border-radius: 5px;">
-            <p style="margin: 0; color: #155724;">
-              <strong>✓ Was this you?</strong> No action needed. You're all set!
-            </p>
-          </div>
-
-          <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin: 20px 0; border-radius: 5px;">
-            <p style="margin: 0; color: #721c24;">
-              <strong>⚠️ Wasn't you?</strong> Secure your account immediately!
-            </p>
-          </div>
-
-          <h3 style="color: #0033A0; margin-top: 30px;">Protect Your Account</h3>
-          <ul style="padding-left: 20px;">
-            <li>Never share your OTP codes with anyone</li>
-            <li>Use a strong, unique password</li>
-            <li>Log out after each session on shared devices</li>
-            <li>Contact us immediately if you notice suspicious activity</li>
-          </ul>
+          ${getEmailFooter()}
         </div>
-        ${getEmailFooter()}
       </body>
     </html>
   `;
