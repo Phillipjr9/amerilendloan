@@ -32,9 +32,8 @@ function validateEnvironment() {
   // Log the DATABASE_URL for debugging
   console.log("[Environment] DATABASE_URL is " + (ENV.databaseUrl ? "configured" : "NOT SET"));
   if (ENV.databaseUrl) {
-    // Show only the first 50 chars and last 10 chars to protect credentials
-    const masked = ENV.databaseUrl.substring(0, 30) + "..." + ENV.databaseUrl.substring(ENV.databaseUrl.length - 10);
-    console.log("[Environment] DATABASE_URL starts with:", masked);
+    // Only confirm it's configured, don't log any part of the URL
+    console.log("[Environment] DATABASE_URL: configured ✓");
   }
   
   if (!ENV.databaseUrl) {
@@ -396,20 +395,27 @@ async function startServer() {
     }
   });
 
-  // Keep the process alive
-  process.on('exit', (code) => {
-    console.log(`[Server] Process exiting with code ${code}`);
-    // Shutdown schedulers
+  // Graceful shutdown handlers (async operations allowed in SIGTERM/SIGINT, not in 'exit')
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`[Server] ${signal} received, shutting down gracefully...`);
     try {
       shutdownPaymentNotificationScheduler();
       shutdownReminderScheduler();
       if (cronJobs) {
-        stopAllCronJobs(cronJobs); // NEW: Stop cron jobs
+        stopAllCronJobs(cronJobs);
       }
       console.log("[Server] ✅ All schedulers shut down successfully");
     } catch (error) {
       console.warn("[Server] Error shutting down schedulers:", error);
     }
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+  process.on('exit', (code) => {
+    console.log(`[Server] Process exiting with code ${code}`);
   });
 }
 

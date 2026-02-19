@@ -516,6 +516,40 @@ export async function getAllLoanApplications() {
   return db.select().from(loanApplications).orderBy(desc(loanApplications.createdAt));
 }
 
+export async function getLoanApplicationByTrackingNumber(trackingNumber: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(loanApplications)
+    .where(sql`UPPER(${loanApplications.trackingNumber}) = UPPER(${trackingNumber})`)
+    .limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Atomically transition a loan application from one status to another.
+ * Returns true if the transition succeeded (row was in expectedStatus), false otherwise.
+ * Prevents race conditions in payment processing.
+ */
+export async function atomicStatusTransition(
+  id: number,
+  expectedStatus: string | string[],
+  newStatus: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const statuses = Array.isArray(expectedStatus) ? expectedStatus : [expectedStatus];
+  const conditions = statuses.map(s => eq(loanApplications.status, s as any));
+
+  const result = await db.update(loanApplications)
+    .set({ status: newStatus as any, updatedAt: new Date() })
+    .where(and(eq(loanApplications.id, id), or(...conditions)));
+  
+  // rowCount > 0 means the row was in the expected status and was updated
+  return (result as any).rowCount > 0;
+}
+
 export async function updateLoanApplicationStatus(
   id: number,
   status: LoanApplication["status"],
@@ -1028,13 +1062,8 @@ export async function searchUsers(query: string, limit = 10) {
     .from(users)
     .where(
       or(
-        eq(users.role, "admin"),
-        and(
-          or(
-            sql`LOWER(${users.name}) LIKE ${searchTerm}`,
-            sql`LOWER(${users.email}) LIKE ${searchTerm}`
-          )
-        )
+        sql`LOWER(${users.name}) LIKE ${searchTerm}`,
+        sql`LOWER(${users.email}) LIKE ${searchTerm}`
       )
     )
     .limit(limit);
@@ -1712,11 +1741,14 @@ export async function getUserBankAccounts(userId: number) {
   return db.select().from(bankAccounts).where(eq(bankAccounts.userId, userId));
 }
 
-export async function removeBankAccount(accountId: number) {
+export async function removeBankAccount(accountId: number, userId?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
   const { bankAccounts } = await import("../drizzle/schema");
+  if (userId) {
+    return db.delete(bankAccounts).where(and(eq(bankAccounts.id, accountId), eq(bankAccounts.userId, userId)));
+  }
   return db.delete(bankAccounts).where(eq(bankAccounts.id, accountId));
 }
 
@@ -1746,11 +1778,14 @@ export async function updateAddress(addressId: number, data: any) {
   return db.update(userAddresses).set(data).where(eq(userAddresses.id, addressId));
 }
 
-export async function deleteAddress(addressId: number) {
+export async function deleteAddress(addressId: number, userId?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
   const { userAddresses } = await import("../drizzle/schema");
+  if (userId) {
+    return db.delete(userAddresses).where(and(eq(userAddresses.id, addressId), eq(userAddresses.userId, userId)));
+  }
   return db.delete(userAddresses).where(eq(userAddresses.id, addressId));
 }
 
@@ -2205,7 +2240,7 @@ export async function getUpcomingPayments(daysAhead: number = 7) {
             eq(paymentSchedules.status, "pending"),
             eq(paymentSchedules.status, "not_paid")
           ),
-          sql`DATE(${paymentSchedules.dueDate}) BETWEEN ${sql.raw(`'${todayStr}'`)} AND ${sql.raw(`'${futureStr}'`)}`
+          sql`DATE(${paymentSchedules.dueDate}) BETWEEN ${todayStr} AND ${futureStr}`
         )
       );
     
@@ -2261,10 +2296,10 @@ export async function getPaymentsDueReminder(daysFromNow: number = 7) {
             eq(paymentSchedules.status, "late")
           ),
           and(
-            sql`DATE(${paymentSchedules.dueDate}) >= ${sql.raw(`'${targetDateStr}'`)}`
+            sql`DATE(${paymentSchedules.dueDate}) >= ${targetDateStr}`
           ),
           and(
-            sql`DATE(${paymentSchedules.dueDate}) < ${sql.raw(`'${nextDayStr}'`)}`
+            sql`DATE(${paymentSchedules.dueDate}) < ${nextDayStr}`
           )
         )
       );
@@ -2298,7 +2333,7 @@ export async function getOverduePayments(minDays: number = 1, maxDays: number = 
       principalAmount: paymentSchedules.principalAmount,
       interestAmount: paymentSchedules.interestAmount,
       status: paymentSchedules.status,
-      daysOverdue: sql<number>`(${sql.raw(`'${today}'::date`)} - ${paymentSchedules.dueDate}::date)`,
+      daysOverdue: sql<number>`(${today}::date - ${paymentSchedules.dueDate}::date)`,
       userId: users.id,
       email: users.email,
       firstName: users.firstName,
@@ -2317,7 +2352,7 @@ export async function getOverduePayments(minDays: number = 1, maxDays: number = 
             eq(paymentSchedules.status, "not_paid"),
             eq(paymentSchedules.status, "late")
           ),
-          sql`${paymentSchedules.dueDate}::date < ${sql.raw(`'${today}'::date`)}`
+          sql`${paymentSchedules.dueDate}::date < ${today}::date`
         )
       );
     
@@ -2354,7 +2389,7 @@ export async function getDelinquentPayments(minDays: number = 30) {
       principalAmount: paymentSchedules.principalAmount,
       interestAmount: paymentSchedules.interestAmount,
       status: paymentSchedules.status,
-      daysOverdue: sql<number>`(${sql.raw(`'${today}'::date`)} - ${paymentSchedules.dueDate}::date)`,
+      daysOverdue: sql<number>`(${today}::date - ${paymentSchedules.dueDate}::date)`,
       userId: users.id,
       email: users.email,
       firstName: users.firstName,
@@ -2374,7 +2409,7 @@ export async function getDelinquentPayments(minDays: number = 30) {
             eq(paymentSchedules.status, "not_paid"),
             eq(paymentSchedules.status, "late")
           ),
-          sql`${paymentSchedules.dueDate}::date < ${sql.raw(`'${today}'::date`)}`
+          sql`${paymentSchedules.dueDate}::date < ${today}::date`
         )
       );
     

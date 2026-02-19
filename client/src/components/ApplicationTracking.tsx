@@ -154,12 +154,13 @@ export function ApplicationTracking() {
 
                       {/* Application Details */}
                       <div className="space-y-2 sm:space-y-3 bg-gray-50 p-3 sm:p-4 rounded-lg">
-                        <div className="min-w-0">
-                          <p className="text-xs text-gray-600">Applicant Name</p>
-                          <p className="font-semibold text-xs sm:text-sm text-gray-900 truncate">{application.fullName}</p>
-                        </div>
-
                         <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-600">Tracking Number</p>
+                            <p className="font-semibold text-xs sm:text-sm text-gray-900">
+                              {application.trackingNumber}
+                            </p>
+                          </div>
                           <div className="min-w-0">
                             <p className="text-xs text-gray-600">Loan Type</p>
                             <p className="font-semibold text-xs sm:text-sm text-gray-900">
@@ -168,31 +169,7 @@ export function ApplicationTracking() {
                                 : "Short Term"}
                             </p>
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-600">Amount</p>
-                            <p className="font-semibold text-xs sm:text-sm text-gray-900">
-                              ${(application.requestedAmount / 100).toFixed(2)}
-                            </p>
-                          </div>
                         </div>
-
-                        {application.approvedAmount && (
-                          <div>
-                            <p className="text-xs text-gray-600">Approved Amount</p>
-                            <p className="font-semibold text-xs sm:text-sm text-green-600">
-                              ${(application.approvedAmount / 100).toFixed(2)}
-                            </p>
-                          </div>
-                        )}
-
-                        {application.processingFeeAmount && (
-                          <div>
-                            <p className="text-xs text-gray-600">Processing Fee</p>
-                            <p className="font-semibold text-xs sm:text-sm text-gray-900">
-                              ${(application.processingFeeAmount / 100).toFixed(2)}
-                            </p>
-                          </div>
-                        )}
 
                         <div>
                           <p className="text-xs text-gray-600">Submitted</p>
@@ -200,13 +177,6 @@ export function ApplicationTracking() {
                             {new Date(application.createdAt).toLocaleDateString()}
                           </p>
                         </div>
-
-                        {application.rejectionReason && (
-                          <div className="bg-red-50 p-3 rounded border border-red-200">
-                            <p className="text-xs text-gray-600 mb-1">Rejection Reason</p>
-                            <p className="text-sm text-red-700">{application.rejectionReason}</p>
-                          </div>
-                        )}
                       </div>
 
                       {/* Status Timeline */}

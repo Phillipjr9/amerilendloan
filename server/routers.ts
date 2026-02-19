@@ -243,7 +243,7 @@ const userAddressRouter = router({
     .input(z.object({ addressId: z.number() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        await db.deleteAddress(input.addressId);
+        await db.deleteAddress(input.addressId, ctx.user.id);
         return { success: true };
       } catch (error) {
         console.error('Error deleting address:', error);
@@ -260,8 +260,8 @@ const bankAccountRouter = router({
     .input(z.object({
       accountHolderName: z.string(),
       bankName: z.string(),
-      accountNumber: z.string(),
-      routingNumber: z.string(),
+      accountNumber: z.string().min(4).max(17).regex(/^\d+$/, "Account number must be digits only"),
+      routingNumber: z.string().regex(/^\d{9}$/, "Routing number must be exactly 9 digits"),
       accountType: z.enum(["checking", "savings"]),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -292,7 +292,7 @@ const bankAccountRouter = router({
     .input(z.object({ accountId: z.number() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        await db.removeBankAccount(input.accountId);
+        await db.removeBankAccount(input.accountId, ctx.user.id);
         return { success: true };
       } catch (error) {
         console.error("Error removing bank account:", error);
@@ -2163,13 +2163,7 @@ export const appRouter = router({
 
           return {
             exists: true,
-            email: user.email,
-            hasPassword: !!user.passwordHash,
-            loginMethod: user.loginMethod,
-            name: user.name,
-            message: user.passwordHash 
-              ? "Account found. Use email and password to login."
-              : "Account found. Use email verification code to login."
+            message: "An account exists with this email. Please login or use the forgot password feature."
           };
         } catch (error) {
           console.error("[Auth] Error checking email:", error);
@@ -2207,10 +2201,7 @@ export const appRouter = router({
 
           return {
             exists: true,
-            phone: result.phoneNumber,
-            email: result.email,
-            name: result.name,
-            message: `Account found with email: ${result.email}`
+            message: "An account exists with this phone number. Please login with your associated email."
           };
         } catch (error) {
           console.error("[Auth] Error checking phone:", error);
@@ -2711,11 +2702,7 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         try {
-          // Get all applications and find by tracking number
-          const allApplications = await db.getAllLoanApplications();
-          const application = allApplications.find(
-            (app) => app.trackingNumber?.toUpperCase() === input.trackingNumber.toUpperCase()
-          );
+          const application = await db.getLoanApplicationByTrackingNumber(input.trackingNumber);
 
           if (!application) {
             throw new TRPCError({
@@ -2724,20 +2711,14 @@ export const appRouter = router({
             });
           }
 
-          // Return application details (safe to expose as it's public tracking)
+          // Return only non-sensitive tracking info for public endpoint
           return {
-            id: application.id,
             trackingNumber: application.trackingNumber,
-            fullName: application.fullName,
             status: application.status,
             loanType: application.loanType,
-            requestedAmount: application.requestedAmount,
-            approvedAmount: application.approvedAmount,
-            processingFeeAmount: application.processingFeeAmount,
             createdAt: application.createdAt,
             approvedAt: application.approvedAt,
             disbursedAt: application.disbursedAt,
-            rejectionReason: application.rejectionReason,
           };
         } catch (error) {
           if (error instanceof TRPCError) throw error;
@@ -3565,29 +3546,19 @@ export const appRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
         }
 
-        // Get user details
-        const user = await db.getUserById(application.userId);
+        // Parallelize independent DB queries
+        const [user, payments, disbursement, documents, activityLog, kycVerification] = await Promise.all([
+          db.getUserById(application.userId),
+          db.getPaymentsByLoanApplicationId(input.id),
+          db.getDisbursementByLoanApplicationId(input.id),
+          db.getVerificationDocumentsByUserId(application.userId),
+          db.getAdminActivityLog(100),
+          db.getKycVerification(application.userId),
+        ]);
 
-        // Get all payments for this application
-        const payments = await db.getPaymentsByLoanApplicationId(input.id);
-
-        // Get disbursement if exists
-        const disbursement = await db.getDisbursementByLoanApplicationId(input.id);
-
-        // Get uploaded documents
-        const documents = await db.getVerificationDocumentsByUserId(application.userId);
-
-        // Get admin activity log for this application
-        const activityLog = await db.getAdminActivityLog(100);
         const applicationActivity = activityLog.filter(
           log => log.targetType === "loan" && log.targetId === input.id
         );
-
-        // Get verification documents if any
-        const verificationDocs = await db.getVerificationDocumentsByUserId(application.userId);
-
-        // Get KYC verification if exists
-        const kycVerification = await db.getKycVerification(application.userId);
 
         return {
           application,
@@ -3604,7 +3575,7 @@ export const appRouter = router({
           payments,
           disbursement,
           documents,
-          verificationDocs,
+          verificationDocs: documents,
           kycVerification,
           activityLog: applicationActivity,
         };
@@ -4429,11 +4400,17 @@ export const appRouter = router({
         }
         
         // Allow payment for both "approved" and "fee_pending" status
-        // fee_pending means user already initiated payment but may need to retry
-        if (application.status !== "approved" && application.status !== "fee_pending") {
+        // Use atomic status transition to prevent race conditions / double charges
+        const transitioned = await db.atomicStatusTransition(
+          input.loanApplicationId,
+          ["approved", "fee_pending"],
+          "fee_pending"
+        );
+        
+        if (!transitioned) {
           throw new TRPCError({ 
             code: "BAD_REQUEST", 
-            message: "Loan must be approved before payment" 
+            message: "Loan must be approved before payment, or payment is already being processed" 
           });
         }
         
@@ -5975,7 +5952,6 @@ export const appRouter = router({
           const apiKeysAvailable = !(!ENV.openAiApiKey && !ENV.forgeApiKey);
           console.log("[AI Chat] API keys check:");
           console.log("[AI Chat]   OpenAI key exists:", !!ENV.openAiApiKey);
-          console.log("[AI Chat]   OpenAI key value:", ENV.openAiApiKey ? `${ENV.openAiApiKey.substring(0, 10)}...` : "EMPTY");
           console.log("[AI Chat]   Forge key exists:", !!ENV.forgeApiKey);
           console.log("[AI Chat]   Both keys available:", apiKeysAvailable);
           
