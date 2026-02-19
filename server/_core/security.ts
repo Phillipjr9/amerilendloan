@@ -102,10 +102,20 @@ export function sanitizeString(input: string): string {
  * Validate that a string is not a SQL injection attempt
  */
 export function isSafeString(input: string): boolean {
+  // Only flag multi-keyword injection patterns, not standalone common words
   const dangerousPatterns = [
-    /(\b(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|SCRIPT)\b)/i,
-    /(-{2}|\/\*|\*\/|;|\||&&)/,  // SQL comments and terminators
-    /(['"`].*['"`])/,  // Quoted strings
+    /\bUNION\s+(ALL\s+)?SELECT\b/i,
+    /\bSELECT\s+.*\bFROM\b/i,
+    /\bINSERT\s+INTO\b/i,
+    /\bUPDATE\s+.*\bSET\b/i,
+    /\bDELETE\s+FROM\b/i,
+    /\bDROP\s+(TABLE|DATABASE|INDEX)\b/i,
+    /\bALTER\s+TABLE\b/i,
+    /\bEXEC(UTE)?\s*\(/i,
+    /<script\b/i,
+    /(-{2})/,              // SQL line comments
+    /(\/\*|\*\/)/,        // SQL block comments
+    /(;\s*(DROP|DELETE|UPDATE|INSERT|ALTER))/i,  // Chained SQL statements
   ];
 
   return !dangerousPatterns.some(pattern => pattern.test(input));

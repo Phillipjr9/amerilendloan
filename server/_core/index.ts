@@ -109,7 +109,31 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Trust proxy for correct IP behind reverse proxies (Railway, Vercel)
+  app.set('trust proxy', 1);
   
+  // CORS headers for API routes
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+      `http://localhost:${process.env.PORT || 3000}`,
+      'http://localhost:5173',
+      process.env.VITE_APP_URL,
+      process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : '',
+    ].filter(Boolean);
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    next();
+  });
+
   // Ensure all responses are properly formatted as JSON
   app.use(ensureJsonHeaders);
   
@@ -137,7 +161,7 @@ async function startServer() {
     // Content Security Policy
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; img-src 'self' data: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https:;"
+      "default-src 'self'; img-src 'self' data: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://js.authorize.net https://jstest.authorize.net; connect-src 'self' https:;"
     );
     
     // XSS Protection

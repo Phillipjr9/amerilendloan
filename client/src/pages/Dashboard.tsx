@@ -1779,7 +1779,7 @@ export default function Dashboard() {
                               placeholder="Type your message..."
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
-                              onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
                               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                             />
                             <button
@@ -1834,10 +1834,10 @@ export default function Dashboard() {
             <CardContent>
               {loans && loans.filter(l => l.status === "disbursed").length > 0 ? (
                 loans.filter(l => l.status === "disbursed").map(loan => {
-                  const interestRate = 5.5; // Default interest rate
-                  const loanTerm = 5; // Default loan term in years
+                  const interestRate = (loan as any).interestRate || (loan as any).apr || 8.99;
+                  const loanTerm = (loan as any).termMonths ? (loan as any).termMonths / 12 : ((loan as any).loanType === 'short_term' ? 1 : 3);
                   const monthlyRate = (interestRate / 100) / 12;
-                  const numPayments = loanTerm * 12;
+                  const numPayments = Math.round(loanTerm * 12);
                   const loanAmount = (loan.approvedAmount || 0) / 100;
                   const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
                   
