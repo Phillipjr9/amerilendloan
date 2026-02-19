@@ -4,6 +4,7 @@
  * Admin can update wallet addresses anytime from the dashboard
  */
 
+import crypto from 'crypto';
 import { verifyCryptoTransactionWeb3, getNetworkStatus, TxVerificationResult } from "./web3-verification";
 
 /**
@@ -271,7 +272,6 @@ export function validateCryptoWebhook(
   signature: string,
   payload: string
 ): boolean {
-  const crypto = require("crypto");
   const secret = process.env.CRYPTO_WEBHOOK_SECRET;
   
   if (!secret) {

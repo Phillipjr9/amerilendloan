@@ -3454,7 +3454,7 @@ export const appRouter = router({
             phone: input.phone,
             dateOfBirth: input.dateOfBirth,
             ssn: encrypt(input.ssn), // Encrypt SSN at rest
-            ssnHash: require('crypto').createHash('sha256').update(input.ssn).digest('hex'), // Hash for lookups
+            ssnHash: (await import('crypto')).createHash('sha256').update(input.ssn).digest('hex'), // Hash for lookups
             street: input.street,
             city: input.city,
             state: input.state,

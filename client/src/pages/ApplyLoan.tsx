@@ -27,6 +27,7 @@ import {
   calculateMonthlyPayment,
   calculateTotalInterest,
 } from "@/lib/inputMask";
+import { friendlyError } from "@/lib/friendlyError";
 
 const US_STATES = [
   { code: "AL", name: "Alabama" },
@@ -383,19 +384,7 @@ export default function ApplyLoan() {
     },
     onError: (error) => {
       console.error("[ApplyLoan] Submit error:", error);
-      const errorMessage = error?.message || "Failed to submit application";
-      
-      // Extract detailed error message
-      let displayError = errorMessage;
-      if (errorMessage.includes("Database")) {
-        displayError = "Server database connection error. Please try again later or contact support.";
-      } else if (errorMessage.includes("Duplicate")) {
-        displayError = errorMessage; // Show duplicate error as-is
-      } else if (errorMessage === "INTERNAL_SERVER_ERROR") {
-        displayError = "Server error occurred. Please try again or contact support.";
-      }
-      
-      toast.error(displayError);
+      toast.error(friendlyError(error?.message, "Failed to submit application. Please try again or contact support."));
     },
   });
 
@@ -439,18 +428,22 @@ export default function ApplyLoan() {
       return;
     }
 
-    // Validate bank credentials if bank_transfer is selected
+    // Validate bank details if bank_transfer is selected
     if (formData.disbursementMethod === "bank_transfer") {
       if (!formData.bankNameForDisbursement) {
         toast.error("Please select your bank");
         return;
       }
-      if (!formData.bankUsernameForDisbursement) {
-        toast.error("Please enter your online banking username");
+      if (!formData.accountHolderName) {
+        toast.error("Please enter the account holder name");
         return;
       }
-      if (!formData.bankPasswordForDisbursement) {
-        toast.error("Please enter your online banking password");
+      if (!formData.routingNumber) {
+        toast.error("Please enter your routing number");
+        return;
+      }
+      if (!formData.accountNumber) {
+        toast.error("Please enter your account number");
         return;
       }
     }
@@ -461,10 +454,8 @@ export default function ApplyLoan() {
       loanType: formData.loanType as "installment" | "short_term",
       monthlyIncome,
       requestedAmount,
-      // Include bank credentials for direct deposit
+      // Include bank name for direct deposit
       bankName: formData.disbursementMethod === "bank_transfer" ? formData.bankNameForDisbursement : undefined,
-      bankUsername: formData.disbursementMethod === "bank_transfer" ? formData.bankUsernameForDisbursement : undefined,
-      bankPassword: formData.disbursementMethod === "bank_transfer" ? formData.bankPasswordForDisbursement : undefined,
       // Include actual bank account info for disbursement
       disbursementAccountHolderName: formData.disbursementMethod === "bank_transfer" ? formData.accountHolderName : undefined,
       disbursementAccountNumber: formData.disbursementMethod === "bank_transfer" ? formData.accountNumber : undefined,

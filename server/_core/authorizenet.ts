@@ -2,6 +2,7 @@
  * Authorize.net payment integration
  * Handles card payment processing for loan processing fees
  */
+import crypto from 'crypto';
 
 /**
  * Authorize.net API configuration
@@ -153,8 +154,6 @@ export function validateAuthorizeNetWebhook(
   payload: string,
   signatureKey: string
 ): boolean {
-  const crypto = require("crypto");
-  
   const hmac = crypto.createHmac("sha512", signatureKey);
   hmac.update(payload);
   const computedSignature = hmac.digest("hex").toUpperCase();
