@@ -100,12 +100,14 @@ export async function getDb() {
       const postgresModule = await import("postgres");
       const postgres = postgresModule.default;
       
-      // Connection options
-      const sslEnabled = process.env.NODE_ENV === 'production';
-      console.log(`[Database] SSL mode: ${sslEnabled ? 'ENABLED' : 'DISABLED'}`);
+      // Connection options — enable SSL for any remote database (Supabase, Railway, Neon, etc.)
+      const dbUrl = process.env.DATABASE_URL;
+      const isLocalDb = dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1');
+      const sslEnabled = !isLocalDb;
+      console.log(`[Database] SSL mode: ${sslEnabled ? 'ENABLED' : 'DISABLED (local)'}`);
       
       _client = postgres(process.env.DATABASE_URL, {
-        ssl: sslEnabled ? 'require' : false,
+        ssl: sslEnabled ? { rejectUnauthorized: false } : false,
         idle_timeout: 30, // 30 seconds
         max_lifetime: 60 * 60, // 1 hour
         connect_timeout: 10, // 10 seconds
@@ -263,6 +265,26 @@ export async function getUserByEmail(email: string) {
     return result[0];
   } catch (error) {
     console.error("[Database] Error in getUserByEmail:", error instanceof Error ? error.message : error);
+    return undefined;
+  }
+}
+
+export async function getUserByName(name: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.select()
+      .from(users)
+      .where(eq(users.name, name))
+      .limit(1);
+
+    return result[0];
+  } catch (error) {
+    console.error("[Database] Error in getUserByName:", error instanceof Error ? error.message : error);
     return undefined;
   }
 }

@@ -108,22 +108,12 @@ export default function OTPLogin() {
     onError: (error) => {
       const errorMsg = error.message || "Failed to sign in";
       
-      // If password not set or invalid password, try to fall back
-      if (errorMsg.includes("not set up with a password") || errorMsg.includes("Invalid email or password")) {
-        // Check if Supabase is enabled - if so, try Supabase login
-        const supabaseEnabled = supabaseEnabledQuery.data?.enabled;
-        if (supabaseEnabled) {
-          supabaseLoginMutation.mutate({ email: loginIdentifier, password: loginPassword });
-          return;
-        }
-        
-        // Otherwise fall back to OTP email code
-        toast.info("Using email verification instead...");
-        setPendingIdentifier(loginIdentifier);
-        requestEmailCodeMutation.mutate({
-          email: loginIdentifier,
-          purpose: "login",
-        });
+      // Handle specific error cases
+      if (errorMsg.includes("does not have a password set")) {
+        // User exists but never set a password — guide them to set one
+        toast.error(errorMsg);
+      } else if (errorMsg.includes("Invalid email or password")) {
+        toast.error("Invalid email/username or password. Check your credentials and try again.");
       } else {
         // Network or other error - show error
         toast.error(errorMsg);
@@ -227,7 +217,7 @@ export default function OTPLogin() {
         toast.error("Enter your password");
         return;
       }
-      passwordLoginMutation.mutate({ email: loginIdentifier, password: loginPassword });
+      passwordLoginMutation.mutate({ email: loginIdentifier.trim(), password: loginPassword });
     } else {
       setPendingIdentifier(loginIdentifier);
       requestEmailCodeMutation.mutate({ email: loginIdentifier, purpose: "login" });

@@ -2045,13 +2045,16 @@ export const appRouter = router({
      */
     loginWithPassword: publicProcedure
       .input(z.object({
-        email: z.string().email(),
+        email: z.string().min(3), // Accepts email or username
         password: z.string().min(8),
       }))
       .mutation(async ({ input, ctx }) => {
         try {
-          // Get user from database by email
-          const user = await db.getUserByEmail(input.email);
+          // Get user from database by email or username (name field)
+          const isEmail = input.email.includes('@');
+          let user = isEmail 
+            ? await db.getUserByEmail(input.email)
+            : await db.getUserByName(input.email);
           
           if (!user) {
             console.warn(`[Auth] Login attempt for non-existent user: ${input.email}`);
@@ -2066,7 +2069,7 @@ export const appRouter = router({
             console.warn(`[Auth] User exists but no password hash stored: ${input.email} (loginMethod: ${user.loginMethod})`);
             throw new TRPCError({
               code: "UNAUTHORIZED",
-              message: "This account was not set up with a password. Please use email verification code to login."
+              message: "This account does not have a password set. Please use 'Forgot Password' to create one, or sign in with Email Code."
             });
           }
 
