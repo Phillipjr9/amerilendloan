@@ -1814,11 +1814,11 @@ export default function ApplyLoan() {
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <p className="text-xs text-gray-600 mb-1">Loan Amount</p>
-                              <p className="text-lg font-semibold text-[#0A2540]">{formatCurrency(formData.requestedAmount)}</p>
+                              <p className="text-lg font-semibold text-[#0A2540]">${Number(formData.requestedAmount).toLocaleString()}</p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-600 mb-1">Processing Fee (3.5%)</p>
-                              <p className="text-lg font-semibold text-[#B8922A]">{formatCurrency(Math.round(Number(formData.requestedAmount) * 0.035).toString())}</p>
+                              <p className="text-lg font-semibold text-[#B8922A]">${(Number(formData.requestedAmount) * 0.035).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                             </div>
                           </div>
                           
@@ -1827,15 +1827,15 @@ export default function ApplyLoan() {
                             <div className="space-y-2">
                               <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
                                 <span className="text-sm text-gray-600">12-Month Term (14.99% APR)</span>
-                                <span className="font-semibold text-[#0A2540]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 12).toString())}/mo</span>
+                                <span className="font-semibold text-[#0A2540]">${calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</span>
                               </div>
                               <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
                                 <span className="text-sm text-gray-600">24-Month Term (14.99% APR)</span>
-                                <span className="font-semibold text-[#0A2540]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 24).toString())}/mo</span>
+                                <span className="font-semibold text-[#0A2540]">${calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 24).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</span>
                               </div>
                               <div className="flex justify-between items-center p-3 bg-white rounded-lg border">
                                 <span className="text-sm text-gray-600">36-Month Term (14.99% APR)</span>
-                                <span className="font-semibold text-[#0A2540]">{formatCurrency(calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 36).toString())}/mo</span>
+                                <span className="font-semibold text-[#0A2540]">${calculateMonthlyPayment(Number(formData.requestedAmount), 14.99, 36).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo</span>
                               </div>
                             </div>
                             <p className="text-xs text-gray-500 mt-3">*Actual APR and terms depend on credit approval. Processing fee is due before disbursement.</p>
