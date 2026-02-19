@@ -129,9 +129,7 @@ function App() {
       >
         <TooltipProvider>
           <Toaster />
-          <div className="pb-24">
-            <Router />
-          </div>
+          <Router />
           <ChatWidget />
           <LanguageSelector />
         </TooltipProvider>
