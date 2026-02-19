@@ -21,7 +21,6 @@ export function SupportModal({ isOpen, onOpenChange }: SupportModalProps) {
   const handleSubmitTicket = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle ticket submission here
-    console.log("Ticket submitted:", ticketData);
     setTicketData({ email: "", subject: "", message: "" });
   };
 

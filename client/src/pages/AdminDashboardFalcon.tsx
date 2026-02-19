@@ -241,7 +241,6 @@ export default function AdminDashboardFalcon() {
       return;
     }
     const amountInCents = Math.round(amount * 100);
-    console.log(`[Frontend] Approving: amount entered=$${amount}, sending to backend=${amountInCents} cents`);
     approveMutation.mutate({
       id: approvalDialog.applicationId,
       approvedAmount: amountInCents,
@@ -880,7 +879,6 @@ export default function AdminDashboardFalcon() {
                                         className="bg-green-600 hover:bg-green-700"
                                         onClick={() => {
                                           const requestedInDollars = app.requestedAmount / 100;
-                                          console.log(`[Approve Dialog] Opening for app ${app.id}: requestedAmount=${app.requestedAmount} cents, pre-filling dialog with $${requestedInDollars}`);
                                           setApprovalDialog({ open: true, applicationId: app.id });
                                           setApprovalAmount(requestedInDollars.toString());
                                         }}

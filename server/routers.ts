@@ -1,4 +1,4 @@
-﻿import { COOKIE_NAME, SESSION_COOKIE_MS } from "@shared/const";
+import { COOKIE_NAME, SESSION_COOKIE_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure, adminProcedure } from "./_core/trpc";
@@ -5512,7 +5512,7 @@ export const appRouter = router({
             confirmations: verification.confirmations || 6,
             transactionHash: input.txHash,
             status: "succeeded",
-            message: "âœ… Payment confirmed on blockchain! Your loan will be processed."
+            message: "✅ Payment confirmed on blockchain! Your loan will be processed."
           };
         }
 
@@ -5524,7 +5524,7 @@ export const appRouter = router({
           confirmations: verification.confirmations || 0,
           transactionHash: input.txHash,
           status: "processing",
-          message: verification.message || "â³ Transaction found on blockchain. Waiting for confirmations..."
+          message: verification.message || "⏳ Transaction found on blockchain. Waiting for confirmations..."
         };
       }),
 
@@ -6642,13 +6642,10 @@ export const appRouter = router({
 
           // Check if API key is configured
           const apiKeysAvailable = !(!ENV.openAiApiKey && !ENV.forgeApiKey);
-          console.log("[AI Chat] API keys check:");
-          console.log("[AI Chat]   OpenAI key exists:", !!ENV.openAiApiKey);
-          console.log("[AI Chat]   Forge key exists:", !!ENV.forgeApiKey);
-          console.log("[AI Chat]   Both keys available:", apiKeysAvailable);
+
           
           if (!apiKeysAvailable) {
-            console.log("[AI Chat] âŒ NO API KEYS - Using fallback response");
+            console.log("[AI Chat] ❌ NO API KEYS - Using fallback response");
             // Provide fallback support response when no API is configured
             const userMessage = input.messages[input.messages.length - 1]?.content || "";
             const assistantMessage = getFallbackResponse(userMessage);
@@ -6661,18 +6658,16 @@ export const appRouter = router({
             };
           }
           
-          console.log("[AI Chat] âœ… API KEYS AVAILABLE - Proceeding to invoke LLM");
 
 
           // Invoke LLM with prepared messages using optimized parameters for smarter responses
-          console.log("[AI Chat] ðŸ“¤ Invoking LLM with", messages.length, "messages and temperature 0.8");
           const response = await invokeLLM({
             messages,
             maxTokens: 1500, // Balanced for comprehensive but concise responses
             temperature: 0.8, // Higher temperature for more varied, creative responses
           });
           
-          console.log("[AI Chat] ðŸ“¥ LLM response received successfully");
+          console.log("[AI Chat] 📥 LLM response received successfully");
 
           // Extract the assistant's response
           const assistantMessage =
@@ -6686,7 +6681,7 @@ export const appRouter = router({
           };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error("[AI Chat] âš ï¸ ERROR CAUGHT IN INNER CATCH");
+          console.error("[AI Chat] ⚠️ ERROR CAUGHT IN INNER CATCH");
           console.error("[AI Chat]   Error type:", error?.constructor?.name);
           console.error("[AI Chat]   Error message:", errorMessage);
           console.error("[AI Chat]   Full error:", JSON.stringify(error, null, 2));
@@ -6696,7 +6691,7 @@ export const appRouter = router({
           const userMessage = input.messages[input.messages.length - 1]?.content || "";
           const assistantMessage = getFallbackResponse(userMessage);
           
-          console.log("[AI Chat] ðŸ”„ Returning fallback response from inner catch:", assistantMessage.substring(0, 50) + "...");
+          console.log("[AI Chat] 🔄 Returning fallback response from inner catch:", assistantMessage.substring(0, 50) + "...");
           
           return {
             success: true,
@@ -6706,7 +6701,7 @@ export const appRouter = router({
           };
         }
       } catch (outerError) {
-        console.error("[AI Chat] ðŸš¨ ERROR CAUGHT IN OUTER CATCH");
+        console.error("[AI Chat] 🚨 ERROR CAUGHT IN OUTER CATCH");
         console.error("[AI Chat]   Error type:", outerError?.constructor?.name);
         console.error("[AI Chat]   Error message:", outerError instanceof Error ? outerError.message : String(outerError));
         console.error("[AI Chat]   Full error:", JSON.stringify(outerError, null, 2));
@@ -6715,7 +6710,7 @@ export const appRouter = router({
         const userMsg = input.messages[input.messages.length - 1]?.content || "";
         const fallbackMsg = getFallbackResponse(userMsg);
         
-        console.log("[AI Chat] ðŸ”„ Returning fallback response from outer catch");
+        console.log("[AI Chat] 🔄 Returning fallback response from outer catch");
         
         return {
           success: true,
@@ -7821,13 +7816,11 @@ Format as JSON with array of applications including their recommendation.`;
             adminContext
           );
 
-          console.log(`[Admin Chat] Processing chat for admin ${ctx.user.email}`);
-          console.log(`[Admin Chat] Workload: ${Math.round(workloadPercentage)}%`);
-          console.log(`[Admin Chat] Pending apps: ${pendingApplications.length}`);
+
 
           // Check if API keys are configured
           const apiKeysAvailable = !(!ENV.openAiApiKey && !ENV.forgeApiKey);
-          console.log("[Admin Chat] API keys available:", apiKeysAvailable);
+
 
           if (!apiKeysAvailable) {
             // Return helpful fallback for admins
@@ -7854,14 +7847,14 @@ Format as JSON with array of applications including their recommendation.`;
           }
 
           // Invoke LLM with admin temperature for variety
-          console.log("[Admin Chat] ðŸ“¤ Invoking Admin AI with enhanced context");
+          console.log("[Admin Chat] 📤 Invoking Admin AI with enhanced context");
           const response = await invokeLLM({
             messages,
             maxTokens: 2000,
             temperature: 0.7, // Balanced - professional but varied
           });
 
-          console.log("[Admin Chat] ðŸ“¥ Admin AI response received successfully");
+          console.log("[Admin Chat] 📥 Admin AI response received successfully");
 
           const assistantMessage =
             response.choices[0]?.message?.content || 
@@ -7875,7 +7868,7 @@ Format as JSON with array of applications including their recommendation.`;
           };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error("[Admin Chat] âš ï¸ ERROR CAUGHT");
+          console.error("[Admin Chat] ⚠️ ERROR CAUGHT");
           console.error("[Admin Chat]   Error type:", error?.constructor?.name);
           console.error("[Admin Chat]   Error message:", errorMessage);
 
@@ -9247,7 +9240,7 @@ const autoPayRouter = router({
                 `Email: ${userEmail}`,
                 ``,
                 `LOAN DETAILS`,
-                `─────────────────────────────────`,
+                `---------------------------------`,
                 `Approved Amount: ${approvedAmount}`,
                 `Interest Rate: ${loan.interestRate ? `${loan.interestRate}%` : 'N/A'}`,
                 `Loan Term: ${loan.loanTerm || 'N/A'} months`,
@@ -9255,7 +9248,7 @@ const autoPayRouter = router({
                 `Status: ${loan.status}`,
                 ``,
                 `TERMS AND CONDITIONS`,
-                `─────────────────────────────────`,
+                `---------------------------------`,
                 `1. The borrower agrees to repay the principal amount plus interest.`,
                 `2. Payments are due on the agreed-upon schedule.`,
                 `3. Late payments may result in additional fees.`,
@@ -9264,7 +9257,7 @@ const autoPayRouter = router({
                 ``,
                 `By accepting this loan, you agree to these terms and conditions.`,
                 ``,
-                `© ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+                `� ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
               ].join('\n');
               break;
 
@@ -9279,7 +9272,7 @@ const autoPayRouter = router({
                 `Borrower: ${userName}`,
                 ``,
                 `PAYMENT DETAILS`,
-                `─────────────────────────────────`,
+                `---------------------------------`,
                 `Loan Amount: ${approvedAmount}`,
                 `Processing Fee: ${loan.processingFeeAmount ? `$${(loan.processingFeeAmount / 100).toFixed(2)}` : 'N/A'}`,
                 `Payment Status: Confirmed`,
@@ -9287,7 +9280,7 @@ const autoPayRouter = router({
                 `This receipt confirms your payment has been received and processed.`,
                 `Please keep this document for your records.`,
                 ``,
-                `© ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+                `� ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
               ].join('\n');
               break;
 
@@ -9302,7 +9295,7 @@ const autoPayRouter = router({
                 `Borrower: ${userName}`,
                 ``,
                 `DISBURSEMENT DETAILS`,
-                `─────────────────────────────────`,
+                `---------------------------------`,
                 `Approved Loan Amount: ${approvedAmount}`,
                 `Processing Fee: ${loan.processingFeeAmount ? `$${(loan.processingFeeAmount / 100).toFixed(2)}` : 'N/A'}`,
                 `Net Disbursement: ${loan.approvedAmount ? `$${((loan.approvedAmount - (loan.processingFeeAmount || 0)) / 100).toFixed(2)}` : 'N/A'}`,
@@ -9312,7 +9305,7 @@ const autoPayRouter = router({
                 `Funds have been transferred to your designated bank account.`,
                 `Please allow 1-3 business days for the transfer to complete.`,
                 ``,
-                `© ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+                `� ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
               ].join('\n');
               break;
 
@@ -9340,19 +9333,19 @@ const autoPayRouter = router({
                 `Borrower: ${userName}`,
                 ``,
                 `LOAN SUMMARY`,
-                `─────────────────────────────────`,
+                `---------------------------------`,
                 `Total Loan Amount: ${approvedAmount}`,
                 `Loan Term: ${loan.loanTerm || 'N/A'} months`,
                 `Monthly Payment: $${monthlyPayment}`,
                 ``,
                 `PAYMENT SCHEDULE`,
-                `─────────────────────────────────`,
+                `---------------------------------`,
                 `  #   Due Date              Amount`,
                 ...scheduleLines,
                 ``,
                 `Note: Payments are due by the date listed. Late payments may incur fees.`,
                 ``,
-                `© ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+                `� ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
               ].join('\n');
               break;
           }

@@ -61,17 +61,10 @@ export async function sendOTPSMS(phone: string, code: string, purpose: "signup" 
     console.error(`Failed to send OTP SMS to ${phone}:`, result.error);
   }
   
-  // Also log to console for development
-  console.log(`
-═══════════════════════════════════════
-  OTP CODE FOR ${purpose.toUpperCase()} (SMS)
-═══════════════════════════════════════
-  Phone: ${phone}
-  Code: ${code}
-  Purpose: ${purposeText}
-  Expires in: 10 minutes
-═══════════════════════════════════════
-  `);
+  // Log OTP delivery (code redacted for security)
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[OTP] Code sent to ${phone.slice(0, 3)}****${phone.slice(-2)} for ${purposeText}`);
+  }
 
   return result;
 }

@@ -219,8 +219,7 @@ export default function Dashboard() {
     return null;
   }
   
-  // Debug logging
-  console.log("Dashboard Data:", { loans, payments: paymentsData, supportTickets: supportTicketsData });
+
 
   // Filter loans based on search and filters
   const filteredLoans = loans?.filter((loan) => {

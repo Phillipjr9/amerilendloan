@@ -43,15 +43,21 @@ import {
 // Bank account encryption utilities
 import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
 
-// Encryption key derived from JWT_SECRET via encryption.ts module
-// This legacy code exists for backward compat but new encryption uses server/_core/encryption.ts
+// Encryption key for bank data — ENCRYPTION_KEY is preferred; JWT_SECRET is accepted as fallback
+// but operators should set a dedicated ENCRYPTION_KEY in production
 const ENCRYPTION_KEY = (() => {
-  const key = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET || '';
-  if (!key) {
-    console.warn('[Security] No ENCRYPTION_KEY or JWT_SECRET set — bank data encryption will fail at runtime');
-    return '0'.repeat(32); // Will fail on actual encrypt/decrypt calls
+  const dedicatedKey = process.env.ENCRYPTION_KEY;
+  if (dedicatedKey) return dedicatedKey.substring(0, 32).padEnd(32, '0');
+
+  const fallback = process.env.JWT_SECRET;
+  if (fallback) {
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('[Security] Using JWT_SECRET for encryption — set a dedicated ENCRYPTION_KEY in production');
+    }
+    return fallback.substring(0, 32).padEnd(32, '0');
   }
-  return key.substring(0, 32).padEnd(32, '0');
+
+  throw new Error('[Security] No ENCRYPTION_KEY or JWT_SECRET configured — cannot encrypt bank data');
 })();
 
 function encryptBankData(data: string): string {
@@ -298,8 +304,6 @@ export async function createUser(email: string, fullName?: string) {
   }
 
   try {
-    console.log("[Database] createUser: Starting user creation for", email);
-    
     // Check if user with this email already exists
     const existingUser = await db.select()
       .from(users)
@@ -307,7 +311,6 @@ export async function createUser(email: string, fullName?: string) {
       .limit(1);
     
     if (existingUser.length > 0) {
-      console.warn(`[Database] createUser: User with email ${email} already exists`);
       throw new Error(`User with email ${email} already exists`);
     }
     
@@ -315,7 +318,6 @@ export async function createUser(email: string, fullName?: string) {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substring(2, 8);
     const openId = `email_${timestamp}_${random}`;
-    console.log("[Database] createUser: Generated openId:", openId);
 
     // Extract first and last name from full name
     let firstName: string | undefined;
@@ -325,15 +327,9 @@ export async function createUser(email: string, fullName?: string) {
       firstName = parts[0];
       lastName = parts.length > 1 ? parts.slice(1).join(' ') : undefined;
     }
-    console.log("[Database] createUser: Names extracted - firstName:", firstName, "lastName:", lastName);
 
-    console.log("[Database] createUser: Inserting user into database...");
-    
     // Check if email is admin email - if so, assign admin role
     const userRole = email === COMPANY_INFO.admin.email ? "admin" : "user";
-    if (email === COMPANY_INFO.admin.email) {
-      console.log(`✅ [Database] Admin email detected - assigning admin role to ${email}`);
-    }
 
     const result = await db.insert(users).values({
       openId,
@@ -348,7 +344,6 @@ export async function createUser(email: string, fullName?: string) {
       lastSignedIn: new Date(),
     }).returning();
 
-    console.log("[Database] createUser: User created successfully with ID:", result[0]?.id);
     return result[0];
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

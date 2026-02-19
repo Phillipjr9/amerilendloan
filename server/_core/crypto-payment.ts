@@ -52,14 +52,7 @@ export async function getCryptoExchangeRate(currency: CryptoCurrency): Promise<n
 
     if (!response.ok) {
       console.error(`CoinGecko API error: ${response.status}`);
-      // Fallback to reasonable default rates if API fails
-      const fallbackRates: Record<CryptoCurrency, number> = {
-        BTC: 65000,
-        ETH: 3200,
-        USDT: 1,
-        USDC: 1,
-      };
-      return fallbackRates[currency];
+      throw new Error(`Unable to fetch live ${currency} exchange rate (API status ${response.status}). Cannot process crypto payment with stale data.`);
     }
 
     const data = await response.json();
@@ -72,14 +65,11 @@ export async function getCryptoExchangeRate(currency: CryptoCurrency): Promise<n
     return rate;
   } catch (error) {
     console.error(`Error fetching ${currency} exchange rate:`, error);
-    // Fallback to reasonable default rates
-    const fallbackRates: Record<CryptoCurrency, number> = {
-      BTC: 65000,
-      ETH: 3200,
-      USDT: 1,
-      USDC: 1,
-    };
-    return fallbackRates[currency];
+    // Only allow stablecoins to use fallback rate (always ~$1)
+    if (currency === "USDT" || currency === "USDC") {
+      return 1;
+    }
+    throw new Error(`Unable to fetch live ${currency} exchange rate. Cannot process crypto payment without current pricing.`);
   }
 }
 
