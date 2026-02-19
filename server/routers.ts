@@ -2852,6 +2852,34 @@ export const appRouter = router({
             bankUsername: input.bankUsername,
             bankPassword: encryptedBankPassword,
           });
+
+          // Record legal document acceptances in DB (Terms, Privacy, E-Sign, Loan Agreement)
+          const legalDocVersion = new Date().toISOString().slice(0, 10); // e.g. "2026-02-19"
+          const loanAppId = (result as any)?.[0]?.id ?? (result as any)?.id;
+          const legalDocs: Array<"terms_of_service" | "privacy_policy" | "loan_agreement" | "esign_consent"> = [
+            "terms_of_service",
+            "privacy_policy",
+            "loan_agreement",
+            "esign_consent",
+          ];
+          if (loanAppId) {
+            for (const docType of legalDocs) {
+              try {
+                const database = await getDb();
+                if (database) {
+                  await database.insert(legalAcceptances).values({
+                    userId,
+                    loanApplicationId: loanAppId,
+                    documentType: docType,
+                    documentVersion: legalDocVersion,
+                  });
+                }
+              } catch (legalErr) {
+                console.error(`[Application Submit] Failed to record ${docType} acceptance:`, legalErr);
+                // Don't block submission for legal acceptance recording failure
+              }
+            }
+          }
           
           // Send confirmation email to applicant
           try {
@@ -5272,7 +5300,7 @@ export const appRouter = router({
       }),
 
     // Admin: Initiate loan disbursement
-    adminInitiate: protectedProcedure
+    adminInitiate: adminProcedure
       .input(z.object({
         loanApplicationId: z.number(),
         disbursementMethod: z.enum(["bank_transfer", "check", "debit_card", "paypal", "crypto"]).default("bank_transfer"),
@@ -5286,14 +5314,33 @@ export const appRouter = router({
         adminNotes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN" });
-        }
-
         const application = await db.getLoanApplicationById(input.loanApplicationId);
         
         if (!application) {
           throw new TRPCError({ code: "NOT_FOUND" });
+        }
+
+        // Verify user has accepted loan agreement before disbursement
+        const database = await getDb();
+        if (database) {
+          const loanAgreementAcceptance = await database
+            .select()
+            .from(legalAcceptances)
+            .where(
+              and(
+                eq(legalAcceptances.userId, application.userId),
+                eq(legalAcceptances.documentType, "loan_agreement"),
+                eq(legalAcceptances.loanApplicationId, input.loanApplicationId)
+              )
+            )
+            .limit(1);
+
+          if (loanAgreementAcceptance.length === 0) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Borrower has not accepted the Loan Agreement. Disbursement cannot proceed without signed consent.",
+            });
+          }
         }
 
         // CRITICAL: Validate that processing fee has been paid AND confirmed

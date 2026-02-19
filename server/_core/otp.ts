@@ -40,7 +40,8 @@ function checkOTPRateLimit(identifier: string): { allowed: boolean; retryAfterSe
 // Clean up stale entries every 30 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [key, tracker] of otpRequestTracker) {
+  const entries = Array.from(otpRequestTracker.entries());
+  for (const [key, tracker] of entries) {
     if (now - tracker.windowStart > TIME_WINDOW_MS * 2) {
       otpRequestTracker.delete(key);
     }
