@@ -1173,6 +1173,95 @@ const invitationCodesRouter = router({
       return { success: true, data: invitation };
     }),
 
+  // Admin: bulk create and send invitation codes to multiple recipients
+  bulkCreate: adminProcedure
+    .input(z.object({
+      recipients: z.array(z.object({
+        email: z.string().email(),
+        name: z.string().min(1),
+      })).min(1).max(100),
+      offerAmount: z.number().min(100).optional(),
+      offerApr: z.number().min(0).optional(),
+      offerTermMonths: z.number().min(1).optional(),
+      offerDescription: z.string().optional(),
+      expiresInDays: z.number().min(1).max(365).default(30),
+      adminNotes: z.string().optional(),
+      sendEmail: z.boolean().default(true),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const dbConn = await getDb();
+      if (!dbConn) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + input.expiresInDays);
+
+      const results: { email: string; name: string; code: string; success: boolean; error?: string }[] = [];
+
+      // Deduplicate emails
+      const seen = new Set<string>();
+      const uniqueRecipients = input.recipients.filter((r) => {
+        const key = r.email.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      for (const recipient of uniqueRecipients) {
+        try {
+          const code = generateInvitationCode();
+          await dbConn
+            .insert(schema.invitationCodes)
+            .values({
+              code,
+              recipientEmail: recipient.email,
+              recipientName: recipient.name,
+              offerAmount: input.offerAmount || null,
+              offerApr: input.offerApr || null,
+              offerTermMonths: input.offerTermMonths || null,
+              offerDescription: input.offerDescription || null,
+              expiresAt,
+              createdBy: ctx.user.id,
+              adminNotes: input.adminNotes || null,
+            });
+
+          if (input.sendEmail) {
+            try {
+              const { sendInvitationCodeEmail } = await import("./_core/email");
+              if (typeof sendInvitationCodeEmail === "function") {
+                await sendInvitationCodeEmail(recipient.email, recipient.name, code, {
+                  amount: input.offerAmount ? input.offerAmount / 100 : undefined,
+                  apr: input.offerApr ? input.offerApr / 100 : undefined,
+                  termMonths: input.offerTermMonths,
+                  description: input.offerDescription || undefined,
+                  expiresAt,
+                });
+              }
+            } catch {
+              // Code was created, email just failed
+              results.push({ email: recipient.email, name: recipient.name, code, success: true, error: "Email send failed" });
+              continue;
+            }
+          }
+          results.push({ email: recipient.email, name: recipient.name, code, success: true });
+        } catch (err: any) {
+          results.push({ email: recipient.email, name: recipient.name, code: "", success: false, error: err.message || "Failed" });
+        }
+      }
+
+      const successCount = results.filter((r) => r.success).length;
+      const failCount = results.filter((r) => !r.success).length;
+
+      return {
+        success: true,
+        data: {
+          total: uniqueRecipients.length,
+          sent: successCount,
+          failed: failCount,
+          results,
+        },
+      };
+    }),
+
   // Admin: list all invitation codes
   list: adminProcedure
     .input(z.object({

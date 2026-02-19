@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -35,6 +41,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Ban,
+  Users,
+  X,
+  UserPlus,
 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
@@ -51,15 +60,71 @@ const statusIcons: Record<string, typeof CheckCircle2> = {
   revoked: Ban,
 };
 
+// Parse emails from text: supports comma, semicolon, newline separated
+// Also detects "Name <email>" and "email (Name)" patterns
+function parseEmailEntries(text: string): { email: string; name: string }[] {
+  const results: { email: string; name: string }[] = [];
+  const seen = new Set<string>();
+
+  // Split by common delimiters
+  const parts = text.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+
+  for (const part of parts) {
+    // Pattern: "Name <email@example.com>"
+    const angleBracket = part.match(/^(.+?)\s*<([^>]+@[^>]+)>$/);
+    if (angleBracket) {
+      const email = angleBracket[2].trim().toLowerCase();
+      const name = angleBracket[1].trim().replace(/^["']|["']$/g, "");
+      if (!seen.has(email) && isValidEmail(email)) {
+        seen.add(email);
+        results.push({ email, name: name || email.split("@")[0] });
+      }
+      continue;
+    }
+
+    // Pattern: "email@example.com (Name)"
+    const parenName = part.match(/^([^\s]+@[^\s]+)\s*\(([^)]+)\)$/);
+    if (parenName) {
+      const email = parenName[1].trim().toLowerCase();
+      const name = parenName[2].trim();
+      if (!seen.has(email) && isValidEmail(email)) {
+        seen.add(email);
+        results.push({ email, name: name || email.split("@")[0] });
+      }
+      continue;
+    }
+
+    // Pattern: plain email
+    const emailOnly = part.trim().toLowerCase();
+    if (!seen.has(emailOnly) && isValidEmail(emailOnly)) {
+      seen.add(emailOnly);
+      results.push({ email: emailOnly, name: emailOnly.split("@")[0] });
+    }
+  }
+
+  return results;
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export default function AdminInvitations() {
   const utils = trpc.useUtils();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [dialogTab, setDialogTab] = useState<"single" | "bulk">("single");
 
-  // Form state
+  // Single invite form state
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
+
+  // Bulk invite form state
+  const [bulkEmailText, setBulkEmailText] = useState("");
+  const [parsedEmails, setParsedEmails] = useState<{ email: string; name: string }[]>([]);
+
+  // Shared offer form state
   const [offerAmount, setOfferAmount] = useState("");
   const [offerApr, setOfferApr] = useState("");
   const [offerTermMonths, setOfferTermMonths] = useState("");
@@ -84,6 +149,21 @@ export default function AdminInvitations() {
     onError: (err) => toast.error(err.message || "Failed to create invitation"),
   });
 
+  const bulkCreateMutation = trpc.invitations.bulkCreate.useMutation({
+    onSuccess: (result) => {
+      const { sent, failed, total } = result.data;
+      if (failed === 0) {
+        toast.success(`All ${sent} invitation${sent > 1 ? "s" : ""} created and sent!`);
+      } else {
+        toast.warning(`${sent} of ${total} invitations sent. ${failed} failed.`);
+      }
+      utils.invitations.list.invalidate();
+      resetForm();
+      setCreateDialogOpen(false);
+    },
+    onError: (err) => toast.error(err.message || "Failed to send bulk invitations"),
+  });
+
   const revokeMutation = trpc.invitations.revoke.useMutation({
     onSuccess: () => {
       toast.success("Invitation revoked");
@@ -100,6 +180,8 @@ export default function AdminInvitations() {
   const resetForm = () => {
     setRecipientName("");
     setRecipientEmail("");
+    setBulkEmailText("");
+    setParsedEmails([]);
     setOfferAmount("");
     setOfferApr("");
     setOfferTermMonths("");
@@ -107,6 +189,7 @@ export default function AdminInvitations() {
     setExpiresInDays("30");
     setAdminNotes("");
     setSendEmail(true);
+    setDialogTab("single");
   };
 
   const handleCreate = () => {
@@ -125,6 +208,40 @@ export default function AdminInvitations() {
       adminNotes: adminNotes.trim() || undefined,
       sendEmail,
     });
+  };
+
+  const handleBulkCreate = () => {
+    if (parsedEmails.length === 0) {
+      toast.error("No valid email addresses detected. Enter emails separated by commas, semicolons, or new lines.");
+      return;
+    }
+    bulkCreateMutation.mutate({
+      recipients: parsedEmails,
+      offerAmount: offerAmount ? Math.round(Number(offerAmount) * 100) : undefined,
+      offerApr: offerApr ? Math.round(Number(offerApr) * 100) : undefined,
+      offerTermMonths: offerTermMonths ? Number(offerTermMonths) : undefined,
+      offerDescription: offerDescription.trim() || undefined,
+      expiresInDays: Number(expiresInDays) || 30,
+      adminNotes: adminNotes.trim() || undefined,
+      sendEmail,
+    });
+  };
+
+  const handleBulkTextChange = (text: string) => {
+    setBulkEmailText(text);
+    setParsedEmails(parseEmailEntries(text));
+  };
+
+  const removeEmail = (emailToRemove: string) => {
+    const updated = parsedEmails.filter((e) => e.email !== emailToRemove);
+    setParsedEmails(updated);
+    setBulkEmailText(updated.map((e) => e.name !== e.email.split("@")[0] ? `${e.name} <${e.email}>` : e.email).join("\n"));
+  };
+
+  const updateEmailName = (email: string, newName: string) => {
+    setParsedEmails((prev) =>
+      prev.map((e) => (e.email === email ? { ...e, name: newName } : e))
+    );
   };
 
   const copyCode = (code: string) => {
@@ -148,15 +265,17 @@ export default function AdminInvitations() {
   const redeemedCount = codes.filter((c: any) => c.status === "redeemed").length;
   const totalCount = codes.length;
 
+  const isMutating = createMutation.isPending || bulkCreateMutation.isPending;
+
   return (
     <div className="space-y-6">
       {/* Header + Stats */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Invitation Codes</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Invitation Codes</h2>
           <p className="text-gray-500 text-sm">Send personalized offer codes to potential borrowers</p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)} className="bg-[#C9A227] hover:bg-[#b8922a] text-white">
+        <Button onClick={() => { resetForm(); setCreateDialogOpen(true); }} className="bg-[#C9A227] hover:bg-[#b8922a] text-white">
           <Plus className="w-4 h-4 mr-2" /> New Invitation
         </Button>
       </div>
@@ -234,14 +353,14 @@ export default function AdminInvitations() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Code</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Recipient</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Offer</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Expires</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Created</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
+                  <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
+                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Code</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Recipient</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Offer</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Expires</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Created</th>
+                    <th className="text-right px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -250,10 +369,10 @@ export default function AdminInvitations() {
                     const isExpired = inv.status === "active" && new Date(inv.expiresAt) < new Date();
                     const displayStatus = isExpired ? "expired" : inv.status;
                     return (
-                      <tr key={inv.id} className="border-b hover:bg-gray-50 transition-colors">
+                      <tr key={inv.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono font-bold text-[#0A2540]">
+                            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs font-mono font-bold text-[#0A2540] dark:text-[#C9A227]">
                               {inv.code}
                             </code>
                             <button
@@ -266,7 +385,7 @@ export default function AdminInvitations() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-medium text-gray-900">{inv.recipientName}</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{inv.recipientName}</p>
                           <p className="text-xs text-gray-500">{inv.recipientEmail}</p>
                         </td>
                         <td className="px-4 py-3">
@@ -290,10 +409,10 @@ export default function AdminInvitations() {
                             {displayStatus}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 text-xs">
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-xs">
                           {new Date(inv.expiresAt).toLocaleDateString()}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 text-xs">
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-xs">
                           {new Date(inv.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -336,71 +455,148 @@ export default function AdminInvitations() {
 
       {/* Create Invitation Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Send className="w-5 h-5 text-[#C9A227]" />
               Send Invitation Code
             </DialogTitle>
             <DialogDescription>
-              Create a personalized offer code and send it to a potential borrower
+              Invite one or multiple customers with personalized offer codes
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Recipient info */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Recipient Name *</Label>
-                <Input
-                  placeholder="John Doe"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Email *</Label>
-                <Input
-                  type="email"
-                  placeholder="john@example.com"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                />
-              </div>
-            </div>
+          <Tabs value={dialogTab} onValueChange={(v) => setDialogTab(v as "single" | "bulk")} className="mt-2">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="single" className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Single Invite
+              </TabsTrigger>
+              <TabsTrigger value="bulk" className="gap-2">
+                <Users className="w-4 h-4" />
+                Bulk Invite
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Offer details */}
-            <div className="border-t pt-4">
-              <p className="text-sm font-semibold text-gray-700 mb-3">Offer Details (optional)</p>
-              <div className="grid grid-cols-3 gap-3">
+            {/* Single Invite Tab */}
+            <TabsContent value="single" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Amount ($)</Label>
+                  <Label>Recipient Name *</Label>
                   <Input
-                    type="number"
-                    placeholder="10000"
-                    value={offerAmount}
-                    onChange={(e) => setOfferAmount(e.target.value)}
+                    placeholder="John Doe"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
                   />
                 </div>
                 <div>
-                  <Label>APR (%)</Label>
+                  <Label>Email *</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="8.99"
-                    value={offerApr}
-                    onChange={(e) => setOfferApr(e.target.value)}
+                    type="email"
+                    placeholder="john@example.com"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
                   />
                 </div>
-                <div>
-                  <Label>Term (months)</Label>
-                  <Input
-                    type="number"
-                    placeholder="36"
-                    value={offerTermMonths}
-                    onChange={(e) => setOfferTermMonths(e.target.value)}
-                  />
+              </div>
+            </TabsContent>
+
+            {/* Bulk Invite Tab */}
+            <TabsContent value="bulk" className="space-y-4 mt-4">
+              <div>
+                <Label>Email Addresses</Label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Enter multiple emails separated by commas, semicolons, or new lines. Supports formats:{" "}
+                  <span className="font-mono text-[#0A2540] dark:text-[#C9A227]">email@example.com</span>,{" "}
+                  <span className="font-mono text-[#0A2540] dark:text-[#C9A227]">John Doe &lt;email@example.com&gt;</span>
+                </p>
+                <Textarea
+                  placeholder={`john@example.com\njane@example.com\nJohn Smith <john.smith@company.com>\nSarah Wilson <sarah@email.com>`}
+                  value={bulkEmailText}
+                  onChange={(e) => handleBulkTextChange(e.target.value)}
+                  rows={5}
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              {/* Preview detected emails */}
+              {parsedEmails.length > 0 && (
+                <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      {parsedEmails.length} email{parsedEmails.length > 1 ? "s" : ""} detected
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-red-500 hover:text-red-700 h-7"
+                      onClick={() => { setBulkEmailText(""); setParsedEmails([]); }}
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {parsedEmails.map((entry) => (
+                      <div
+                        key={entry.email}
+                        className="flex items-center gap-2 bg-white dark:bg-gray-900 rounded px-3 py-1.5 text-sm"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <input
+                          type="text"
+                          value={entry.name}
+                          onChange={(e) => updateEmailName(entry.email, e.target.value)}
+                          className="bg-transparent border-none outline-none font-medium text-gray-900 dark:text-gray-100 w-32 min-w-0"
+                          title="Edit recipient name"
+                        />
+                        <span className="text-gray-500 text-xs truncate flex-1">{entry.email}</span>
+                        <button
+                          onClick={() => removeEmail(entry.email)}
+                          className="text-gray-400 hover:text-red-500 shrink-0"
+                          title="Remove email"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          {/* Shared offer details */}
+          <div className="space-y-4 border-t pt-4">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Offer Details (optional)</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label>Amount ($)</Label>
+                <Input
+                  type="number"
+                  placeholder="10000"
+                  value={offerAmount}
+                  onChange={(e) => setOfferAmount(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>APR (%)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="8.99"
+                  value={offerApr}
+                  onChange={(e) => setOfferApr(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Term (months)</Label>
+                <Input
+                  type="number"
+                  placeholder="36"
+                  value={offerTermMonths}
+                  onChange={(e) => setOfferTermMonths(e.target.value)}
+                />
               </div>
             </div>
 
@@ -437,7 +633,7 @@ export default function AdminInvitations() {
                     onChange={(e) => setSendEmail(e.target.checked)}
                     className="rounded border-gray-300"
                   />
-                  <span className="text-sm text-gray-700">Send email notification</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Send email notification</span>
                 </label>
               </div>
             </div>
@@ -453,22 +649,39 @@ export default function AdminInvitations() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => { resetForm(); setCreateDialogOpen(false); }}>
               Cancel
             </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={createMutation.isPending}
-              className="bg-[#C9A227] hover:bg-[#b8922a] text-white"
-            >
-              {createMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4 mr-2" />
-              )}
-              {sendEmail ? "Create & Send" : "Create Code"}
-            </Button>
+            {dialogTab === "single" ? (
+              <Button
+                onClick={handleCreate}
+                disabled={isMutating}
+                className="bg-[#C9A227] hover:bg-[#b8922a] text-white"
+              >
+                {createMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                {sendEmail ? "Create & Send" : "Create Code"}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleBulkCreate}
+                disabled={isMutating || parsedEmails.length === 0}
+                className="bg-[#C9A227] hover:bg-[#b8922a] text-white"
+              >
+                {bulkCreateMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Users className="w-4 h-4 mr-2" />
+                )}
+                {sendEmail
+                  ? `Send to ${parsedEmails.length} Recipient${parsedEmails.length !== 1 ? "s" : ""}`
+                  : `Create ${parsedEmails.length} Code${parsedEmails.length !== 1 ? "s" : ""}`}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
