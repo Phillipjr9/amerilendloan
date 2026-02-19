@@ -3,6 +3,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Hide Google Translate default top bar ── */
+.goog-te-banner-frame { display: none !important; }
+body { top: 0 !important; }
+.skiptranslate { display: none !important; }
+/* Keep our own LanguageSelector visible */
+.notranslate { display: block !important; }
+
 /* Professional Financial Institution Design System */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

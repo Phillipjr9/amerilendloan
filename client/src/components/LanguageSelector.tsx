@@ -1,30 +1,78 @@
-import { useState, useRef, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Globe } from "lucide-react";
+
+/**
+ * Language selector powered by Google Translate.
+ * Renders a floating globe button (bottom-left) that opens a language picker.
+ * When the user picks a language, the entire page is translated in-place via
+ * Google's client-side translation API — no manual i18n string tables needed.
+ */
 
 const languages = [
   { code: "en", name: "English", flag: "\u{1F1FA}\u{1F1F8}" },
   { code: "es", name: "Espa\u00F1ol", flag: "\u{1F1EA}\u{1F1F8}" },
   { code: "fr", name: "Fran\u00E7ais", flag: "\u{1F1EB}\u{1F1F7}" },
   { code: "de", name: "Deutsch", flag: "\u{1F1E9}\u{1F1EA}" },
-  { code: "zh", name: "\u4E2D\u6587", flag: "\u{1F1E8}\u{1F1F3}" },
+  { code: "zh-CN", name: "\u4E2D\u6587", flag: "\u{1F1E8}\u{1F1F3}" },
   { code: "ja", name: "\u65E5\u672C\u8A9E", flag: "\u{1F1EF}\u{1F1F5}" },
   { code: "pt", name: "Portugu\u00EAs", flag: "\u{1F1E7}\u{1F1F7}" },
   { code: "ru", name: "\u0420\u0443\u0441\u0441\u043A\u0438\u0439", flag: "\u{1F1F7}\u{1F1FA}" },
   { code: "ar", name: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629", flag: "\u{1F1F8}\u{1F1E6}" },
   { code: "hi", name: "\u0939\u093F\u0928\u094D\u0926\u0940", flag: "\u{1F1EE}\u{1F1F3}" },
+  { code: "ko", name: "\uD55C\uAD6D\uC5B4", flag: "\u{1F1F0}\u{1F1F7}" },
+  { code: "vi", name: "Ti\u1EBFng Vi\u1EC7t", flag: "\u{1F1FB}\u{1F1F3}" },
+  { code: "tl", name: "Filipino", flag: "\u{1F1F5}\u{1F1ED}" },
 ];
 
+// Detect current Google Translate language from the cookie
+function getGoogleTranslateLang(): string {
+  const match = document.cookie.match(/googtrans=\/en\/([a-zA-Z-]+)/);
+  return match?.[1] || "en";
+}
+
+// Set the Google Translate cookie and reload
+function setGoogleTranslateLang(lang: string) {
+  const domain = window.location.hostname;
+  // Set for current domain and root domain
+  document.cookie = `googtrans=/en/${lang}; path=/; domain=${domain}`;
+  document.cookie = `googtrans=/en/${lang}; path=/`;
+  // Also set for root domain (handles subdomains)
+  const parts = domain.split(".");
+  if (parts.length > 2) {
+    const root = parts.slice(-2).join(".");
+    document.cookie = `googtrans=/en/${lang}; path=/; domain=.${root}`;
+  }
+}
+
 export default function LanguageSelector() {
-  const { i18n } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState("en");
   const ref = useRef<HTMLDivElement>(null);
 
-  const handleChange = (lang: string) => {
-    i18n.changeLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
+  // Detect current language on mount
+  useEffect(() => {
+    setCurrentLang(getGoogleTranslateLang());
+  }, []);
+
+  const handleChange = useCallback((lang: string) => {
+    if (lang === "en") {
+      // Reset to English: clear cookie and reload
+      const domain = window.location.hostname;
+      document.cookie = `googtrans=; path=/; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 UTC`;
+      document.cookie = `googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC`;
+      const parts = domain.split(".");
+      if (parts.length > 2) {
+        const root = parts.slice(-2).join(".");
+        document.cookie = `googtrans=; path=/; domain=.${root}; expires=Thu, 01 Jan 1970 00:00:00 UTC`;
+      }
+    } else {
+      setGoogleTranslateLang(lang);
+    }
+    setCurrentLang(lang);
     setOpen(false);
-  };
+    // Reload page to apply translation
+    window.location.reload();
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -35,10 +83,10 @@ export default function LanguageSelector() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const current = languages.find((l) => l.code === i18n.language) || languages[0];
+  const current = languages.find((l) => l.code === currentLang) || languages[0];
 
   return (
-    <div ref={ref} className="fixed bottom-6 left-6 z-50">
+    <div ref={ref} className="fixed bottom-6 left-6 z-50 notranslate">
       {/* Floating globe button */}
       <button
         onClick={() => setOpen(!open)}
@@ -57,7 +105,7 @@ export default function LanguageSelector() {
           </div>
           <div className="max-h-72 overflow-y-auto py-1">
             {languages.map((lang) => {
-              const isActive = i18n.language === lang.code;
+              const isActive = currentLang === lang.code;
               return (
                 <button
                   key={lang.code}
