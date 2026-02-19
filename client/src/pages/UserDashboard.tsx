@@ -297,6 +297,40 @@ export function UserDashboard() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Disbursement Bank Info */}
+                  {(activeLoan.disbursementAccountHolderName || activeLoan.disbursementAccountNumberMasked) && (
+                    <div className="mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide mb-2">Disbursement Account</p>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {activeLoan.disbursementAccountHolderName && (
+                          <div>
+                            <p className="text-blue-500 dark:text-blue-400 text-xs">Account Holder</p>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">{activeLoan.disbursementAccountHolderName}</p>
+                          </div>
+                        )}
+                        {activeLoan.disbursementAccountNumberMasked && (
+                          <div>
+                            <p className="text-blue-500 dark:text-blue-400 text-xs">Account Number</p>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">{activeLoan.disbursementAccountNumberMasked}</p>
+                          </div>
+                        )}
+                        {activeLoan.disbursementAccountType && (
+                          <div>
+                            <p className="text-blue-500 dark:text-blue-400 text-xs">Account Type</p>
+                            <p className="font-medium text-blue-900 dark:text-blue-100 capitalize">{activeLoan.disbursementAccountType}</p>
+                          </div>
+                        )}
+                        {activeLoan.bankName && (
+                          <div>
+                            <p className="text-blue-500 dark:text-blue-400 text-xs">Bank</p>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">{activeLoan.bankName}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <Button 
                     onClick={() => navigate(`/loans/${activeLoan.id}`)}
                     className="w-full"

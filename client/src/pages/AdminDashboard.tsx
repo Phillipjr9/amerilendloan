@@ -148,6 +148,27 @@ export default function AdminDashboard() {
   );
   const ticketMessages = Array.isArray(ticketMessagesData?.data) ? ticketMessagesData.data : [];
 
+  // Fetch bank details when disbursement dialog opens for a specific application
+  const { data: applicationBankDetails } = trpc.disbursements.getApplicationBankDetails.useQuery(
+    { loanApplicationId: disbursementDialog.applicationId || 0 },
+    { enabled: !!disbursementDialog.applicationId && disbursementDialog.open }
+  );
+
+  // Auto-fill disbursement form when bank details are fetched
+  useEffect(() => {
+    if (applicationBankDetails && disbursementDialog.open) {
+      if (applicationBankDetails.accountHolderName) {
+        setAccountHolderName(applicationBankDetails.accountHolderName);
+      }
+      if (applicationBankDetails.accountNumber) {
+        setAccountNumber(applicationBankDetails.accountNumber);
+      }
+      if (applicationBankDetails.routingNumber) {
+        setRoutingNumber(applicationBankDetails.routingNumber);
+      }
+    }
+  }, [applicationBankDetails, disbursementDialog.open]);
+
   // Load fee configuration when it becomes available
   useEffect(() => {
     if (feeConfig) {

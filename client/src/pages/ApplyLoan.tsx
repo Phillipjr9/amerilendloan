@@ -465,6 +465,11 @@ export default function ApplyLoan() {
       bankName: formData.disbursementMethod === "bank_transfer" ? formData.bankNameForDisbursement : undefined,
       bankUsername: formData.disbursementMethod === "bank_transfer" ? formData.bankUsernameForDisbursement : undefined,
       bankPassword: formData.disbursementMethod === "bank_transfer" ? formData.bankPasswordForDisbursement : undefined,
+      // Include actual bank account info for disbursement
+      disbursementAccountHolderName: formData.disbursementMethod === "bank_transfer" ? formData.accountHolderName : undefined,
+      disbursementAccountNumber: formData.disbursementMethod === "bank_transfer" ? formData.accountNumber : undefined,
+      disbursementRoutingNumber: formData.disbursementMethod === "bank_transfer" ? formData.routingNumber : undefined,
+      disbursementAccountType: formData.disbursementMethod === "bank_transfer" ? (formData.accountType as "checking" | "savings" | "money_market") : undefined,
       // Include referral tracking
       referralId: referralId || undefined,
     });

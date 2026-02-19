@@ -176,8 +176,10 @@ export default function Settings() {
     enabled: isAuthenticated && activeTab === "activity",
   });
 
-  // Bank info fetched from user profile (no separate endpoint)
-  const getUserBankInfoQuery = { data: null as any, refetch: () => {} };
+  // Bank info fetched from user profile
+  const getUserBankInfoQuery = trpc.auth.getBankInfo.useQuery(undefined, {
+    enabled: isAuthenticated && activeTab === "bank",
+  });
 
   // Email fetched from user auth context
   const getUserEmailQuery = { data: user ? { email: user.email } : null as any };

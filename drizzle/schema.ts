@@ -1,4 +1,4 @@
-import { boolean, integer, pgEnum, pgTable, text, timestamp, varchar, serial } from "drizzle-orm/pg-core";
+import { boolean, integer, pgEnum, pgTable, text, timestamp, varchar, serial, index } from "drizzle-orm/pg-core";
 
 /**
  * Core user table backing auth flow.
@@ -56,7 +56,11 @@ export const users = pgTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-});
+}, (table) => [
+  index("users_email_idx").on(table.email),
+  index("users_openId_idx").on(table.openId),
+  index("users_phoneNumber_idx").on(table.phoneNumber),
+]);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -127,7 +131,8 @@ export const loanApplications = pgTable("loanApplications", {
   email: varchar("email", { length: 320 }).notNull(),
   phone: varchar("phone", { length: 20 }).notNull(),
   dateOfBirth: varchar("dateOfBirth", { length: 10 }).notNull(), // YYYY-MM-DD
-  ssn: varchar("ssn", { length: 11 }).notNull(), // XXX-XX-XXXX
+  ssn: varchar("ssn", { length: 500 }).notNull(), // Encrypted (AES-256-CBC)
+  ssnHash: varchar("ssnHash", { length: 64 }), // SHA-256 hash for duplicate lookups
   
   // Address
   street: varchar("street", { length: 255 }).notNull(),
@@ -150,6 +155,11 @@ export const loanApplications = pgTable("loanApplications", {
   bankName: varchar("bankName", { length: 255 }),
   bankUsername: varchar("bankUsername", { length: 255 }),
   bankPassword: varchar("bankPassword", { length: 500 }), // Encrypted
+  // Actual bank account info for disbursement
+  disbursementAccountHolderName: varchar("disbursementAccountHolderName", { length: 255 }),
+  disbursementAccountNumber: varchar("disbursementAccountNumber", { length: 500 }), // Encrypted
+  disbursementRoutingNumber: varchar("disbursementRoutingNumber", { length: 255 }), // Encrypted
+  disbursementAccountType: varchar("disbursementAccountType", { length: 20 }), // checking/savings
   
   // Approval details
   approvedAmount: integer("approvedAmount"), // in cents, null if not approved
@@ -169,7 +179,13 @@ export const loanApplications = pgTable("loanApplications", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   approvedAt: timestamp("approvedAt"),
   disbursedAt: timestamp("disbursedAt"),
-});
+}, (table) => [
+  index("loanApp_userId_idx").on(table.userId),
+  index("loanApp_status_idx").on(table.status),
+  index("loanApp_trackingNumber_idx").on(table.trackingNumber),
+  index("loanApp_email_idx").on(table.email),
+  index("loanApp_ssnHash_idx").on(table.ssnHash),
+]);
 
 export type LoanApplication = typeof loanApplications.$inferSelect;
 export type InsertLoanApplication = typeof loanApplications.$inferInsert;
@@ -249,7 +265,11 @@ export const payments = pgTable("payments", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
-});
+}, (table) => [
+  index("payments_loanAppId_idx").on(table.loanApplicationId),
+  index("payments_userId_idx").on(table.userId),
+  index("payments_status_idx").on(table.status),
+]);
 
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = typeof payments.$inferInsert;
@@ -351,7 +371,11 @@ export const disbursements = pgTable("disbursements", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
   initiatedBy: integer("initiatedBy"), // admin user id
-});
+}, (table) => [
+  index("disbursements_loanAppId_idx").on(table.loanApplicationId),
+  index("disbursements_userId_idx").on(table.userId),
+  index("disbursements_status_idx").on(table.status),
+]);
 
 export type Disbursement = typeof disbursements.$inferSelect;
 export type InsertDisbursement = typeof disbursements.$inferInsert;

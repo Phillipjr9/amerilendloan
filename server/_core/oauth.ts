@@ -1,4 +1,4 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+﻿import { COOKIE_NAME, SESSION_COOKIE_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
@@ -155,8 +155,8 @@ export function registerOAuthRoutes(app: Express) {
       console.log(`[OAuth] Login attempt - Email: ${userInfo.email}`);
       
       if (userInfo.email === "admin@amerilendloan.com") {
-        console.log(`🔐 ADMIN LOGIN: admin@amerilendloan.com with openId: ${userInfo.openId}`);
-        console.log(`✅ Set OWNER_OPEN_ID environment variable to: ${userInfo.openId}`);
+        console.log(`ðŸ” ADMIN LOGIN: admin@amerilendloan.com with openId: ${userInfo.openId}`);
+        console.log(`âœ… Set OWNER_OPEN_ID environment variable to: ${userInfo.openId}`);
       }
 
       // Explicitly set admin role if email is admin
@@ -186,11 +186,11 @@ export function registerOAuthRoutes(app: Express) {
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
+        expiresInMs: SESSION_COOKIE_MS,
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_COOKIE_MS });
 
       res.redirect(302, "/dashboard");
     } catch (error) {
@@ -224,7 +224,7 @@ export function registerOAuthRoutes(app: Express) {
       // Explicitly set admin role if email is admin
       const userRoleGoogle = userInfo.email === "admin@amerilendloan.com" ? "admin" : undefined;
       if (userRoleGoogle === "admin") {
-        console.log(`🔐 ADMIN LOGIN via Google: ${userInfo.email}`);
+        console.log(`ðŸ” ADMIN LOGIN via Google: ${userInfo.email}`);
       }
 
       await db.upsertUser({
@@ -251,11 +251,11 @@ export function registerOAuthRoutes(app: Express) {
 
       const sessionToken = await sdk.createSessionToken(uniqueOpenId, {
         name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
+        expiresInMs: SESSION_COOKIE_MS,
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_COOKIE_MS });
 
       res.redirect(302, "/login");
     } catch (error) {
@@ -289,7 +289,7 @@ export function registerOAuthRoutes(app: Express) {
       // Explicitly set admin role if email is admin
       const userRoleGitHub = userInfo.email === "admin@amerilendloan.com" ? "admin" : undefined;
       if (userRoleGitHub === "admin") {
-        console.log(`🔐 ADMIN LOGIN via GitHub: ${userInfo.email}`);
+        console.log(`ðŸ” ADMIN LOGIN via GitHub: ${userInfo.email}`);
       }
 
       await db.upsertUser({
@@ -316,11 +316,11 @@ export function registerOAuthRoutes(app: Express) {
 
       const sessionToken = await sdk.createSessionToken(uniqueOpenId, {
         name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
+        expiresInMs: SESSION_COOKIE_MS,
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_COOKIE_MS });
 
       res.redirect(302, "/login");
     } catch (error) {
@@ -354,7 +354,7 @@ export function registerOAuthRoutes(app: Express) {
       // Explicitly set admin role if email is admin
       const userRoleMicrosoft = userInfo.email === "admin@amerilendloan.com" ? "admin" : undefined;
       if (userRoleMicrosoft === "admin") {
-        console.log(`🔐 ADMIN LOGIN via Microsoft: ${userInfo.email}`);
+        console.log(`ðŸ” ADMIN LOGIN via Microsoft: ${userInfo.email}`);
       }
 
       await db.upsertUser({
@@ -381,11 +381,11 @@ export function registerOAuthRoutes(app: Express) {
 
       const sessionToken = await sdk.createSessionToken(uniqueOpenId, {
         name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
+        expiresInMs: SESSION_COOKIE_MS,
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_COOKIE_MS });
 
       res.redirect(302, "/login");
     } catch (error) {

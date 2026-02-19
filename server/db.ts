@@ -408,13 +408,21 @@ export async function checkDuplicateAccount(dateOfBirth: string, ssn: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Check for existing applications with same DOB and SSN
+  // Hash the SSN for lookup (matches the hash stored during submission)
+  const crypto = await import('crypto');
+  const ssnHash = crypto.createHash('sha256').update(ssn).digest('hex');
+  
+  // Check for existing applications with same DOB and SSN hash
+  // Fall back to plain SSN check for legacy records that haven't been migrated
   const existingApplications = await db.select()
     .from(loanApplications)
     .where(
       and(
         eq(loanApplications.dateOfBirth, dateOfBirth),
-        eq(loanApplications.ssn, ssn)
+        or(
+          eq(loanApplications.ssnHash, ssnHash),
+          eq(loanApplications.ssn, ssn) // Legacy fallback for unencrypted records
+        )
       )
     );
   

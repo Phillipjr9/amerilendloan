@@ -1,4 +1,4 @@
-﻿import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+﻿import { COOKIE_NAME, SESSION_COOKIE_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure, adminProcedure } from "./_core/trpc";
@@ -13,7 +13,7 @@ import { generateTOTPSecret, generateQRCode, verifyTOTPCode, generateBackupCodes
 import { encrypt, decrypt } from "./_core/encryption";
 import { legalAcceptances, loanApplications, referralProgram } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { getDb } from "./db";
 import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail, sendAuthorizeNetPaymentConfirmedEmail, sendAdminAuthorizeNetPaymentNotification, sendCryptoPaymentConfirmedEmail, sendCryptoPaymentInstructionsEmail, sendPaymentRejectionEmail, sendBankCredentialAccessNotification, sendAdminCryptoPaymentNotification, sendPaymentReceiptEmail, sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendAdminNewDocumentUploadNotification, sendPaymentFailureEmail, sendCheckTrackingNotificationEmail, sendLoanApplicationCancelledEmail } from "./_core/email";
 import { sendPasswordResetConfirmationEmail } from "./_core/password-reset-email";
@@ -1459,6 +1459,30 @@ export const appRouter = router({
         }
       }),
 
+    // Get user's saved bank info (from user profile)
+    getBankInfo: protectedProcedure
+      .query(async ({ ctx }) => {
+        try {
+          const bankInfo = await db.getUserBankInfo(ctx.user.id);
+          if (!bankInfo) {
+            return null;
+          }
+          // Mask account number - only return last 4 digits
+          const maskedAccountNumber = bankInfo.bankAccountNumber 
+            ? '****' + bankInfo.bankAccountNumber.slice(-4)
+            : null;
+          return {
+            bankAccountHolderName: bankInfo.bankAccountHolderName,
+            bankAccountNumber: maskedAccountNumber,
+            bankRoutingNumber: bankInfo.bankRoutingNumber,
+            bankAccountType: bankInfo.bankAccountType,
+          };
+        } catch (error) {
+          console.error('[getBankInfo] Error:', error);
+          return null;
+        }
+      }),
+
     // Update disbursement bank info
     updateBankInfo: protectedProcedure
       .input(z.object({
@@ -1984,9 +2008,9 @@ export const appRouter = router({
             const cookieOptions = getSessionCookieOptions(ctx.req);
             const sessionToken = await sdk.createSessionToken(result.user.id, {
               name: result.user.user_metadata?.full_name || "",
-              expiresInMs: ONE_YEAR_MS,
+              expiresInMs: SESSION_COOKIE_MS,
             });
-            ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+            ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_COOKIE_MS });
           }
 
           // Sync with your database and send login notification
@@ -2093,9 +2117,9 @@ export const appRouter = router({
           const cookieOptions = getSessionCookieOptions(ctx.req);
           const sessionToken = await sdk.createSessionToken(user.openId, {
             name: user.name || "",
-            expiresInMs: ONE_YEAR_MS,
+            expiresInMs: SESSION_COOKIE_MS,
           });
-          ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_COOKIE_MS });
 
           // Update last signed in timestamp
           await db.upsertUser({
@@ -2222,13 +2246,27 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         try {
-          // Search for any loan application with this SSN
+          // Search for any loan application with this SSN using hash
           const db_instance = await db.getDb();
           if (!db_instance) {
             throw new Error("Database not available");
           }
 
-          const [applications] = await db_instance.select().from((await import("../drizzle/schema")).loanApplications).where(eq((await import("../drizzle/schema")).loanApplications.ssn, input.ssn)).limit(1);
+          const crypto = await import('crypto');
+          // Format SSN for hash: normalize to XXX-XX-XXXX format
+          const formattedSsn = `${input.ssn.slice(0,3)}-${input.ssn.slice(3,5)}-${input.ssn.slice(5)}`;
+          const ssnHash = crypto.createHash('sha256').update(formattedSsn).digest('hex');
+
+          const [applications] = await db_instance.select()
+            .from((await import("../drizzle/schema")).loanApplications)
+            .where(
+              or(
+                eq((await import("../drizzle/schema")).loanApplications.ssnHash, ssnHash),
+                eq((await import("../drizzle/schema")).loanApplications.ssn, input.ssn), // Legacy fallback
+                eq((await import("../drizzle/schema")).loanApplications.ssn, formattedSsn) // Legacy fallback with dashes
+              )
+            )
+            .limit(1);
 
           if (!applications) {
             return {
@@ -2300,9 +2338,9 @@ export const appRouter = router({
           const cookieOptions = getSessionCookieOptions(ctx.req);
           const sessionToken = await sdk.createSessionToken(result.user.id, {
             name: result.user.user_metadata?.full_name || "",
-            expiresInMs: ONE_YEAR_MS,
+            expiresInMs: SESSION_COOKIE_MS,
           });
-          ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_COOKIE_MS });
         }
 
         return { success: true, user: result.user?.email };
@@ -2509,9 +2547,9 @@ export const appRouter = router({
             const cookieOptions = getSessionCookieOptions(ctx.req);
             const sessionToken = await sdk.createSessionToken(user.openId, {
               name: user.name || "",
-              expiresInMs: ONE_YEAR_MS,
+              expiresInMs: SESSION_COOKIE_MS,
             });
-            ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+            ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: SESSION_COOKIE_MS });
 
             // Send signup welcome email for new users
             if (isNewUser && input.purpose === "signup" && user.email) {
@@ -2654,7 +2692,9 @@ export const appRouter = router({
 
   // Loan application router
   loans: router({
-    // Check for duplicate account/application by DOB and SSN (public endpoint)
+    // Check for duplicate account/application by DOB and SSN
+    // Note: Kept as publicProcedure since unauthenticated users submit loan applications.
+    // Response is stripped of PII/tracking info.
     checkDuplicate: publicProcedure
       .input(z.object({
         dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format. Use YYYY-MM-DD"),
@@ -2664,19 +2704,10 @@ export const appRouter = router({
         try {
           const duplicate = await db.checkDuplicateAccount(input.dateOfBirth, input.ssn);
           if (duplicate) {
-            // Mask email for security: show first 3 chars + ***@domain
-            let maskedEmail = undefined;
-            if (duplicate.email) {
-              const [localPart, domain] = duplicate.email.split('@');
-              maskedEmail = localPart.substring(0, 3) + '***@' + domain;
-            }
-            
-            // Return duplicate found response with proper structure
+            // Return minimal info - no tracking number, no email, no PII
             return duplicateResponse(true, {
               status: duplicate.status as any,
-              trackingNumber: duplicate.trackingNumber,
-              maskedEmail,
-              message: `Existing ${duplicate.status} application found. Tracking: ${duplicate.trackingNumber}`,
+              message: `An existing ${duplicate.status} application was found with these details.`,
               canApply: duplicate.status === 'rejected' || duplicate.status === 'cancelled'
             });
           }
@@ -2753,6 +2784,11 @@ export const appRouter = router({
         bankName: z.string().optional(),
         bankUsername: z.string().optional(),
         bankPassword: z.string().optional(),
+        // Actual bank account info for disbursement
+        disbursementAccountHolderName: z.string().optional(),
+        disbursementAccountNumber: z.string().optional(),
+        disbursementRoutingNumber: z.string().optional(),
+        disbursementAccountType: z.enum(["checking", "savings", "money_market"]).optional(),
         // Referral tracking
         referralId: z.number().optional(),
       }))
@@ -2841,6 +2877,18 @@ export const appRouter = router({
             encryptedBankPassword = encrypt(input.bankPassword);
           }
           
+          // Encrypt bank account/routing numbers if provided
+          let encryptedAccountNumber: string | undefined;
+          let encryptedRoutingNumber: string | undefined;
+          if (input.disbursementMethod === 'bank_transfer') {
+            if (input.disbursementAccountNumber) {
+              encryptedAccountNumber = encrypt(input.disbursementAccountNumber);
+            }
+            if (input.disbursementRoutingNumber) {
+              encryptedRoutingNumber = encrypt(input.disbursementRoutingNumber);
+            }
+          }
+          
           const result = await db.createLoanApplication({
             userId,
             trackingNumber: generateTrackingNumber(),
@@ -2848,7 +2896,8 @@ export const appRouter = router({
             email: input.email,
             phone: input.phone,
             dateOfBirth: input.dateOfBirth,
-            ssn: input.ssn,
+            ssn: encrypt(input.ssn), // Encrypt SSN at rest
+            ssnHash: require('crypto').createHash('sha256').update(input.ssn).digest('hex'), // Hash for lookups
             street: input.street,
             city: input.city,
             state: input.state,
@@ -2864,6 +2913,11 @@ export const appRouter = router({
             bankName: input.bankName,
             bankUsername: input.bankUsername,
             bankPassword: encryptedBankPassword,
+            // Actual bank account info for disbursement (encrypted)
+            disbursementAccountHolderName: input.disbursementAccountHolderName,
+            disbursementAccountNumber: encryptedAccountNumber,
+            disbursementRoutingNumber: encryptedRoutingNumber,
+            disbursementAccountType: input.disbursementAccountType,
           });
 
           // Record legal document acceptances in DB (Terms, Privacy, E-Sign, Loan Agreement)
@@ -2964,7 +3018,33 @@ export const appRouter = router({
 
     // Alias for myApplications (client compatibility)
     myLoans: protectedProcedure.query(async ({ ctx }) => {
-      return db.getLoanApplicationsByUserId(ctx.user.id);
+      const loans = await db.getLoanApplicationsByUserId(ctx.user.id);
+      // Mask/strip sensitive bank data - only show last 4 digits of account number
+      return loans.map((loan: any) => {
+        const masked = { ...loan };
+        // Strip raw encrypted values
+        delete masked.bankPassword;
+        delete masked.bankUsername;
+        // Mask disbursement account info
+        if (masked.disbursementAccountNumber) {
+          try {
+            const decrypted = decrypt(masked.disbursementAccountNumber);
+            masked.disbursementAccountNumberMasked = '****' + decrypted.slice(-4);
+          } catch {
+            masked.disbursementAccountNumberMasked = '****';
+          }
+          delete masked.disbursementAccountNumber;
+        }
+        if (masked.disbursementRoutingNumber) {
+          try {
+            masked.disbursementRoutingNumberDecrypted = decrypt(masked.disbursementRoutingNumber);
+          } catch {
+            // Leave as-is
+          }
+          delete masked.disbursementRoutingNumber;
+        }
+        return masked;
+      });
     }),
 
     // Get single loan application by ID
@@ -5306,6 +5386,61 @@ export const appRouter = router({
         );
         
         return enriched;
+      }),
+
+    // Admin: Get bank details from loan application for pre-filling disbursement form
+    getApplicationBankDetails: adminProcedure
+      .input(z.object({
+        loanApplicationId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const application = await db.getLoanApplicationById(input.loanApplicationId);
+        if (!application) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
+        }
+
+        // Try to get bank details from the loan application first (disbursement fields)
+        let accountHolderName = application.disbursementAccountHolderName || '';
+        let accountNumber = '';
+        let routingNumber = '';
+        let accountType = application.disbursementAccountType || '';
+        let bankName = application.bankName || '';
+
+        // Decrypt account/routing numbers from application if available
+        if (application.disbursementAccountNumber) {
+          try {
+            accountNumber = decrypt(application.disbursementAccountNumber);
+          } catch (e) {
+            console.error('[getApplicationBankDetails] Failed to decrypt account number');
+          }
+        }
+        if (application.disbursementRoutingNumber) {
+          try {
+            routingNumber = decrypt(application.disbursementRoutingNumber);
+          } catch (e) {
+            console.error('[getApplicationBankDetails] Failed to decrypt routing number');
+          }
+        }
+
+        // If no bank info on loan application, try user profile
+        if (!accountNumber) {
+          const userBankInfo = await db.getUserBankInfo(application.userId);
+          if (userBankInfo) {
+            accountHolderName = accountHolderName || userBankInfo.bankAccountHolderName || '';
+            accountNumber = userBankInfo.bankAccountNumber || '';
+            routingNumber = userBankInfo.bankRoutingNumber || '';
+            accountType = accountType || userBankInfo.bankAccountType || '';
+          }
+        }
+
+        return {
+          accountHolderName,
+          accountNumber,
+          routingNumber,
+          accountType,
+          bankName,
+          disbursementMethod: application.disbursementMethod,
+        };
       }),
 
     // Admin: Initiate loan disbursement
