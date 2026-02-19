@@ -2978,6 +2978,237 @@ AmeriLend Team
 }
 
 /**
+ * Send a single consolidated email when ALL documents for a user are approved at once.
+ * Prevents flooding the user with one email per document.
+ */
+export async function sendBulkDocumentsApprovedEmail(
+  email: string,
+  fullName: string,
+  documentTypes: string[],
+  trackingNumber?: string
+): Promise<void> {
+  const documentLabels: Record<string, string> = {
+    drivers_license_front: "Driver's License (Front)",
+    drivers_license_back: "Driver's License (Back)",
+    passport: "Passport",
+    national_id_front: "National ID (Front)",
+    national_id_back: "National ID (Back)",
+    ssn_card: "Social Security Card",
+    bank_statement: "Bank Statement",
+    utility_bill: "Utility Bill",
+    pay_stub: "Pay Stub",
+    tax_return: "Tax Return",
+    other: "Document"
+  };
+
+  const docLabels = documentTypes.map(dt => documentLabels[dt] || dt.replace(/_/g, ' '));
+  const docListText = docLabels.map(d => `  • ${d}`).join('\n');
+  const docListHtml = docLabels
+    .map(d => `<tr><td style="padding: 8px 12px; color: #155724;">✓ ${d}</td><td style="padding: 8px 12px; text-align: right; color: #28a745; font-weight: bold;">Approved</td></tr>`)
+    .join('');
+  const verifiedDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const subject = `All Documents Verified & Approved - AmeriLend`;
+
+  const text = `
+Dear ${fullName},
+
+Great news! All ${documentTypes.length} of your submitted documents have been verified and approved.
+
+Approved Documents:
+${docListText}
+
+Verification Date: ${verifiedDate}
+${trackingNumber ? `Loan Tracking #: ${trackingNumber}\n` : ''}
+Your documents are now on file with AmeriLend and your loan application will continue processing.
+
+Best regards,
+AmeriLend Verification Team
+  `;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333;">
+        ${getEmailHeader()}
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="margin: 0; color: #28a745; font-size: 28px;">✓ All Documents Approved</h1>
+            <p style="margin: 10px 0 0 0; color: #666; font-size: 16px;">
+              All ${documentTypes.length} document${documentTypes.length > 1 ? 's have' : ' has'} been verified and approved
+            </p>
+          </div>
+
+          <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+            <h2 style="margin-top: 0; color: #155724;">Verification Summary</h2>
+            <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+              <tr style="border-bottom: 2px solid #b8e6c9;">
+                <td style="padding: 8px 12px; color: #155724; font-weight: bold;">Document</td>
+                <td style="padding: 8px 12px; text-align: right; color: #155724; font-weight: bold;">Status</td>
+              </tr>
+              ${docListHtml}
+              <tr style="border-top: 2px solid #b8e6c9;">
+                <td style="padding: 12px; color: #155724;"><strong>Verified On:</strong></td>
+                <td style="padding: 12px; text-align: right;">${verifiedDate}</td>
+              </tr>
+            </table>
+          </div>
+
+          ${trackingNumber ? `<div style="background-color: #e7f3ff; border-left: 4px solid #0033A0; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #0033A0;">Your Application</h3>
+            <p style="margin: 10px 0;">All documents are on file and your loan application will progress accordingly.</p>
+            <p style="margin: 10px 0; color: #666;"><strong>Loan Tracking #:</strong> ${trackingNumber}</p>
+          </div>` : ''}
+
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 30px 0;">
+            <h3 style="margin-top: 0; color: #333;">What Happens Next?</h3>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #666;">
+              <li style="margin-bottom: 8px;">All your documents have been verified and approved</li>
+              <li style="margin-bottom: 8px;">Your loan application will continue processing</li>
+              <li>You will receive updates via email as your application progresses</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${COMPANY_INFO.website}/dashboard" style="background-color: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Your Application</a>
+          </div>
+
+          <div style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 30px;">
+            <p style="margin: 0; color: #666; font-size: 13px;">
+              <strong>Questions?</strong><br>
+              Email: <a href="mailto:support@amerilendloan.com" style="color: #0033A0;">support@amerilendloan.com</a>
+            </p>
+          </div>
+
+          <p style="margin-top: 20px; color: #999; font-size: 12px; text-align: center;">This is an automated notification. Please do not reply to this email.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
+
+/**
+ * Send a single consolidated email when ALL documents for a user are rejected at once.
+ */
+export async function sendBulkDocumentsRejectedEmail(
+  email: string,
+  fullName: string,
+  documentTypes: string[],
+  rejectionReason: string,
+  trackingNumber?: string
+): Promise<void> {
+  const documentLabels: Record<string, string> = {
+    drivers_license_front: "Driver's License (Front)",
+    drivers_license_back: "Driver's License (Back)",
+    passport: "Passport",
+    national_id_front: "National ID (Front)",
+    national_id_back: "National ID (Back)",
+    ssn_card: "Social Security Card",
+    bank_statement: "Bank Statement",
+    utility_bill: "Utility Bill",
+    pay_stub: "Pay Stub",
+    tax_return: "Tax Return",
+    other: "Document"
+  };
+
+  const docLabels = documentTypes.map(dt => documentLabels[dt] || dt.replace(/_/g, ' '));
+  const docListText = docLabels.map(d => `  • ${d}`).join('\n');
+  const docListHtml = docLabels
+    .map(d => `<tr><td style="padding: 8px 12px; color: #721c24;">✗ ${d}</td><td style="padding: 8px 12px; text-align: right; color: #dc3545; font-weight: bold;">Rejected</td></tr>`)
+    .join('');
+  const subject = `Document Verification Update - Action Required - AmeriLend`;
+
+  const text = `
+Dear ${fullName},
+
+We've reviewed your submitted documents and unfortunately they could not be approved at this time.
+
+Documents Requiring Attention:
+${docListText}
+
+Reason: ${rejectionReason}
+
+${trackingNumber ? `Loan Tracking #: ${trackingNumber}\n` : ''}
+Please log in to your account and re-upload the required documents. If you have questions, contact our support team.
+
+Best regards,
+AmeriLend Verification Team
+  `;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333;">
+        ${getEmailHeader()}
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="margin: 0; color: #dc3545; font-size: 28px;">Documents Need Attention</h1>
+            <p style="margin: 10px 0 0 0; color: #666; font-size: 16px;">
+              ${documentTypes.length} document${documentTypes.length > 1 ? 's require' : ' requires'} re-submission
+            </p>
+          </div>
+
+          <div style="background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+            <h2 style="margin-top: 0; color: #721c24;">Review Details</h2>
+            <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+              <tr style="border-bottom: 2px solid #e8b4b8;">
+                <td style="padding: 8px 12px; color: #721c24; font-weight: bold;">Document</td>
+                <td style="padding: 8px 12px; text-align: right; color: #721c24; font-weight: bold;">Status</td>
+              </tr>
+              ${docListHtml}
+            </table>
+            <div style="margin-top: 15px; padding: 12px; background-color: rgba(255,255,255,0.5); border-radius: 4px;">
+              <strong style="color: #721c24;">Reason:</strong>
+              <p style="margin: 5px 0 0 0; color: #721c24;">${rejectionReason}</p>
+            </div>
+          </div>
+
+          ${trackingNumber ? `<div style="background-color: #e7f3ff; border-left: 4px solid #0033A0; padding: 20px; margin-bottom: 20px; border-radius: 4px;">
+            <p style="margin: 0; color: #666;"><strong>Loan Tracking #:</strong> ${trackingNumber}</p>
+          </div>` : ''}
+
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 30px 0;">
+            <h3 style="margin-top: 0; color: #333;">What To Do Next</h3>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #666;">
+              <li style="margin-bottom: 8px;">Log in to your AmeriLend account</li>
+              <li style="margin-bottom: 8px;">Navigate to your document uploads</li>
+              <li style="margin-bottom: 8px;">Re-upload clear, legible copies of the required documents</li>
+              <li>Our team will review them as quickly as possible</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${COMPANY_INFO.website}/dashboard" style="background-color: #0033A0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">Re-Upload Documents</a>
+          </div>
+
+          <div style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 30px;">
+            <p style="margin: 0; color: #666; font-size: 13px;">
+              <strong>Need help?</strong><br>
+              Email: <a href="mailto:support@amerilendloan.com" style="color: #0033A0;">support@amerilendloan.com</a>
+            </p>
+          </div>
+
+          <p style="margin-top: 20px; color: #999; font-size: 12px; text-align: center;">This is an automated notification. Please do not reply to this email.</p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: email, subject, text, html });
+}
+
+/**
  * Send document approval notification to user
  */
 export async function sendDocumentApprovedEmail(

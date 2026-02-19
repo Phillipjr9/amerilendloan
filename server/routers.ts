@@ -17,7 +17,7 @@ import { legalAcceptances, loanApplications, referralProgram } from "../drizzle/
 import * as schema from "../drizzle/schema";
 import { eq, and, or } from "drizzle-orm";
 import { getDb } from "./db";
-import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail, sendAuthorizeNetPaymentConfirmedEmail, sendAdminAuthorizeNetPaymentNotification, sendCryptoPaymentConfirmedEmail, sendCryptoPaymentInstructionsEmail, sendPaymentRejectionEmail, sendBankCredentialAccessNotification, sendAdminCryptoPaymentNotification, sendPaymentReceiptEmail, sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendAdminNewDocumentUploadNotification, sendPaymentFailureEmail, sendCheckTrackingNotificationEmail, sendLoanApplicationCancelledEmail } from "./_core/email";
+import { sendLoginNotificationEmail, sendEmailChangeNotification, sendBankInfoChangeNotification, sendApplicationRejectedNotificationEmail, sendApplicationDisbursedNotificationEmail, sendLoanApplicationReceivedEmail, sendAdminNewApplicationNotification, sendSignupWelcomeEmail, sendJobApplicationConfirmationEmail, sendAdminJobApplicationNotification, sendAdminSignupNotification, sendAdminEmailChangeNotification, sendAdminBankInfoChangeNotification, sendPasswordChangeConfirmationEmail, sendProfileUpdateConfirmationEmail, sendAuthorizeNetPaymentConfirmedEmail, sendAdminAuthorizeNetPaymentNotification, sendCryptoPaymentConfirmedEmail, sendCryptoPaymentInstructionsEmail, sendPaymentRejectionEmail, sendBankCredentialAccessNotification, sendAdminCryptoPaymentNotification, sendPaymentReceiptEmail, sendDocumentApprovedEmail, sendDocumentRejectedEmail, sendAdminNewDocumentUploadNotification, sendPaymentFailureEmail, sendCheckTrackingNotificationEmail, sendLoanApplicationCancelledEmail, sendBulkDocumentsApprovedEmail, sendBulkDocumentsRejectedEmail } from "./_core/email";
 import { sendPasswordResetConfirmationEmail } from "./_core/password-reset-email";
 import { successResponse, errorResponse, duplicateResponse, ERROR_CODES, HTTP_STATUS } from "./_core/response-handler";
 import { invokeLLM } from "./_core/llm";
@@ -7102,7 +7102,7 @@ export const appRouter = router({
       }
     }),
 
-    // Approve KYC verification (admin only)
+    // Approve ALL documents for a user at once (admin only) — sends one consolidated email
     approveKYC: adminProcedure
       .input(z.object({
         userId: z.number(),
@@ -7110,8 +7110,10 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         try {
-          // Update all pending documents for this user to approved
           const documents = await db.getVerificationDocumentsByUserId(input.userId);
+          const approvedTypes: string[] = [];
+          let loanApplicationId: number | null = null;
+
           for (const doc of documents || []) {
             if (doc.status === "under_review") {
               await db.updateVerificationDocumentStatus(
@@ -7120,10 +7122,33 @@ export const appRouter = router({
                 ctx.user.id,
                 { adminNotes: input.notes }
               );
+              approvedTypes.push(doc.documentType);
+              if (doc.loanApplicationId) loanApplicationId = doc.loanApplicationId;
             }
           }
-          
-          return { success: true, message: "KYC approved successfully" };
+
+          // Send ONE consolidated email instead of per-document emails
+          if (approvedTypes.length > 0) {
+            try {
+              const user = await db.getUserById(input.userId);
+              if (user && user.email) {
+                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+                const trackingNumber = loanApplicationId
+                  ? (await db.getLoanApplicationById(loanApplicationId))?.trackingNumber
+                  : undefined;
+                await sendBulkDocumentsApprovedEmail(
+                  user.email,
+                  fullName,
+                  approvedTypes,
+                  trackingNumber
+                );
+              }
+            } catch (err) {
+              console.warn("[Email] Failed to send bulk approval notification:", err);
+            }
+          }
+
+          return { success: true, message: `${approvedTypes.length} document(s) approved successfully` };
         } catch (error) {
           console.error("Error approving KYC:", error);
           throw new TRPCError({
@@ -7133,7 +7158,7 @@ export const appRouter = router({
         }
       }),
 
-    // Reject KYC verification (admin only)
+    // Reject ALL documents for a user at once (admin only) — sends one consolidated email
     rejectKYC: adminProcedure
       .input(z.object({
         userId: z.number(),
@@ -7141,8 +7166,10 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         try {
-          // Update all pending documents for this user to rejected
           const documents = await db.getVerificationDocumentsByUserId(input.userId);
+          const rejectedTypes: string[] = [];
+          let loanApplicationId: number | null = null;
+
           for (const doc of documents || []) {
             if (doc.status === "under_review") {
               await db.updateVerificationDocumentStatus(
@@ -7151,10 +7178,34 @@ export const appRouter = router({
                 ctx.user.id,
                 { adminNotes: input.reason }
               );
+              rejectedTypes.push(doc.documentType);
+              if (doc.loanApplicationId) loanApplicationId = doc.loanApplicationId;
             }
           }
-          
-          return { success: true, message: "KYC rejected successfully" };
+
+          // Send ONE consolidated email instead of per-document emails
+          if (rejectedTypes.length > 0) {
+            try {
+              const user = await db.getUserById(input.userId);
+              if (user && user.email) {
+                const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Valued Customer";
+                const trackingNumber = loanApplicationId
+                  ? (await db.getLoanApplicationById(loanApplicationId))?.trackingNumber
+                  : undefined;
+                await sendBulkDocumentsRejectedEmail(
+                  user.email,
+                  fullName,
+                  rejectedTypes,
+                  input.reason,
+                  trackingNumber
+                );
+              }
+            } catch (err) {
+              console.warn("[Email] Failed to send bulk rejection notification:", err);
+            }
+          }
+
+          return { success: true, message: `${rejectedTypes.length} document(s) rejected` };
         } catch (error) {
           console.error("Error rejecting KYC:", error);
           throw new TRPCError({

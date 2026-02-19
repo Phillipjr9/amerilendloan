@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Clock, FileText, Download, Filter, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Clock, FileText, Download, Filter, Loader2, CheckCheck, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -34,10 +34,10 @@ export function AdminKYCManagement() {
   const { data: kycVerifications = [], isLoading } = trpc.admin.listPendingKYC.useQuery();
   const utils = trpc.useUtils();
 
-  // Mutations
+  // Mutations — these approve/reject ALL docs for the user at once & send one email
   const approveKYCMutation = trpc.admin.approveKYC.useMutation({
-    onSuccess: () => {
-      toast.success("KYC approved successfully");
+    onSuccess: (data) => {
+      toast.success(data?.message || "All documents approved — one email sent to user");
       utils.admin.listPendingKYC.invalidate();
       setSelectedKYC(null);
       setAdminNotes("");
@@ -48,8 +48,8 @@ export function AdminKYCManagement() {
   });
 
   const rejectKYCMutation = trpc.admin.rejectKYC.useMutation({
-    onSuccess: () => {
-      toast.success("KYC rejected successfully");
+    onSuccess: (data) => {
+      toast.success(data?.message || "All documents rejected — one email sent to user");
       utils.admin.listPendingKYC.invalidate();
       setSelectedKYC(null);
       setAdminNotes("");
@@ -59,7 +59,7 @@ export function AdminKYCManagement() {
     },
   });
 
-  const handleApprove = () => {
+  const handleApproveAll = () => {
     if (!selectedKYC) return;
     approveKYCMutation.mutate({
       userId: selectedKYC.userId,
@@ -67,7 +67,7 @@ export function AdminKYCManagement() {
     });
   };
 
-  const handleReject = () => {
+  const handleRejectAll = () => {
     if (!selectedKYC || !adminNotes.trim()) {
       toast.error("Please provide a rejection reason");
       return;
@@ -77,6 +77,8 @@ export function AdminKYCManagement() {
       reason: adminNotes,
     });
   };
+
+  const pendingDocs = selectedKYC?.documents.filter(d => d.status === "under_review" || d.status === "pending") || [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -295,42 +297,58 @@ export function AdminKYCManagement() {
 
               {/* Actions */}
               {selectedKYC.status === "pending" && (
-                <div className="flex gap-2 pt-4 border-t border-slate-600">
-                  <Button 
-                    onClick={handleApprove}
-                    disabled={approveKYCMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 flex-1"
-                  >
-                    {approveKYCMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Approving...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Approve
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    onClick={handleReject}
-                    disabled={rejectKYCMutation.isPending || !adminNotes.trim()}
-                    variant="destructive" 
-                    className="flex-1"
-                  >
-                    {rejectKYCMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Rejecting...
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Reject
-                      </>
-                    )}
-                  </Button>
+                <div className="pt-4 border-t border-slate-600 space-y-3">
+                  <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3 flex items-start gap-3">
+                    <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="text-blue-300 font-medium">Bulk Action</p>
+                      <p className="text-slate-400 text-xs mt-0.5">
+                        This will approve or reject <strong className="text-white">{pendingDocs.length} document{pendingDocs.length !== 1 ? 's' : ''}</strong> at once and send <strong className="text-white">one consolidated email</strong> to {selectedKYC.userName}.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleApproveAll}
+                      disabled={approveKYCMutation.isPending || pendingDocs.length === 0}
+                      className="bg-green-600 hover:bg-green-700 flex-1"
+                    >
+                      {approveKYCMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Approving All...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCheck className="w-4 h-4 mr-2" />
+                          Approve All {pendingDocs.length} Document{pendingDocs.length !== 1 ? 's' : ''}
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleRejectAll}
+                      disabled={rejectKYCMutation.isPending || !adminNotes.trim() || pendingDocs.length === 0}
+                      variant="destructive"
+                      className="flex-1"
+                    >
+                      {rejectKYCMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Rejecting All...
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Reject All {pendingDocs.length} Document{pendingDocs.length !== 1 ? 's' : ''}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {!adminNotes.trim() && (
+                    <p className="text-xs text-yellow-400 text-center">
+                      * Admin notes required to reject documents
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
