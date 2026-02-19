@@ -49,6 +49,7 @@ export default function EnhancedPaymentPage() {
   } | null>(null);
   const [txHash, setTxHash] = useState("");
   const [verifyingTx, setVerifyingTx] = useState(false);
+  const [currentPaymentId, setCurrentPaymentId] = useState<number | null>(null);
   const [paymentVerification, setPaymentVerification] = useState<PaymentVerificationState>({
     status: "pending",
     method: null,
@@ -92,6 +93,11 @@ export default function EnhancedPaymentPage() {
 
   const createPaymentMutation = trpc.payments.createIntent.useMutation({
     onSuccess: (data) => {
+      // Store the real paymentId from backend for confirm/verify calls
+      if (data.paymentId) {
+        setCurrentPaymentId(data.paymentId);
+      }
+
       if (paymentMethod === "crypto" && data.cryptoAddress) {
         setCryptoPaymentData({
           address: data.cryptoAddress!,
@@ -99,9 +105,20 @@ export default function EnhancedPaymentPage() {
           currency: selectedCrypto,
         });
         toast.success("Crypto payment address generated");
+      } else if (data.success && data.transactionId) {
+        // Card payment already completed by backend (Authorize.Net charges inline)
+        setAnimationStatus("success");
+        setTimeout(() => {
+          setPaymentVerification({
+            status: "confirmed",
+            method: "card",
+            transactionId: data.transactionId,
+            message: "\u2705 Card payment confirmed! Your processing fee has been paid.",
+          });
+          toast.success("Payment confirmed! Your loan is ready for disbursement.");
+        }, 1500);
       } else {
         toast.success("Payment initiated");
-        // For card payments, would redirect to payment processor
       }
     },
     onError: (error) => {
@@ -247,14 +264,16 @@ export default function EnhancedPaymentPage() {
   };
 
   const handleConfirmPayment = () => {
-    // In production, this would be called by a webhook
-    // For demo, we simulate payment confirmation
+    if (!currentPaymentId) {
+      toast.error("No payment in progress. Please initiate a payment first.");
+      return;
+    }
     setPaymentVerification({
       status: "verifying",
       method: "card",
       message: "Processing card payment...",
     });
-    confirmPaymentMutation.mutate({ paymentId: 1 }); // Mock payment ID
+    confirmPaymentMutation.mutate({ paymentId: currentPaymentId });
   };
 
   const handleVerifyCryptoPayment = async () => {
@@ -268,11 +287,16 @@ export default function EnhancedPaymentPage() {
       return;
     }
 
+    if (!currentPaymentId) {
+      toast.error("No payment in progress. Please initiate a crypto payment first.");
+      setVerifyingTx(false);
+      return;
+    }
+
     setVerifyingTx(true);
 
-    // Mock verification - in production, call backend Web3 verification
     verifyCryptoMutation.mutate({
-      paymentId: 1, // In production, use actual payment ID
+      paymentId: currentPaymentId,
       txHash,
     });
   };

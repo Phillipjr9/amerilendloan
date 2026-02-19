@@ -1833,8 +1833,8 @@ export default function Dashboard() {
             <CardContent>
               {loans && loans.filter(l => l.status === "disbursed").length > 0 ? (
                 loans.filter(l => l.status === "disbursed").map(loan => {
-                  const interestRate = (loan as any).interestRate || (loan as any).apr || 8.99;
-                  const loanTerm = (loan as any).termMonths ? (loan as any).termMonths / 12 : ((loan as any).loanType === 'short_term' ? 1 : 3);
+                  const interestRate = parseFloat((loan as any).estimatedApr) || parseFloat((loan as any).interestRate) || parseFloat((loan as any).apr) || 8.99;
+                  const loanTerm = (loan as any).offerTermMonths ? (loan as any).offerTermMonths / 12 : ((loan as any).termMonths ? (loan as any).termMonths / 12 : ((loan as any).loanType === 'short_term' ? 1 : 3));
                   const monthlyRate = (interestRate / 100) / 12;
                   const numPayments = Math.round(loanTerm * 12);
                   const loanAmount = (loan.approvedAmount || 0) / 100;
