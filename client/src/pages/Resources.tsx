@@ -13,57 +13,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
-
-const articles = [
-  {
-    icon: PiggyBank,
-    category: "Saving",
-    title: "5 Simple Ways to Build an Emergency Fund",
-    excerpt:
-      "Life happens. Here's how to start saving for the unexpected, even if you're living paycheck to paycheck.",
-    readTime: "4 min read",
-  },
-  {
-    icon: CreditCard,
-    category: "Credit",
-    title: "Understanding Your Credit Score: A Beginner's Guide",
-    excerpt:
-      "Your credit score affects more than you think. Learn what goes into it and how to improve yours over time.",
-    readTime: "6 min read",
-  },
-  {
-    icon: TrendingUp,
-    category: "Budgeting",
-    title: "The 50/30/20 Rule: A Simple Budget That Works",
-    excerpt:
-      "Stop guessing where your money goes. This proven budgeting method makes it easy to manage your finances.",
-    readTime: "5 min read",
-  },
-  {
-    icon: Shield,
-    category: "Protection",
-    title: "How to Spot and Avoid Loan Scams",
-    excerpt:
-      "Predatory lenders are everywhere. Here's what to watch for and how to protect yourself when borrowing.",
-    readTime: "4 min read",
-  },
-  {
-    icon: Lightbulb,
-    category: "Personal Loans",
-    title: "When Does a Personal Loan Make Sense?",
-    excerpt:
-      "Personal loans aren't for everyone. Learn when borrowing is a smart financial move and when to hold off.",
-    readTime: "5 min read",
-  },
-  {
-    icon: BookOpen,
-    category: "Debt Management",
-    title: "How to Pay Off Debt Faster: Strategies That Work",
-    excerpt:
-      "From the snowball method to balance transfers — practical strategies to become debt-free sooner.",
-    readTime: "7 min read",
-  },
-];
+import { articles } from "./ArticlePage";
+import FinancialNewsTicker from "@/components/FinancialNewsTicker";
 
 const tips = [
   "Always read the full loan agreement before signing.",
@@ -150,36 +101,48 @@ export default function Resources() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {articles.map((article) => (
-              <article
-                key={article.title}
-                className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow group cursor-pointer"
+              <Link
+                key={article.slug}
+                href={`/resources/${article.slug}`}
+                className="block"
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-[#C9A227]/10 rounded-xl flex items-center justify-center">
-                    <article.icon className="w-5 h-5 text-[#C9A227]" />
+                <article
+                  className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow group cursor-pointer h-full"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-[#C9A227]/10 rounded-xl flex items-center justify-center">
+                      <article.icon className="w-5 h-5 text-[#C9A227]" />
+                    </div>
+                    <span className="text-xs font-bold text-[#C9A227] uppercase tracking-wider">
+                      {article.category}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-[#C9A227] uppercase tracking-wider">
-                    {article.category}
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-[#0A2540] mb-2 group-hover:text-[#C9A227] transition-colors">
-                  {article.title}
-                </h3>
-                <p className="text-sm text-gray-500 leading-relaxed mb-4">{article.excerpt}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{article.readTime}</span>
-                  <span className="text-sm font-medium text-[#0A2540] flex items-center gap-1 group-hover:text-[#C9A227] transition-colors">
-                    Read More <ChevronRight className="w-4 h-4" />
-                  </span>
-                </div>
-              </article>
+                  <h3 className="text-lg font-bold text-[#0A2540] mb-2 group-hover:text-[#C9A227] transition-colors">
+                    {article.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed mb-4">{article.excerpt}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">{article.readTime}</span>
+                    <span className="text-sm font-medium text-[#0A2540] flex items-center gap-1 group-hover:text-[#C9A227] transition-colors">
+                      Read More <ChevronRight className="w-4 h-4" />
+                    </span>
+                  </div>
+                </article>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Quick Tips */}
+      {/* Live Financial News */}
       <section className="py-16 md:py-24 bg-gray-50">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <FinancialNewsTicker />
+        </div>
+      </section>
+
+      {/* Quick Tips */}
+      <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-4">Quick Money Tips</h2>

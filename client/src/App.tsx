@@ -49,6 +49,7 @@ import HowItWorksPage from "./pages/HowItWorks";
 import Rates from "./pages/Rates";
 import Contact from "./pages/Contact";
 import Resources from "./pages/Resources";
+import ArticlePage from "./pages/ArticlePage";
 
 function Router() {
   return (
@@ -97,6 +98,7 @@ function Router() {
       <Route path="/how-it-works" component={HowItWorksPage} />
       <Route path="/rates" component={Rates} />
       <Route path="/contact" component={Contact} />
+      <Route path="/resources/:slug" component={ArticlePage} />
       <Route path="/resources" component={Resources} />
       <Route path="/careers" component={Careers} />
       <Route path={"/payment-enhanced/:id"} component={EnhancedPaymentPage} />
