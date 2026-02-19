@@ -209,7 +209,7 @@ export async function verifyOTPForPasswordReset(
  * Send OTP via email using SendGrid
  */
 export async function sendOTPEmail(email: string, code: string, purpose: "signup" | "login" | "reset"): Promise<void> {
-  await sendEmailViaSendGrid(email, code, purpose as "signup" | "login");
+  await sendEmailViaSendGrid(email, code, purpose);
 }
 
 /**

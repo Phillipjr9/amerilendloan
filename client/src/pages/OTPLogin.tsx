@@ -51,7 +51,11 @@ export default function OTPLogin() {
   const [existingAccountInfo, setExistingAccountInfo] = useState<any>(null);
 
   const requestEmailCodeMutation = trpc.otp.requestCode.useMutation({
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      // Server returns the resolved email (in case user entered a username)
+      if (data.resolvedEmail) {
+        setPendingIdentifier(data.resolvedEmail);
+      }
       toast.success(isResetMode ? "Reset code sent to your email" : "Verification code sent to your email");
       setStep("code");
     },
@@ -219,8 +223,8 @@ export default function OTPLogin() {
       }
       passwordLoginMutation.mutate({ email: loginIdentifier.trim(), password: loginPassword });
     } else {
-      setPendingIdentifier(loginIdentifier);
-      requestEmailCodeMutation.mutate({ email: loginIdentifier, purpose: "login" });
+      setPendingIdentifier(loginIdentifier.trim());
+      requestEmailCodeMutation.mutate({ email: loginIdentifier.trim(), purpose: "login" });
     }
   };
 
@@ -284,9 +288,9 @@ export default function OTPLogin() {
       return;
     }
 
-    setPendingIdentifier(loginIdentifier);
+    setPendingIdentifier(loginIdentifier.trim());
     requestEmailCodeMutation.mutate({
-      email: loginIdentifier,
+      email: loginIdentifier.trim(),
       purpose: "reset",
     });
   };
@@ -310,7 +314,7 @@ export default function OTPLogin() {
     }
 
     updatePasswordMutation.mutate({
-      email: loginIdentifier,
+      email: pendingIdentifier || loginIdentifier.trim(),
       code: code,
       newPassword: newPassword,
     });

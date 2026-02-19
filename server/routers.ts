@@ -2399,13 +2399,26 @@ export const appRouter = router({
     // Request OTP code for signup or login via email
     requestCode: publicProcedure
       .input(z.object({
-        email: z.string().email(),
+        email: z.string().min(3), // accepts email or username
         purpose: z.enum(["signup", "login", "reset"]),
       }))
       .mutation(async ({ input }) => {
-        const code = await createOTP(input.email, input.purpose, "email");
-        await sendOTPEmail(input.email, code, input.purpose);
-        return { success: true };
+        let email = input.email.trim();
+        const isEmail = email.includes('@');
+
+        // If user entered a username, resolve it to their email
+        if (!isEmail) {
+          const user = await db.getUserByName(email);
+          if (!user || !user.email) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "No account found with that username" });
+          }
+          email = user.email;
+        }
+
+        const code = await createOTP(email, input.purpose, "email");
+        await sendOTPEmail(email, code, input.purpose);
+        // Return the resolved email so client can use it for verification
+        return { success: true, resolvedEmail: email };
       }),
 
     // Request OTP code for signup or login via phone
@@ -2535,14 +2548,26 @@ export const appRouter = router({
     // Reset password after OTP verification (public - no auth required)
     resetPasswordWithOTP: publicProcedure
       .input(z.object({
-        email: z.string().email(),
+        email: z.string().min(3), // accepts email or username
         code: z.string().length(6),
         newPassword: z.string().min(8),
       }))
       .mutation(async ({ input }) => {
+        let email = input.email.trim();
+        const isEmail = email.includes('@');
+
+        // If user entered a username, resolve it to their email
+        if (!isEmail) {
+          const userByName = await db.getUserByName(email);
+          if (!userByName || !userByName.email) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "No account found with that username" });
+          }
+          email = userByName.email;
+        }
+
         // Verify the OTP code for password reset
         // Use verifyOTPForPasswordReset which accepts already-verified codes from the code verification step
-        const result = await verifyOTPForPasswordReset(input.email, input.code);
+        const result = await verifyOTPForPasswordReset(email, input.code);
         if (!result.valid) {
           throw new TRPCError({ 
             code: "BAD_REQUEST", 
@@ -2551,7 +2576,7 @@ export const appRouter = router({
         }
 
         // Get user by email
-        const user = await db.getUserByEmail(input.email);
+        const user = await db.getUserByEmail(email);
         if (!user) {
           throw new TRPCError({
             code: "NOT_FOUND",
