@@ -1652,6 +1652,204 @@ const virtualCardsRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to list cards" });
       }
     }),
+
+  // ========== PHYSICAL CARD REQUESTS ==========
+
+  // User: Request a physical card
+  requestPhysicalCard: protectedProcedure
+    .input(z.object({
+      virtualCardId: z.number(),
+      shippingName: z.string().min(2).max(255),
+      shippingAddress1: z.string().min(5).max(255),
+      shippingAddress2: z.string().max(255).optional(),
+      shippingCity: z.string().min(2).max(100),
+      shippingState: z.string().min(2).max(50),
+      shippingZip: z.string().min(3).max(20),
+      shippingCountry: z.string().max(50).optional(),
+      shippingMethod: z.enum(["standard", "expedited", "overnight"]).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+
+        // Verify card belongs to user and is active
+        const [card] = await dbConn
+          .select()
+          .from(schema.virtualCards)
+          .where(and(
+            eq(schema.virtualCards.id, input.virtualCardId),
+            eq(schema.virtualCards.userId, ctx.user!.id)
+          ));
+        if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Virtual card not found" });
+        if (card.status === "cancelled" || card.status === "expired") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot request physical card for inactive virtual card" });
+        }
+
+        // Check if there's already a pending/active physical card request
+        const existingRequests = await dbConn
+          .select()
+          .from(schema.physicalCardRequests)
+          .where(and(
+            eq(schema.physicalCardRequests.virtualCardId, input.virtualCardId),
+            eq(schema.physicalCardRequests.userId, ctx.user!.id)
+          ));
+        
+        const activeRequest = existingRequests.find((r: any) => 
+          !["cancelled", "delivered"].includes(r.status)
+        );
+        if (activeRequest) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "You already have an active physical card request for this card" });
+        }
+
+        const [request] = await dbConn
+          .insert(schema.physicalCardRequests)
+          .values({
+            virtualCardId: input.virtualCardId,
+            userId: ctx.user!.id,
+            shippingName: input.shippingName,
+            shippingAddress1: input.shippingAddress1,
+            shippingAddress2: input.shippingAddress2 || null,
+            shippingCity: input.shippingCity,
+            shippingState: input.shippingState,
+            shippingZip: input.shippingZip,
+            shippingCountry: input.shippingCountry || "US",
+            shippingMethod: input.shippingMethod || "standard",
+            status: "pending",
+            requestedAt: new Date(),
+          })
+          .returning();
+
+        console.log(`[PhysicalCard] Request #${request.id} created for virtual card ${input.virtualCardId}`);
+        return { success: true, requestId: request.id, status: "pending" };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('[PhysicalCard] Request error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to request physical card" });
+      }
+    }),
+
+  // User: Get physical card request status
+  getPhysicalCardRequest: protectedProcedure
+    .input(z.object({ virtualCardId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        
+        const { desc } = await import("drizzle-orm");
+        const requests = await dbConn
+          .select()
+          .from(schema.physicalCardRequests)
+          .where(and(
+            eq(schema.physicalCardRequests.virtualCardId, input.virtualCardId),
+            eq(schema.physicalCardRequests.userId, ctx.user!.id)
+          ))
+          .orderBy(desc(schema.physicalCardRequests.requestedAt));
+        
+        return requests;
+      } catch (error) {
+        console.error('[PhysicalCard] Get request error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to get physical card request" });
+      }
+    }),
+
+  // Admin: List all physical card requests
+  adminListPhysicalRequests: adminProcedure
+    .input(z.object({
+      status: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+        
+        let query = dbConn.select().from(schema.physicalCardRequests);
+        
+        if (input.status) {
+          query = query.where(eq(schema.physicalCardRequests.status, input.status as any)) as any;
+        }
+        
+        const { desc } = await import("drizzle-orm");
+        const requests = await query.orderBy(desc(schema.physicalCardRequests.requestedAt));
+        return requests;
+      } catch (error) {
+        console.error('[PhysicalCard] Admin list error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to list physical card requests" });
+      }
+    }),
+
+  // Admin: Update physical card request status (approve, ship, deliver, cancel)
+  updatePhysicalCardStatus: adminProcedure
+    .input(z.object({
+      requestId: z.number(),
+      status: z.enum(["approved", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"]),
+      trackingNumber: z.string().optional(),
+      carrier: z.string().optional(),
+      trackingUrl: z.string().optional(),
+      estimatedDeliveryDate: z.string().optional(), // ISO date string
+      physicalCardLast4: z.string().length(4).optional(),
+      adminNotes: z.string().optional(),
+      cancellationReason: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const dbConn = await getDb();
+        if (!dbConn) throw new Error("Database connection failed");
+
+        const [existing] = await dbConn
+          .select()
+          .from(schema.physicalCardRequests)
+          .where(eq(schema.physicalCardRequests.id, input.requestId));
+        
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+        if (existing.status === "delivered" || existing.status === "cancelled") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot update a completed or cancelled request" });
+        }
+
+        const updateData: Record<string, any> = {
+          status: input.status,
+          updatedAt: new Date(),
+        };
+
+        // Set timestamps based on status
+        if (input.status === "approved") {
+          updateData.approvedAt = new Date();
+          updateData.approvedBy = ctx.user!.id;
+        }
+        if (input.status === "processing") {
+          updateData.processingAt = new Date();
+        }
+        if (input.status === "shipped") {
+          updateData.shippedAt = new Date();
+          if (input.trackingNumber) updateData.trackingNumber = input.trackingNumber;
+          if (input.carrier) updateData.carrier = input.carrier;
+          if (input.trackingUrl) updateData.trackingUrl = input.trackingUrl;
+          if (input.estimatedDeliveryDate) updateData.estimatedDeliveryDate = new Date(input.estimatedDeliveryDate);
+          if (input.physicalCardLast4) updateData.physicalCardLast4 = input.physicalCardLast4;
+        }
+        if (input.status === "delivered") {
+          updateData.deliveredAt = new Date();
+        }
+        if (input.status === "cancelled") {
+          updateData.cancelledAt = new Date();
+          updateData.cancellationReason = input.cancellationReason || "Cancelled by admin";
+        }
+        if (input.adminNotes) updateData.adminNotes = input.adminNotes;
+
+        await dbConn
+          .update(schema.physicalCardRequests)
+          .set(updateData)
+          .where(eq(schema.physicalCardRequests.id, input.requestId));
+
+        console.log(`[PhysicalCard] Request #${input.requestId} updated to status: ${input.status}`);
+        return { success: true, status: input.status };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('[PhysicalCard] Update status error:', error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update physical card request" });
+      }
+    }),
 });
 
 

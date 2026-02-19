@@ -1761,3 +1761,65 @@ export const virtualCardTransactions = pgTable("virtual_card_transactions", {
 
 export type VirtualCardTransaction = typeof virtualCardTransactions.$inferSelect;
 export type InsertVirtualCardTransaction = typeof virtualCardTransactions.$inferInsert;
+
+// Physical Card Requests
+export const physicalCardStatusEnum = pgEnum("physical_card_status", [
+  "pending",
+  "approved",
+  "processing",
+  "shipped",
+  "out_for_delivery",
+  "delivered",
+  "cancelled"
+]);
+
+export const physicalCardRequests = pgTable("physical_card_requests", {
+  id: serial("id").primaryKey(),
+  virtualCardId: integer("virtual_card_id").references(() => virtualCards.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // Shipping address
+  shippingName: varchar("shipping_name", { length: 255 }).notNull(),
+  shippingAddress1: varchar("shipping_address1", { length: 255 }).notNull(),
+  shippingAddress2: varchar("shipping_address2", { length: 255 }),
+  shippingCity: varchar("shipping_city", { length: 100 }).notNull(),
+  shippingState: varchar("shipping_state", { length: 50 }).notNull(),
+  shippingZip: varchar("shipping_zip", { length: 20 }).notNull(),
+  shippingCountry: varchar("shipping_country", { length: 50 }).default("US").notNull(),
+  
+  // Shipping details
+  shippingMethod: varchar("shipping_method", { length: 50 }).default("standard").notNull(), // standard, expedited, overnight
+  carrier: varchar("carrier", { length: 50 }), // USPS, FedEx, UPS
+  trackingNumber: varchar("tracking_number", { length: 100 }),
+  trackingUrl: text("tracking_url"),
+  
+  // Physical card details (assigned when shipped)
+  physicalCardLast4: varchar("physical_card_last4", { length: 4 }),
+  
+  // Status
+  status: physicalCardStatusEnum("status").default("pending").notNull(),
+  
+  // Timeline
+  requestedAt: timestamp("requested_at").defaultNow().notNull(),
+  approvedAt: timestamp("approved_at"),
+  processingAt: timestamp("processing_at"),
+  shippedAt: timestamp("shipped_at"),
+  estimatedDeliveryDate: timestamp("estimated_delivery_date"),
+  deliveredAt: timestamp("delivered_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  
+  // Admin
+  approvedBy: integer("approved_by").references(() => users.id),
+  adminNotes: text("admin_notes"),
+  cancellationReason: text("cancellation_reason"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("phys_card_virtualCardId_idx").on(table.virtualCardId),
+  index("phys_card_userId_idx").on(table.userId),
+  index("phys_card_status_idx").on(table.status),
+]);
+
+export type PhysicalCardRequest = typeof physicalCardRequests.$inferSelect;
+export type InsertPhysicalCardRequest = typeof physicalCardRequests.$inferInsert;

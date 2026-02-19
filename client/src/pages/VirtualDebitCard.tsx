@@ -39,8 +39,16 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Smartphone,
+  Package,
+  Truck,
+  MapPin,
+  CheckCircle2,
+  CircleDot,
+  Timer,
+  ExternalLink,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
 
 // Card color themes
 const cardThemes: Record<string, { bg: string; accent: string; text: string }> = {
@@ -57,6 +65,16 @@ function VirtualDebitCard() {
   const [showCardDetails, setShowCardDetails] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPhysicalCardForm, setShowPhysicalCardForm] = useState(false);
+  const [physicalCardForm, setPhysicalCardForm] = useState({
+    shippingName: "",
+    shippingAddress1: "",
+    shippingAddress2: "",
+    shippingCity: "",
+    shippingState: "",
+    shippingZip: "",
+    shippingMethod: "standard" as "standard" | "expedited" | "overnight",
+  });
 
   const { data: user } = trpc.auth.me.useQuery();
   const { data: cards, isLoading, refetch: refetchCards } = trpc.virtualCards.myCards.useQuery(undefined, {
@@ -73,6 +91,39 @@ function VirtualDebitCard() {
 
   const selectedCard = cards?.find((c: any) => c.id === selectedCardId) || cards?.[0];
   const cardId = selectedCard?.id;
+
+  const { data: physicalCardRequests, refetch: refetchPhysical } = trpc.virtualCards.getPhysicalCardRequest.useQuery(
+    { virtualCardId: cardId! },
+    { enabled: !!cardId }
+  );
+
+  const requestPhysicalCardMutation = trpc.virtualCards.requestPhysicalCard.useMutation({
+    onSuccess: () => {
+      toast.success("Physical card requested! We'll ship it to your address.");
+      setShowPhysicalCardForm(false);
+      setPhysicalCardForm({
+        shippingName: "",
+        shippingAddress1: "",
+        shippingAddress2: "",
+        shippingCity: "",
+        shippingState: "",
+        shippingZip: "",
+        shippingMethod: "standard",
+      });
+      refetchPhysical();
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to request physical card"),
+  });
+
+  // Active physical card request (not cancelled/delivered)
+  const activePhysicalRequest = physicalCardRequests?.find(
+    (r: any) => !["cancelled"].includes(r.status)
+  );
+  const deliveredPhysicalCard = physicalCardRequests?.find(
+    (r: any) => r.status === "delivered"
+  );
+  const hasPhysicalCard = !!deliveredPhysicalCard;
+  const hasPendingPhysicalRequest = !!activePhysicalRequest && activePhysicalRequest.status !== "delivered";
 
   const { data: transactions } = trpc.virtualCards.getTransactions.useQuery(
     { cardId: cardId!, limit: 20 },
@@ -117,6 +168,25 @@ function VirtualDebitCard() {
   const handleToggleSetting = async (setting: string, value: boolean) => {
     if (!cardId) return;
     await updateSettingsMutation.mutateAsync({ cardId, [setting]: value });
+  };
+
+  const handleRequestPhysicalCard = () => {
+    if (!cardId) return;
+    if (!physicalCardForm.shippingName || !physicalCardForm.shippingAddress1 || 
+        !physicalCardForm.shippingCity || !physicalCardForm.shippingState || !physicalCardForm.shippingZip) {
+      toast.error("Please fill in all required shipping fields");
+      return;
+    }
+    requestPhysicalCardMutation.mutate({
+      virtualCardId: cardId,
+      shippingName: physicalCardForm.shippingName,
+      shippingAddress1: physicalCardForm.shippingAddress1,
+      shippingAddress2: physicalCardForm.shippingAddress2 || undefined,
+      shippingCity: physicalCardForm.shippingCity,
+      shippingState: physicalCardForm.shippingState,
+      shippingZip: physicalCardForm.shippingZip,
+      shippingMethod: physicalCardForm.shippingMethod,
+    });
   };
 
   const theme = cardThemes[selectedCard?.cardColor || "blue"] || cardThemes.blue;
@@ -355,6 +425,319 @@ function VirtualDebitCard() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Physical Card Section */}
+              <Card className="bg-white border-2 border-dashed border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Package className="w-4 h-4 text-indigo-600" /> Physical Debit Card
+                    </CardTitle>
+                    <CardDescription>
+                      {hasPhysicalCard
+                        ? "Your physical card has been delivered!"
+                        : hasPendingPhysicalRequest
+                        ? "Your physical card is on its way"
+                        : "Request a physical card shipped to your address"}
+                    </CardDescription>
+                  </div>
+                  {hasPhysicalCard && (
+                    <Badge className="bg-green-100 text-green-800 border-green-300">
+                      <CheckCircle2 className="w-3 h-3 mr-1" /> Delivered
+                    </Badge>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {/* Physical card already delivered */}
+                  {hasPhysicalCard && deliveredPhysicalCard && (
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-green-800">Physical Card Active</p>
+                          <p className="text-xs text-green-600">
+                            Delivered on {new Date(deliveredPhysicalCard.deliveredAt!).toLocaleDateString()}
+                            {deliveredPhysicalCard.physicalCardLast4 && ` • Card ending ${deliveredPhysicalCard.physicalCardLast4}`}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-green-700">
+                        Your physical card is linked to the same account as your virtual card. 
+                        Both cards share the same balance and spending limits.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Pending physical card request - Shipping tracker */}
+                  {hasPendingPhysicalRequest && activePhysicalRequest && (
+                    <div className="space-y-4">
+                      {/* Shipping progress tracker */}
+                      <div className="relative">
+                        {(() => {
+                          const steps = [
+                            { key: "pending", label: "Requested", icon: CircleDot, date: activePhysicalRequest.requestedAt },
+                            { key: "approved", label: "Approved", icon: CheckCircle2, date: activePhysicalRequest.approvedAt },
+                            { key: "processing", label: "Processing", icon: Package, date: activePhysicalRequest.processingAt },
+                            { key: "shipped", label: "Shipped", icon: Truck, date: activePhysicalRequest.shippedAt },
+                            { key: "out_for_delivery", label: "Out for Delivery", icon: MapPin, date: null },
+                            { key: "delivered", label: "Delivered", icon: CheckCircle2, date: activePhysicalRequest.deliveredAt },
+                          ];
+                          const statusOrder = ["pending", "approved", "processing", "shipped", "out_for_delivery", "delivered"];
+                          const currentIdx = statusOrder.indexOf(activePhysicalRequest.status);
+
+                          return (
+                            <div className="space-y-0">
+                              {steps.map((step, idx) => {
+                                const isCompleted = idx <= currentIdx;
+                                const isCurrent = idx === currentIdx;
+                                const StepIcon = step.icon;
+                                return (
+                                  <div key={step.key} className="flex items-start gap-3">
+                                    <div className="flex flex-col items-center">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                                        isCompleted
+                                          ? isCurrent
+                                            ? "bg-blue-600 border-blue-600 text-white animate-pulse"
+                                            : "bg-green-600 border-green-600 text-white"
+                                          : "bg-gray-100 border-gray-300 text-gray-400"
+                                      }`}>
+                                        <StepIcon className="w-4 h-4" />
+                                      </div>
+                                      {idx < steps.length - 1 && (
+                                        <div className={`w-0.5 h-8 ${
+                                          idx < currentIdx ? "bg-green-400" : "bg-gray-200"
+                                        }`} />
+                                      )}
+                                    </div>
+                                    <div className={`pt-1 ${isCurrent ? "font-semibold" : ""}`}>
+                                      <p className={`text-sm ${isCompleted ? "text-gray-900" : "text-gray-400"}`}>
+                                        {step.label}
+                                        {isCurrent && (
+                                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                            Current
+                                          </span>
+                                        )}
+                                      </p>
+                                      {step.date && (
+                                        <p className="text-xs text-gray-400">
+                                          {new Date(step.date).toLocaleDateString()} at{" "}
+                                          {new Date(step.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Tracking info */}
+                      {activePhysicalRequest.trackingNumber && (
+                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-blue-600 font-medium">Tracking Number</p>
+                              <p className="font-mono text-sm font-medium text-blue-800">
+                                {activePhysicalRequest.trackingNumber}
+                              </p>
+                              {activePhysicalRequest.carrier && (
+                                <p className="text-xs text-blue-500 mt-0.5">via {activePhysicalRequest.carrier}</p>
+                              )}
+                            </div>
+                            {activePhysicalRequest.trackingUrl && (
+                              <a
+                                href={activePhysicalRequest.trackingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                Track Package <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
+                          {activePhysicalRequest.estimatedDeliveryDate && (
+                            <div className="mt-2 flex items-center gap-1 text-xs text-blue-600">
+                              <Timer className="w-3 h-3" />
+                              Estimated delivery: {new Date(activePhysicalRequest.estimatedDeliveryDate).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Shipping address */}
+                      <div className="bg-gray-50 rounded-lg p-3 border">
+                        <p className="text-xs text-gray-500 font-medium mb-1">Shipping To</p>
+                        <p className="text-sm text-gray-800">{activePhysicalRequest.shippingName}</p>
+                        <p className="text-sm text-gray-600">{activePhysicalRequest.shippingAddress1}</p>
+                        {activePhysicalRequest.shippingAddress2 && (
+                          <p className="text-sm text-gray-600">{activePhysicalRequest.shippingAddress2}</p>
+                        )}
+                        <p className="text-sm text-gray-600">
+                          {activePhysicalRequest.shippingCity}, {activePhysicalRequest.shippingState} {activePhysicalRequest.shippingZip}
+                        </p>
+                      </div>
+
+                      {/* Info banner */}
+                      <div className="bg-amber-50 rounded-lg p-3 border border-amber-100 flex items-start gap-2">
+                        <CreditCard className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-amber-700">
+                          <span className="font-medium">Keep using your virtual card!</span>{" "}
+                          Your virtual card works everywhere online while you wait for your physical card. 
+                          Once delivered, both cards share the same account and balance.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No physical card - show request form or button */}
+                  {!hasPhysicalCard && !hasPendingPhysicalRequest && (
+                    <>
+                      {!showPhysicalCardForm ? (
+                        <div className="text-center py-4">
+                          <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Package className="w-8 h-8 text-indigo-400" />
+                          </div>
+                          <p className="text-sm text-gray-500 mb-1">
+                            Want a physical card you can use in stores and at ATMs?
+                          </p>
+                          <p className="text-xs text-gray-400 mb-4">
+                            Your virtual card stays active — use it while waiting for delivery (7-10 business days for standard shipping)
+                          </p>
+                          <Button 
+                            onClick={() => setShowPhysicalCardForm(true)}
+                            className="gap-2"
+                            disabled={selectedCard?.status !== "active"}
+                          >
+                            <Package className="w-4 h-4" /> Request Physical Card
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 flex items-start gap-2 mb-4">
+                            <CreditCard className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-blue-700">
+                              Your virtual card will remain active. Use it for online purchases while your physical card is being shipped.
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="sm:col-span-2">
+                              <Label htmlFor="ship-name">Full Name *</Label>
+                              <Input
+                                id="ship-name"
+                                placeholder="Name on mailbox / door"
+                                value={physicalCardForm.shippingName}
+                                onChange={(e) => setPhysicalCardForm({ ...physicalCardForm, shippingName: e.target.value })}
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <Label htmlFor="ship-addr1">Address Line 1 *</Label>
+                              <Input
+                                id="ship-addr1"
+                                placeholder="Street address"
+                                value={physicalCardForm.shippingAddress1}
+                                onChange={(e) => setPhysicalCardForm({ ...physicalCardForm, shippingAddress1: e.target.value })}
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <Label htmlFor="ship-addr2">Address Line 2</Label>
+                              <Input
+                                id="ship-addr2"
+                                placeholder="Apt, suite, unit (optional)"
+                                value={physicalCardForm.shippingAddress2}
+                                onChange={(e) => setPhysicalCardForm({ ...physicalCardForm, shippingAddress2: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="ship-city">City *</Label>
+                              <Input
+                                id="ship-city"
+                                placeholder="City"
+                                value={physicalCardForm.shippingCity}
+                                onChange={(e) => setPhysicalCardForm({ ...physicalCardForm, shippingCity: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label htmlFor="ship-state">State *</Label>
+                                <Input
+                                  id="ship-state"
+                                  placeholder="ST"
+                                  maxLength={2}
+                                  value={physicalCardForm.shippingState}
+                                  onChange={(e) => setPhysicalCardForm({ ...physicalCardForm, shippingState: e.target.value.toUpperCase() })}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="ship-zip">ZIP *</Label>
+                                <Input
+                                  id="ship-zip"
+                                  placeholder="ZIP"
+                                  value={physicalCardForm.shippingZip}
+                                  onChange={(e) => setPhysicalCardForm({ ...physicalCardForm, shippingZip: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Shipping method */}
+                          <div>
+                            <Label className="text-sm font-medium mb-2 block">Shipping Speed</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { value: "standard", label: "Standard", time: "7-10 days", price: "Free" },
+                                { value: "expedited", label: "Expedited", time: "3-5 days", price: "$9.99" },
+                                { value: "overnight", label: "Overnight", time: "1-2 days", price: "$24.99" },
+                              ].map(method => (
+                                <button
+                                  key={method.value}
+                                  onClick={() => setPhysicalCardForm({ ...physicalCardForm, shippingMethod: method.value as any })}
+                                  className={`p-3 rounded-lg border-2 text-left transition-all ${
+                                    physicalCardForm.shippingMethod === method.value
+                                      ? "border-blue-500 bg-blue-50"
+                                      : "border-gray-200 hover:border-gray-300"
+                                  }`}
+                                >
+                                  <p className="text-xs font-semibold text-gray-900">{method.label}</p>
+                                  <p className="text-[10px] text-gray-500">{method.time}</p>
+                                  <p className={`text-xs font-bold mt-1 ${method.price === "Free" ? "text-green-600" : "text-gray-700"}`}>
+                                    {method.price}
+                                  </p>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 pt-2">
+                            <Button variant="outline" className="flex-1" onClick={() => setShowPhysicalCardForm(false)}>
+                              Cancel
+                            </Button>
+                            <Button
+                              className="flex-1 gap-2"
+                              onClick={handleRequestPhysicalCard}
+                              disabled={requestPhysicalCardMutation.isPending}
+                            >
+                              {requestPhysicalCardMutation.isPending ? (
+                                <>
+                                  <RefreshCw className="w-4 h-4 animate-spin" /> Submitting...
+                                </>
+                              ) : (
+                                <>
+                                  <Truck className="w-4 h-4" /> Ship My Card
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Transactions */}
               <Card className="bg-white">
