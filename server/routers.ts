@@ -9094,6 +9094,275 @@ const autoPayRouter = router({
         });
       }
     }),
+
+  // Automation Rules Router (Admin)
+  automationRules: router({
+    getAll: adminProcedure
+      .query(async () => {
+        try {
+          const rules = await db.getAutomationRules();
+          return successResponse(rules.map((r: any) => ({
+            ...r,
+            conditions: JSON.parse(r.conditions || '[]'),
+            action: JSON.parse(r.action || '{}'),
+          })));
+        } catch (error) {
+          console.error('[AutomationRules] Get all error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to fetch automation rules"
+          });
+        }
+      }),
+
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        enabled: z.boolean(),
+        type: z.string(),
+        conditions: z.array(z.object({
+          field: z.string(),
+          operator: z.string(),
+          value: z.string(),
+        })),
+        action: z.object({
+          type: z.string(),
+          value: z.string(),
+        }),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const rule = await db.createAutomationRule({
+            name: input.name,
+            enabled: input.enabled,
+            type: input.type,
+            conditions: JSON.stringify(input.conditions),
+            action: JSON.stringify(input.action),
+            createdBy: ctx.user.id,
+          });
+          return successResponse(rule);
+        } catch (error) {
+          console.error('[AutomationRules] Create error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create automation rule"
+          });
+        }
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        enabled: z.boolean().optional(),
+        type: z.string().optional(),
+        conditions: z.array(z.object({
+          field: z.string(),
+          operator: z.string(),
+          value: z.string(),
+        })).optional(),
+        action: z.object({
+          type: z.string(),
+          value: z.string(),
+        }).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const updateData: any = {};
+          if (input.name !== undefined) updateData.name = input.name;
+          if (input.enabled !== undefined) updateData.enabled = input.enabled;
+          if (input.type !== undefined) updateData.type = input.type;
+          if (input.conditions !== undefined) updateData.conditions = JSON.stringify(input.conditions);
+          if (input.action !== undefined) updateData.action = JSON.stringify(input.action);
+
+          await db.updateAutomationRule(input.id, updateData);
+          return successResponse({ message: "Rule updated" });
+        } catch (error) {
+          console.error('[AutomationRules] Update error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update automation rule"
+          });
+        }
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        try {
+          await db.deleteAutomationRule(input.id);
+          return successResponse({ message: "Rule deleted" });
+        } catch (error) {
+          console.error('[AutomationRules] Delete error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to delete automation rule"
+          });
+        }
+      }),
+  }),
+
+  // Document Download Router
+  documents: router({
+    generate: protectedProcedure
+      .input(z.object({
+        loanId: z.number(),
+        documentType: z.enum(["loan_agreement", "payment_receipt", "disbursement_statement", "repayment_schedule"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const result = await db.getLoanApplicationForDocument(input.loanId, ctx.user.id);
+          if (!result) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Loan application not found"
+            });
+          }
+
+          const { loan, user } = result;
+          const now = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          const userName = user?.name || 'N/A';
+          const userEmail = user?.email || 'N/A';
+          const approvedAmount = loan.approvedAmount ? `$${(loan.approvedAmount / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'N/A';
+          const trackingNumber = loan.trackingNumber || `LOAN-${loan.id}`;
+
+          let content = '';
+          let filename = '';
+
+          switch (input.documentType) {
+            case "loan_agreement":
+              filename = `Loan_Agreement_${trackingNumber}.txt`;
+              content = [
+                `AMERILEND FINANCIAL - LOAN AGREEMENT`,
+                `======================================`,
+                ``,
+                `Date: ${now}`,
+                `Tracking Number: ${trackingNumber}`,
+                `Borrower: ${userName}`,
+                `Email: ${userEmail}`,
+                ``,
+                `LOAN DETAILS`,
+                `─────────────────────────────────`,
+                `Approved Amount: ${approvedAmount}`,
+                `Interest Rate: ${loan.interestRate ? `${loan.interestRate}%` : 'N/A'}`,
+                `Loan Term: ${loan.loanTerm || 'N/A'} months`,
+                `Purpose: ${loan.loanPurpose || 'N/A'}`,
+                `Status: ${loan.status}`,
+                ``,
+                `TERMS AND CONDITIONS`,
+                `─────────────────────────────────`,
+                `1. The borrower agrees to repay the principal amount plus interest.`,
+                `2. Payments are due on the agreed-upon schedule.`,
+                `3. Late payments may result in additional fees.`,
+                `4. Early repayment is permitted without penalty.`,
+                `5. This agreement is governed by applicable federal and state laws.`,
+                ``,
+                `By accepting this loan, you agree to these terms and conditions.`,
+                ``,
+                `© ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+              ].join('\n');
+              break;
+
+            case "payment_receipt":
+              filename = `Payment_Receipt_${trackingNumber}.txt`;
+              content = [
+                `AMERILEND FINANCIAL - PAYMENT RECEIPT`,
+                `=======================================`,
+                ``,
+                `Date: ${now}`,
+                `Tracking Number: ${trackingNumber}`,
+                `Borrower: ${userName}`,
+                ``,
+                `PAYMENT DETAILS`,
+                `─────────────────────────────────`,
+                `Loan Amount: ${approvedAmount}`,
+                `Processing Fee: ${loan.processingFeeAmount ? `$${(loan.processingFeeAmount / 100).toFixed(2)}` : 'N/A'}`,
+                `Payment Status: Confirmed`,
+                ``,
+                `This receipt confirms your payment has been received and processed.`,
+                `Please keep this document for your records.`,
+                ``,
+                `© ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+              ].join('\n');
+              break;
+
+            case "disbursement_statement":
+              filename = `Disbursement_Statement_${trackingNumber}.txt`;
+              content = [
+                `AMERILEND FINANCIAL - DISBURSEMENT STATEMENT`,
+                `============================================`,
+                ``,
+                `Date: ${now}`,
+                `Tracking Number: ${trackingNumber}`,
+                `Borrower: ${userName}`,
+                ``,
+                `DISBURSEMENT DETAILS`,
+                `─────────────────────────────────`,
+                `Approved Loan Amount: ${approvedAmount}`,
+                `Processing Fee: ${loan.processingFeeAmount ? `$${(loan.processingFeeAmount / 100).toFixed(2)}` : 'N/A'}`,
+                `Net Disbursement: ${loan.approvedAmount ? `$${((loan.approvedAmount - (loan.processingFeeAmount || 0)) / 100).toFixed(2)}` : 'N/A'}`,
+                `Disbursement Method: Direct Deposit`,
+                `Status: ${loan.status === 'disbursed' ? 'Completed' : 'Pending'}`,
+                ``,
+                `Funds have been transferred to your designated bank account.`,
+                `Please allow 1-3 business days for the transfer to complete.`,
+                ``,
+                `© ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+              ].join('\n');
+              break;
+
+            case "repayment_schedule":
+              filename = `Repayment_Schedule_${trackingNumber}.txt`;
+              const monthlyPayment = loan.approvedAmount && loan.loanTerm
+                ? (loan.approvedAmount / loan.loanTerm / 100).toFixed(2)
+                : 'N/A';
+              const scheduleLines = [];
+              if (loan.loanTerm && loan.approvedAmount) {
+                for (let i = 1; i <= Math.min(loan.loanTerm, 36); i++) {
+                  const dueDate = new Date();
+                  dueDate.setMonth(dueDate.getMonth() + i);
+                  scheduleLines.push(
+                    `  ${String(i).padStart(2, ' ')}. ${dueDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}    $${monthlyPayment}`
+                  );
+                }
+              }
+              content = [
+                `AMERILEND FINANCIAL - REPAYMENT SCHEDULE`,
+                `=========================================`,
+                ``,
+                `Date: ${now}`,
+                `Tracking Number: ${trackingNumber}`,
+                `Borrower: ${userName}`,
+                ``,
+                `LOAN SUMMARY`,
+                `─────────────────────────────────`,
+                `Total Loan Amount: ${approvedAmount}`,
+                `Loan Term: ${loan.loanTerm || 'N/A'} months`,
+                `Monthly Payment: $${monthlyPayment}`,
+                ``,
+                `PAYMENT SCHEDULE`,
+                `─────────────────────────────────`,
+                `  #   Due Date              Amount`,
+                ...scheduleLines,
+                ``,
+                `Note: Payments are due by the date listed. Late payments may incur fees.`,
+                ``,
+                `© ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+              ].join('\n');
+              break;
+          }
+
+          return successResponse({ content, filename, mimeType: 'text/plain' });
+        } catch (error: any) {
+          if (error instanceof TRPCError) throw error;
+          console.error('[Documents] Generate error:', error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to generate document"
+          });
+        }
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

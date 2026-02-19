@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Edit2, Save, X } from "lucide-react";
+import { ArrowLeft, Edit2, Save, X, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 export default function Profile() {
   const { user, isAuthenticated } = useAuth();
@@ -15,6 +16,32 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
+  });
+
+  // Fetch latest user data from server
+  const { data: meData } = trpc.auth.me.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+
+  // Sync server data to form when not editing
+  useEffect(() => {
+    if (meData && !isEditing) {
+      const userData = (meData as any)?.data || meData;
+      setFormData({
+        name: userData?.name || user?.name || "",
+        email: userData?.email || user?.email || "",
+      });
+    }
+  }, [meData, isEditing]);
+
+  const updateProfile = trpc.auth.updateUserProfile.useMutation({
+    onSuccess: () => {
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update profile");
+    },
   });
 
   if (!isAuthenticated) {
@@ -35,9 +62,14 @@ export default function Profile() {
   }
 
   const handleSave = () => {
-    // In a real app, you would send this to the server
-    toast.success("Profile updated successfully!");
-    setIsEditing(false);
+    const nameParts = formData.name.trim().split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    
+    updateProfile.mutate({
+      firstName,
+      lastName,
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,9 +164,19 @@ export default function Profile() {
                   <Button
                     onClick={handleSave}
                     className="bg-[#FFA500] hover:bg-[#FF8C00] text-white flex-1"
+                    disabled={updateProfile.isPending}
                   >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
+                    {updateProfile.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
                   </Button>
                 </div>
               )}
@@ -153,12 +195,22 @@ export default function Profile() {
               <div className="flex items-center justify-between py-3 border-b">
                 <span className="text-gray-600">Member Since</span>
                 <span className="font-semibold text-gray-800">
-                  {new Date().toLocaleDateString()}
+                  {(() => {
+                    const userData = (meData as any)?.data || meData;
+                    return userData?.createdAt 
+                      ? new Date(userData.createdAt).toLocaleDateString()
+                      : new Date().toLocaleDateString();
+                  })()}
                 </span>
               </div>
               <div className="flex items-center justify-between py-3">
                 <span className="text-gray-600">Account Type</span>
-                <span className="font-semibold text-gray-800">Premium</span>
+                <span className="font-semibold text-gray-800 capitalize">
+                  {(() => {
+                    const userData = (meData as any)?.data || meData;
+                    return userData?.role || "Member";
+                  })()}
+                </span>
               </div>
             </CardContent>
           </Card>

@@ -8,9 +8,12 @@ import {
   Send,
   Menu,
   X,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 const contactMethods = [
   {
@@ -50,12 +53,29 @@ export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const sendEmail = trpc.contact.sendEmail.useMutation({
+    onSuccess: () => {
+      setSubmitted(true);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to send message. Please try again.");
+    },
+  });
+
   document.title = "Contact Us | AmeriLend";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In production this would hit the tRPC API
-    setSubmitted(true);
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    sendEmail.mutate({
+      name: formData.name,
+      email: formData.email,
+      subject: formData.subject,
+      message: formData.message,
+    });
   };
 
   return (
@@ -238,8 +258,16 @@ export default function Contact() {
                   type="submit"
                   size="lg"
                   className="w-full bg-[#0A2540] hover:bg-[#0d3a5c] text-white font-semibold rounded-xl py-3"
+                  disabled={sendEmail.isPending}
                 >
-                  Send Message
+                  {sendEmail.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Message"
+                  )}
                 </Button>
               </form>
             )}

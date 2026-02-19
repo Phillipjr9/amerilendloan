@@ -27,7 +27,8 @@ import {
   InsertSupportTicket,
   ticketMessages,
   TicketMessage,
-  InsertTicketMessage
+  InsertTicketMessage,
+  automationRules
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { COMPANY_INFO } from './_core/companyConfig';
@@ -5412,4 +5413,79 @@ export async function resetUserPassword(userId: number) {
   await db.update(users)
     .set({ passwordHash: null, forcePasswordReset: true, updatedAt: new Date() })
     .where(eq(users.id, userId));
+}
+
+// ============================================
+// AUTOMATION RULES
+// ============================================
+
+export async function getAutomationRules() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(automationRules).orderBy(automationRules.createdAt);
+}
+
+export async function createAutomationRule(data: {
+  name: string;
+  enabled: boolean;
+  type: string;
+  conditions: string;
+  action: string;
+  createdBy?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [rule] = await db.insert(automationRules).values({
+    name: data.name,
+    enabled: data.enabled,
+    type: data.type,
+    conditions: data.conditions,
+    action: data.action,
+    createdBy: data.createdBy || null,
+  }).returning();
+  return rule;
+}
+
+export async function updateAutomationRule(id: number, data: Partial<{
+  name: string;
+  enabled: boolean;
+  type: string;
+  conditions: string;
+  action: string;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(automationRules)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(automationRules.id, id));
+}
+
+export async function deleteAutomationRule(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(automationRules).where(eq(automationRules.id, id));
+}
+
+// ============================================
+// DOCUMENT GENERATION HELPERS
+// ============================================
+
+export async function getLoanApplicationForDocument(loanId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [loan] = await db.select().from(loanApplications)
+    .where(eq(loanApplications.id, loanId));
+  
+  if (!loan) return null;
+  if (loan.userId !== userId) return null;
+  
+  // Get user info
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  
+  return { loan, user };
 }
