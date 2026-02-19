@@ -1,4 +1,4 @@
-import { desc, eq, or, and, sql, ilike, inArray } from "drizzle-orm";
+import { asc, desc, eq, or, and, sql, ilike, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import type postgres from "postgres";
 import { 
@@ -5145,4 +5145,271 @@ export async function updateDelinquencyPromise(
     .returning();
 
   return result[0];
+}
+
+// =====================
+// Comprehensive Admin User Management Functions
+// =====================
+
+export async function listAllUsersWithPagination(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  accountStatus?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const page = params.page || 1;
+  const limit = params.limit || 20;
+  const offset = (page - 1) * limit;
+
+  const conditions: any[] = [];
+  
+  if (params.search) {
+    const searchTerm = `%${params.search.toLowerCase()}%`;
+    conditions.push(
+      or(
+        sql`LOWER(${users.name}) LIKE ${searchTerm}`,
+        sql`LOWER(${users.email}) LIKE ${searchTerm}`,
+        sql`LOWER(${users.firstName}) LIKE ${searchTerm}`,
+        sql`LOWER(${users.lastName}) LIKE ${searchTerm}`,
+        sql`LOWER(${users.phoneNumber}) LIKE ${searchTerm}`
+      )
+    );
+  }
+
+  if (params.role && params.role !== "all") {
+    conditions.push(eq(users.role, params.role as any));
+  }
+
+  if (params.accountStatus && params.accountStatus !== "all") {
+    conditions.push(eq(users.accountStatus, params.accountStatus as any));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const countResult = await db.select({ count: sql`count(*)` }).from(users).where(whereClause);
+  const totalCount = Number(countResult[0]?.count || 0);
+
+  // Determine sort column and direction
+  const sortColumn = params.sortBy === "name" ? users.name
+    : params.sortBy === "email" ? users.email
+    : params.sortBy === "role" ? users.role
+    : params.sortBy === "lastSignedIn" ? users.lastSignedIn
+    : users.createdAt;
+  
+  const orderFn = params.sortOrder === "asc" ? asc : desc;
+
+  const results = await db.select().from(users).where(whereClause).orderBy(orderFn(sortColumn)).limit(limit).offset(offset);
+
+  return {
+    users: results,
+    totalCount,
+    page,
+    limit,
+    totalPages: Math.ceil(totalCount / limit),
+  };
+}
+
+export async function getUserFullProfile(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const user = await db.select().from(users).where(eq(users.id, userId)).then(rows => rows[0] || null);
+  if (!user) return null;
+
+  const loans = await db.select().from(loanApplications).where(eq(loanApplications.userId, userId)).orderBy(desc(loanApplications.createdAt));
+  const userPayments = await db.select().from(payments).where(eq(payments.userId, userId)).orderBy(desc(payments.createdAt));
+  const userDisbursements = await db.select().from(disbursements).where(eq(disbursements.userId, userId)).orderBy(desc(disbursements.createdAt));
+
+  const { userSessions } = await import("../drizzle/schema");
+  const sessions = await db.select().from(userSessions).where(eq(userSessions.userId, userId)).orderBy(desc(userSessions.lastActivityAt));
+
+  const { loginAttempts } = await import("../drizzle/schema");
+  const recentLogins = await db.select().from(loginAttempts)
+    .where(eq(loginAttempts.email, user.email || ""))
+    .orderBy(desc(loginAttempts.createdAt))
+    .limit(20);
+
+  const userDocuments = await db.select().from(verificationDocuments).where(eq(verificationDocuments.userId, userId));
+  const userTickets = await db.select().from(supportTickets).where(eq(supportTickets.userId, userId)).orderBy(desc(supportTickets.createdAt));
+
+  return {
+    ...user,
+    loans,
+    payments: userPayments,
+    disbursements: userDisbursements,
+    sessions,
+    recentLogins,
+    documents: userDocuments,
+    supportTickets: userTickets,
+  };
+}
+
+export async function adminUpdateUserFull(userId: number, updates: {
+  name?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  role?: "user" | "admin";
+  accountStatus?: "active" | "suspended" | "banned" | "deactivated";
+  adminNotes?: string;
+  forcePasswordReset?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const updateData: any = { updatedAt: new Date() };
+  
+  if (updates.name !== undefined) updateData.name = updates.name || null;
+  if (updates.email !== undefined) updateData.email = updates.email || null;
+  if (updates.firstName !== undefined) updateData.firstName = updates.firstName || null;
+  if (updates.lastName !== undefined) updateData.lastName = updates.lastName || null;
+  if (updates.phoneNumber !== undefined) updateData.phoneNumber = updates.phoneNumber || null;
+  if (updates.dateOfBirth !== undefined) updateData.dateOfBirth = updates.dateOfBirth || null;
+  if (updates.street !== undefined) updateData.street = updates.street || null;
+  if (updates.city !== undefined) updateData.city = updates.city || null;
+  if (updates.state !== undefined) updateData.state = updates.state || null;
+  if (updates.zipCode !== undefined) updateData.zipCode = updates.zipCode || null;
+  if (updates.role !== undefined) updateData.role = updates.role;
+  if (updates.accountStatus !== undefined) updateData.accountStatus = updates.accountStatus;
+  if (updates.adminNotes !== undefined) updateData.adminNotes = updates.adminNotes;
+  if (updates.forcePasswordReset !== undefined) updateData.forcePasswordReset = updates.forcePasswordReset;
+
+  await db.update(users).set(updateData).where(eq(users.id, userId));
+}
+
+export async function suspendUser(userId: number, adminId: number, reason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users)
+    .set({
+      accountStatus: "suspended",
+      suspendedAt: new Date(),
+      suspendedReason: reason,
+      suspendedBy: adminId,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
+}
+
+export async function activateUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users)
+    .set({
+      accountStatus: "active",
+      suspendedAt: null,
+      suspendedReason: null,
+      suspendedBy: null,
+      bannedAt: null,
+      bannedReason: null,
+      bannedBy: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
+}
+
+export async function banUser(userId: number, adminId: number, reason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users)
+    .set({
+      accountStatus: "banned",
+      bannedAt: new Date(),
+      bannedReason: reason,
+      bannedBy: adminId,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
+}
+
+export async function deactivateUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users)
+    .set({ accountStatus: "deactivated", updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function forceLogoutUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { userSessions } = await import("../drizzle/schema");
+  await db.delete(userSessions).where(eq(userSessions.userId, userId));
+}
+
+export async function setForcePasswordReset(userId: number, force: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users)
+    .set({ forcePasswordReset: force, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function adminDeleteUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { userSessions } = await import("../drizzle/schema");
+  await db.delete(userSessions).where(eq(userSessions.userId, userId));
+  
+  const userTickets = await db.select({ id: supportTickets.id }).from(supportTickets).where(eq(supportTickets.userId, userId));
+  for (const ticket of userTickets) {
+    await db.delete(ticketMessages).where(eq(ticketMessages.ticketId, ticket.id));
+  }
+  await db.delete(supportTickets).where(eq(supportTickets.userId, userId));
+  await db.delete(verificationDocuments).where(eq(verificationDocuments.userId, userId));
+  await db.delete(payments).where(eq(payments.userId, userId));
+  await db.delete(disbursements).where(eq(disbursements.userId, userId));
+  await db.delete(loanApplications).where(eq(loanApplications.userId, userId));
+  await db.delete(users).where(eq(users.id, userId));
+}
+
+export async function getUserLoginHistory(userId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const user = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).then(r => r[0]);
+  if (!user?.email) return [];
+
+  const { loginAttempts } = await import("../drizzle/schema");
+  return db.select().from(loginAttempts)
+    .where(eq(loginAttempts.email, user.email))
+    .orderBy(desc(loginAttempts.createdAt))
+    .limit(limit);
+}
+
+export async function updateAdminNotes(userId: number, notes: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users)
+    .set({ adminNotes: notes, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function resetUserPassword(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users)
+    .set({ passwordHash: null, forcePasswordReset: true, updatedAt: new Date() })
+    .where(eq(users.id, userId));
 }

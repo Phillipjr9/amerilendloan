@@ -7280,6 +7280,256 @@ export const appRouter = router({
           });
         }
       }),
+
+    // =====================
+    // Comprehensive User Management Endpoints
+    // =====================
+
+    // List all users with pagination, search, filters
+    listAllUsers: adminProcedure
+      .input(z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(20),
+        search: z.string().optional(),
+        role: z.string().optional(),
+        accountStatus: z.string().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        try {
+          return await db.listAllUsersWithPagination(input || {});
+        } catch (error) {
+          console.error("Error listing users:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to list users",
+          });
+        }
+      }),
+
+    // Get full user profile with all related data
+    getUserFullProfile: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const profile = await db.getUserFullProfile(input.userId);
+        if (!profile) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+        return profile;
+      }),
+
+    // Full user profile update (all fields)
+    updateUserFull: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        phoneNumber: z.string().optional(),
+        dateOfBirth: z.string().optional(),
+        street: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        zipCode: z.string().optional(),
+        role: z.enum(["user", "admin"]).optional(),
+        accountStatus: z.enum(["active", "suspended", "banned", "deactivated"]).optional(),
+        adminNotes: z.string().optional(),
+        forcePasswordReset: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { userId, ...updates } = input;
+        
+        // Only owner can change roles
+        if (updates.role !== undefined && ctx.user.openId !== ENV.ownerOpenId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only the system owner can change user roles",
+          });
+        }
+
+        // Cannot modify own account status
+        if (ctx.user.id === userId && updates.accountStatus) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot change your own account status",
+          });
+        }
+
+        await db.adminUpdateUserFull(userId, updates);
+        return { success: true };
+      }),
+
+    // Suspend user account
+    suspendUser: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        reason: z.string().min(1, "Suspension reason is required"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.id === input.userId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot suspend your own account",
+          });
+        }
+
+        const targetUser = await db.getUserById(input.userId);
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        // Prevent suspending the owner
+        if (targetUser.openId === ENV.ownerOpenId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cannot suspend the system owner",
+          });
+        }
+
+        await db.suspendUser(input.userId, ctx.user.id, input.reason);
+        // Force logout suspended user
+        await db.forceLogoutUser(input.userId);
+        return { success: true, message: "User suspended and logged out" };
+      }),
+
+    // Activate user account (un-suspend / un-ban)
+    activateUser: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.activateUser(input.userId);
+        return { success: true, message: "User account activated" };
+      }),
+
+    // Ban user account (permanent)
+    banUser: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        reason: z.string().min(1, "Ban reason is required"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.id === input.userId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot ban your own account",
+          });
+        }
+
+        const targetUser = await db.getUserById(input.userId);
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        if (targetUser.openId === ENV.ownerOpenId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cannot ban the system owner",
+          });
+        }
+
+        await db.banUser(input.userId, ctx.user.id, input.reason);
+        await db.forceLogoutUser(input.userId);
+        return { success: true, message: "User banned and logged out" };
+      }),
+
+    // Deactivate user account (soft delete)
+    deactivateUser: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.id === input.userId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot deactivate your own account",
+          });
+        }
+        await db.deactivateUser(input.userId);
+        await db.forceLogoutUser(input.userId);
+        return { success: true, message: "User account deactivated" };
+      }),
+
+    // Force logout user (clear all sessions)
+    forceLogout: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.forceLogoutUser(input.userId);
+        return { success: true, message: "User sessions cleared" };
+      }),
+
+    // Force password reset
+    forcePasswordReset: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.resetUserPassword(input.userId);
+        await db.forceLogoutUser(input.userId);
+        return { success: true, message: "Password reset and user logged out" };
+      }),
+
+    // Delete user account permanently
+    deleteUser: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.id === input.userId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot delete your own account",
+          });
+        }
+
+        const targetUser = await db.getUserById(input.userId);
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        if (targetUser.openId === ENV.ownerOpenId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cannot delete the system owner",
+          });
+        }
+
+        // Only owner can delete users permanently
+        if (ctx.user.openId !== ENV.ownerOpenId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only the system owner can permanently delete users",
+          });
+        }
+
+        await db.adminDeleteUser(input.userId);
+        return { success: true, message: "User permanently deleted" };
+      }),
+
+    // Update admin notes
+    updateAdminNotes: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        notes: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateAdminNotes(input.userId, input.notes);
+        return { success: true };
+      }),
+
+    // Get user login history
+    getUserLoginHistory: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        limit: z.number().min(1).max(100).default(20),
+      }))
+      .query(async ({ input }) => {
+        return db.getUserLoginHistory(input.userId, input.limit);
+      }),
+
+    // Get user active sessions
+    getUserSessions: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getUserSessions(input.userId);
+      }),
   }),
 
   // Admin AI Assistant Router

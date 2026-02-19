@@ -7,6 +7,7 @@ import { boolean, integer, pgEnum, pgTable, text, timestamp, varchar, serial, in
  */
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const accountStatusEnum = pgEnum("account_status", ["active", "suspended", "banned", "deactivated"]);
 export const purposeEnum = pgEnum("purpose", ["signup", "login", "reset"]);
 export const loanTypeEnum = pgEnum("loan_type", ["installment", "short_term"]);
 export const disbursementMethodEnum = pgEnum("disbursement_method", ["bank_transfer", "check", "debit_card", "paypal", "crypto"]);
@@ -24,6 +25,19 @@ export const users = pgTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   passwordHash: text("passwordHash"), // for local password auth
   role: roleEnum("role").default("user").notNull(),
+  accountStatus: accountStatusEnum("accountStatus").default("active").notNull(),
+  
+  // Account administration
+  suspendedAt: timestamp("suspendedAt"),
+  suspendedReason: text("suspendedReason"),
+  suspendedBy: integer("suspendedBy"),
+  bannedAt: timestamp("bannedAt"),
+  bannedReason: text("bannedReason"),
+  bannedBy: integer("bannedBy"),
+  adminNotes: text("adminNotes"),
+  forcePasswordReset: boolean("forcePasswordReset").default(false),
+  loginCount: integer("loginCount").default(0),
+  lastLoginIp: varchar("lastLoginIp", { length: 45 }),
   
   // Personal information
   firstName: varchar("firstName", { length: 100 }),

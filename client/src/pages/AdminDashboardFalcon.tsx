@@ -39,7 +39,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-gray-100 text-gray-800 border-gray-300",
 };
 
-type ViewType = "dashboard" | "applications" | "tracking" | "verification" | "support" | "audit" | "fees" | "crypto" | "workflows" | "payments" | "invitations" | "virtual_cards";
+type ViewType = "dashboard" | "applications" | "tracking" | "verification" | "support" | "audit" | "fees" | "crypto" | "workflows" | "payments" | "invitations" | "virtual_cards" | "user_management";
 
 export default function AdminDashboardFalcon() {
   const [, setLocation] = useLocation();
@@ -385,6 +385,7 @@ export default function AdminDashboardFalcon() {
   // Navigation items
   const navItems = [
     { id: "dashboard" as ViewType, icon: Home, label: "Dashboard" },
+    { id: "user_management" as ViewType, icon: Users, label: "User Management" },
     { id: "applications" as ViewType, icon: FileText, label: "Applications" },
     { id: "tracking" as ViewType, icon: Package, label: "Tracking" },
     { id: "verification" as ViewType, icon: ShieldCheck, label: "Verification" },
@@ -524,6 +525,26 @@ export default function AdminDashboardFalcon() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-3 md:p-6">
+          {/* User Management View */}
+          {currentView === "user_management" && (
+            <div className="space-y-6">
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle>User Management</CardTitle>
+                  <CardDescription>Full control over all user accounts</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-4">
+                    <p className="text-gray-500 mb-4">Manage users, suspend/ban accounts, edit profiles, and more</p>
+                    <Button onClick={() => setLocation('/admin/users')} className="gap-2">
+                      <Users className="w-4 h-4" /> Open User Management
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Dashboard View */}
           {currentView === "dashboard" && (
             <div className="space-y-4 md:space-y-6">
