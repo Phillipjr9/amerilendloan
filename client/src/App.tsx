@@ -52,6 +52,7 @@ import Contact from "./pages/Contact";
 import Resources from "./pages/Resources";
 import ArticlePage from "./pages/ArticlePage";
 import VirtualDebitCard from "./pages/VirtualDebitCard";
+import ChatWidget from "./components/ChatWidget";
 
 function Router() {
   return (
@@ -131,6 +132,7 @@ function App() {
           <div className="pb-24">
             <Router />
           </div>
+          <ChatWidget />
           <LanguageSelector />
         </TooltipProvider>
       </ThemeProvider>
