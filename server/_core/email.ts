@@ -5201,6 +5201,115 @@ export async function sendInvitationCodeEmail(
 }
 
 /**
+ * Send daily reminder email to invited users who haven't registered yet
+ */
+export async function sendInvitationReminderEmail(
+  email: string,
+  recipientName: string,
+  code: string,
+  offer: {
+    amount?: number;
+    apr?: number;
+    termMonths?: number;
+    expiresAt: Date;
+  },
+  reminderCount: number
+): Promise<{ success: boolean; error?: string }> {
+  const daysLeft = Math.max(0, Math.ceil((offer.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  const urgency = daysLeft <= 3 ? "⏰ Expiring Soon!" : daysLeft <= 7 ? "⏳ Don't Miss Out!" : "🎁 Reminder";
+
+  const subject = `${urgency} Your Exclusive AmeriLend Offer Code ${code} is Waiting`;
+
+  const offerLine = offer.amount
+    ? `$${offer.amount.toLocaleString()}${offer.apr ? ` at ${offer.apr.toFixed(2)}% APR` : ""}${offer.termMonths ? ` for ${offer.termMonths} months` : ""}`
+    : "a personalized loan offer";
+
+  const text = `
+Hello ${recipientName},
+
+This is a friendly reminder that your exclusive AmeriLend invitation code ${code} is still available!
+
+Your offer: ${offerLine}
+Days remaining: ${daysLeft}
+
+Visit https://amerilendloan.com/check-offers to redeem your code and see your personalized terms.
+
+This offer expires on ${offer.expiresAt.toLocaleDateString()}.
+
+Questions? Contact us:
+Phone: (945) 212-1609
+Email: support@amerilendloan.com
+
+The AmeriLend Team
+  `.trim();
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+      <div style="background-color: #0A2540; padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; color: #C9A227; font-size: 28px;">Ameri<span style="color: white;">Lend</span></h1>
+        <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;">Friendly Reminder</p>
+      </div>
+
+      <div style="padding: 30px; background: white; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 18px;">Hello <strong>${recipientName}</strong>,</p>
+
+        <p>Just a friendly reminder — your exclusive invitation code is still waiting for you! Don't miss your chance to take advantage of this personalized offer.</p>
+
+        <div style="background-color: #f8f9fa; border: 2px dashed #C9A227; padding: 20px; margin: 20px 0; border-radius: 10px; text-align: center;">
+          <p style="margin: 0 0 5px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #666;">Your Invitation Code</p>
+          <p style="margin: 0; font-size: 32px; font-weight: bold; letter-spacing: 3px; color: #0A2540; font-family: monospace;">${code}</p>
+        </div>
+
+        ${offer.amount ? `
+        <div style="background: linear-gradient(135deg, #C9A227 0%, #e6c84d 100%); padding: 25px; margin: 20px 0; border-radius: 12px; color: white; text-align: center;">
+          <p style="margin: 0 0 5px; font-size: 14px; opacity: 0.9;">Pre-Approved Amount</p>
+          <p style="margin: 0; font-size: 36px; font-weight: bold;">$${offer.amount.toLocaleString()}</p>
+          ${offer.apr ? `<p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">As low as ${offer.apr.toFixed(2)}% APR</p>` : ""}
+          ${offer.termMonths ? `<p style="margin: 4px 0 0; font-size: 14px; opacity: 0.9;">${offer.termMonths}-month term</p>` : ""}
+        </div>
+        ` : ""}
+
+        <div style="background-color: ${daysLeft <= 3 ? "#fff3cd" : "#e7f3ff"}; border-left: 4px solid ${daysLeft <= 3 ? "#ffc107" : "#0033A0"}; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="margin: 0; color: ${daysLeft <= 3 ? "#856404" : "#0033A0"}; font-weight: bold;">
+            ${daysLeft <= 3 ? "⏰ Only " + daysLeft + " day" + (daysLeft !== 1 ? "s" : "") + " left!" : "📅 " + daysLeft + " days remaining"}
+          </p>
+          <p style="margin: 5px 0 0; color: #666; font-size: 14px;">
+            This code expires on <strong>${offer.expiresAt.toLocaleDateString()}</strong>.
+          </p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://amerilendloan.com/check-offers" style="display: inline-block; background-color: #C9A227; color: white; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Redeem Your Code Now</a>
+        </div>
+
+        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #0A2540; font-size: 15px;">Why Choose AmeriLend?</h3>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">✓ Fast approval in minutes</p>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">✓ Competitive rates personalized for you</p>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">✓ Funds within 24-48 hours</p>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">✓ No hidden fees or surprises</p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+
+        <p style="font-size: 12px; color: #999; text-align: center;">
+          AmeriLend | <a href="https://amerilendloan.com" style="color: #C9A227;">amerilendloan.com</a><br />
+          Questions? Email us at support@amerilendloan.com or call (945) 212-1609
+        </p>
+        <p style="font-size: 11px; color: #bbb; text-align: center; margin-top: 10px;">
+          You received this because an AmeriLend administrator sent you an invitation. If you don't wish to receive further reminders, simply ignore this email — your code will expire on ${offer.expiresAt.toLocaleDateString()}.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, text, html });
+}
+
+/**
  * Send account deletion request confirmation email
  */
 export async function sendAccountDeletionRequestEmail(

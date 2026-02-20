@@ -15,7 +15,8 @@ import {
   sendUnpaidFeeReminderEmail,
   sendPendingDisbursementReminderEmail,
   sendIncompleteDocumentsReminderEmail,
-  sendInactiveUserReminderEmail
+  sendInactiveUserReminderEmail,
+  sendInvitationReminderEmail
 } from './email';
 
 let reminderInterval: NodeJS.Timeout | null = null;
@@ -326,6 +327,86 @@ async function checkInactiveUsers() {
 }
 
 /**
+ * Check for unredeemed invitation codes and send daily reminders
+ * Sends one reminder per day to invited users who haven't registered yet
+ */
+async function checkUnredeemedInvitations() {
+  try {
+    console.log('[Reminder Scheduler] Checking for unredeemed invitation codes...');
+
+    const database = await db.getDb();
+    if (!database) return;
+
+    const { invitationCodes } = await import('../../drizzle/schema');
+    const { eq, and, lt, or, isNull } = await import('drizzle-orm');
+
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Get all active invitation codes that haven't expired
+    const activeInvitations = await database
+      .select()
+      .from(invitationCodes)
+      .where(eq(invitationCodes.status, 'active'));
+
+    let sentCount = 0;
+    const MAX_REMINDERS = 14; // Stop after 14 reminders (2 weeks of daily emails)
+
+    for (const invitation of activeInvitations) {
+      // Skip if expired
+      if (now > invitation.expiresAt) continue;
+
+      // Skip if we've sent too many reminders already
+      if (invitation.reminderCount >= MAX_REMINDERS) continue;
+
+      // Skip if we already sent a reminder in the last 24 hours
+      if (invitation.lastReminderSentAt && new Date(invitation.lastReminderSentAt) > twentyFourHoursAgo) continue;
+
+      // Skip if the invitation was just created (wait at least 24 hours before first reminder)
+      if (new Date(invitation.createdAt) > twentyFourHoursAgo) continue;
+
+      try {
+        const result = await sendInvitationReminderEmail(
+          invitation.recipientEmail,
+          invitation.recipientName || 'Valued Customer',
+          invitation.code,
+          {
+            amount: invitation.offerAmount ? invitation.offerAmount / 100 : undefined,
+            apr: invitation.offerApr ? invitation.offerApr / 100 : undefined,
+            termMonths: invitation.offerTermMonths ?? undefined,
+            expiresAt: invitation.expiresAt,
+          },
+          invitation.reminderCount
+        );
+
+        if (result && result.success) {
+          // Update reminder tracking
+          await database
+            .update(invitationCodes)
+            .set({
+              lastReminderSentAt: now,
+              reminderCount: invitation.reminderCount + 1,
+              updatedAt: now,
+            })
+            .where(eq(invitationCodes.id, invitation.id));
+
+          sentCount++;
+          console.log(`[Reminder] ✅ Sent invitation reminder #${invitation.reminderCount + 1} to ${invitation.recipientEmail} (code: ${invitation.code})`);
+        } else {
+          console.error(`[Reminder] ❌ Failed to send invitation reminder to ${invitation.recipientEmail}: ${result?.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error(`[Reminder] ❌ Exception sending invitation reminder to ${invitation.recipientEmail}:`, error);
+      }
+    }
+
+    console.log(`[Reminder Scheduler] Invitation reminder check complete. Sent ${sentCount} reminders.`);
+  } catch (error) {
+    console.error('[Reminder Scheduler] Error checking unredeemed invitations:', error);
+  }
+}
+
+/**
  * Run all reminder checks
  */
 async function runAllReminderChecks() {
@@ -337,7 +418,8 @@ async function runAllReminderChecks() {
       checkUnpaidFees(),
       checkPendingDisbursements(),
       checkIncompleteDocuments(),
-      checkInactiveUsers()
+      checkInactiveUsers(),
+      checkUnredeemedInvitations()
     ]);
     
     console.log('[Reminder Scheduler] All reminder checks completed');

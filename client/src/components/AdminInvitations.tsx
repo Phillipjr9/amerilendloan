@@ -284,6 +284,7 @@ export default function AdminInvitations() {
 
   const activeCount = codes.filter((c: any) => c.status === "active").length;
   const redeemedCount = codes.filter((c: any) => c.status === "redeemed").length;
+  const pendingReminderCount = codes.filter((c: any) => c.status === "active" && new Date(c.expiresAt) > new Date() && (c.reminderCount || 0) > 0).length;
   const totalCount = codes.length;
 
   const isMutating = createMutation.isPending || bulkCreateMutation.isPending;
@@ -302,7 +303,7 @@ export default function AdminInvitations() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card className="border-l-4 border-l-purple-500">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
@@ -319,6 +320,15 @@ export default function AdminInvitations() {
               <p className="text-2xl font-bold text-green-700">{activeCount}</p>
             </div>
             <Mail className="w-8 h-8 text-green-400" />
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-amber-500">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Being Reminded</p>
+              <p className="text-2xl font-bold text-amber-700">{pendingReminderCount}</p>
+            </div>
+            <Clock className="w-8 h-8 text-amber-400" />
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-blue-500">
@@ -379,6 +389,7 @@ export default function AdminInvitations() {
                     <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Recipient</th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Offer</th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Reminders</th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Expires</th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Created</th>
                     <th className="text-right px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Actions</th>
@@ -429,6 +440,22 @@ export default function AdminInvitations() {
                             <StatusIcon className="w-3 h-3" />
                             {displayStatus}
                           </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          {inv.reminderCount > 0 ? (
+                            <div className="flex items-center gap-1">
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                                {inv.reminderCount} sent
+                              </Badge>
+                              {inv.lastReminderSentAt && (
+                                <span className="text-[10px] text-gray-400" title={`Last: ${new Date(inv.lastReminderSentAt).toLocaleString()}`}>
+                                  {new Date(inv.lastReminderSentAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-xs">
                           {new Date(inv.expiresAt).toLocaleDateString()}

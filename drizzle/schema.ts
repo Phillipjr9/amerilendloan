@@ -1701,6 +1701,10 @@ export const invitationCodes = pgTable("invitation_codes", {
   redeemedAt: timestamp("redeemed_at"),
   expiresAt: timestamp("expires_at").notNull(),
   
+  // Reminder tracking
+  lastReminderSentAt: timestamp("last_reminder_sent_at"),
+  reminderCount: integer("reminder_count").default(0).notNull(),
+  
   // Admin tracking
   createdBy: integer("created_by").references(() => users.id).notNull(),
   adminNotes: text("admin_notes"),
