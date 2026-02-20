@@ -6685,8 +6685,19 @@ export const appRouter = router({
                 // Count total loans
                 supportContext.loanCount = applications.length;
                 
+                // Build all-applications list with tracking numbers
+                supportContext.allApplications = applications.map(app => ({
+                  trackingNumber: app.trackingNumber || `LOAN-${app.id}`,
+                  status: app.status,
+                  requestedAmount: app.requestedAmount,
+                  approvedAmount: app.approvedAmount,
+                  loanType: app.loanType,
+                  createdAt: app.createdAt,
+                }));
+                
                 // Get most recent application for current status
                 const application = applications[0];
+                supportContext.trackingNumber = application.trackingNumber || undefined;
                 supportContext.loanStatus = application.status;
                 supportContext.loanAmount = application.requestedAmount;
                 supportContext.approvalAmount = application.approvedAmount ?? undefined;
@@ -6724,6 +6735,8 @@ export const appRouter = router({
               accountAge: supportContext.accountAge,
               loanCount: supportContext.loanCount,
               customerRelationshipDuration: supportContext.customerRelationshipDuration,
+              trackingNumber: supportContext.trackingNumber,
+              allApplications: supportContext.allApplications,
             }
           );
 

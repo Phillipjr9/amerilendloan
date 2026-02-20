@@ -42,7 +42,7 @@ export const SYSTEM_PROMPTS = {
 - **Loan Personalization**: Help identify which loan product matches their situation
 - **Mobile & Web**: Explain how to use our platform for applications and future account management
 - **Payment Processing**: Explain payment methods (credit card, bank transfer, automatic), flexibility, early payoff options
-- **Real-time Tracking**: Show how they can monitor application status once they apply
+- **Real-time Tracking**: Explain that they get a tracking number (e.g., APP-XXXXXX) when they apply, and can use it in the AI chat or Application Tracker to check status anytime
 - **Verification Documents**: Explain what documents they'll need (ID, income, employment verification)
 - **Pros vs Cons**: Be honest about loan benefits and considerations
 - **Next Steps**: Always guide them toward application with clear CTA
@@ -100,6 +100,7 @@ export const SYSTEM_PROMPTS = {
 - **Account History**: Acknowledge relationship length, previous applications, payment progress
 - **Loan Details**: Discuss their fees, interest rate, payment schedule, disbursement date with precision
 - **Personalized Strategy**: Suggest payment options, early payoff strategies, refinancing strategies specific to their approved amount
+- **Tracking Number Lookup**: When a user provides a tracking number (e.g., APP-XXXXXX), look it up from the context data and provide detailed status, amounts, and next steps for that specific application
 - **Dashboard Mastery**: Guide them through every feature relative to their current status
 - **Document Handling**: Provide step-by-step assistance with their specific documents
 - **Payment Optimization**: Show HOW to save money based on their specific approved amount and terms
@@ -209,6 +210,15 @@ export function buildMessages(
     accountAge?: number;
     loanCount?: number;
     customerRelationshipDuration?: string;
+    trackingNumber?: string;
+    allApplications?: Array<{
+      trackingNumber: string;
+      status: string;
+      requestedAmount: number;
+      approvedAmount?: number | null;
+      loanType?: string | null;
+      createdAt: Date;
+    }>;
   }
 ): Message[] {
   const systemPrompt = isAuthenticated ? SYSTEM_PROMPTS.AUTHENTICATED : SYSTEM_PROMPTS.GENERAL;
@@ -293,6 +303,16 @@ export function buildMessages(
       loanAmountContext = `$${userContext.approvalAmount.toLocaleString()} (approved)`;
     }
 
+    // Format tracking numbers
+    let trackingInfo = "N/A";
+    if (userContext.allApplications && userContext.allApplications.length > 0) {
+      trackingInfo = userContext.allApplications
+        .map(app => `${app.trackingNumber} (${app.status}, $${app.requestedAmount.toLocaleString()}${app.loanType ? `, ${app.loanType}` : ""})`)
+        .join("; ");
+    } else if (userContext.trackingNumber) {
+      trackingInfo = userContext.trackingNumber;
+    }
+
     contextText = `\n\n[AUTHENTICATED USER CONTEXT - ${relationshipStatus}]
 - Customer Stage: ${customerStage}
 - User ID: ${userContext.userId || "N/A"}
@@ -300,6 +320,7 @@ export function buildMessages(
 - Account Age: ${userContext.accountAge ? userContext.accountAge + " days" : "N/A"}
 - Total Loans: ${userContext.loanCount || 0}
 - Current Loan Status: ${userContext.loanStatus || "No active loan"}
+- Tracking Number(s): ${trackingInfo}
 - Loan Amount: ${loanAmountContext || "N/A"}
 - Application Submitted: ${applicationTimeline}
 - Last Status Update: ${updateRecency}
@@ -321,6 +342,11 @@ IMPORTANT:
 - Acknowledge the timeline ("You applied ${applicationTimeline}")
 - If approval differs from request, explain this tactfully
 - Use recent updates to gauge urgency ("Your status was just updated ${updateRecency}")
+- When the user asks about a tracking number or application, match it to the tracking numbers above
+- If they provide a tracking number, look it up from the list and give them status details for that specific application
+- Proactively mention their tracking number(s) when discussing application status so they can reference it
+
+Tracking Number Reference: ${trackingInfo}
 
 Always reference their specific situation naturally in responses. Show you understand their journey.`;
   }
@@ -382,6 +408,15 @@ export interface SupportContext {
   lastPaymentDate?: Date;
   customerRelationshipDuration?: string; // "New customer" vs "3+ year customer" etc
   previousIssues?: string[];
+  trackingNumber?: string; // Primary/most-recent tracking number
+  allApplications?: Array<{
+    trackingNumber: string;
+    status: string;
+    requestedAmount: number;
+    approvedAmount?: number | null;
+    loanType?: string | null;
+    createdAt: Date;
+  }>;
 }
 
 export function getSuggestedPrompts(isAuthenticated: boolean): string[] {

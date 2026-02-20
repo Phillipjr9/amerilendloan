@@ -5,6 +5,7 @@ import { getDb, getDbStatus } from "../db";
 import { buildMessages, getSuggestedPrompts as getAiSuggestedPrompts } from "./aiSupport";
 import { invokeLLM } from "./llm";
 import { createBackup, restoreBackup, listBackups } from "./database-backup";
+import * as db from "../db";
 import * as path from "path";
 
 // Helper function to get varied fallback responses based on user intent
@@ -47,11 +48,11 @@ const getFallbackResponse = (userMessage: string): string => {
     return responses[Math.floor(Math.random() * responses.length)];
   }
 
-  if (msg.includes("status") || msg.includes("application")) {
+  if (msg.includes("status") || msg.includes("application") || msg.includes("track")) {
     const responses = [
-      "You can check your loan application status anytime by logging into your dashboard. We'll also send email updates at each stage of the process.",
-      "Track your application progress in real-time through your account dashboard. You'll receive notifications as your application moves through each stage.",
-      "Your application status is always available in your dashboard. We typically process applications within 24-48 hours and keep you updated via email.",
+      "You can check your loan application status anytime by logging into your dashboard. Your tracking number (e.g., APP-XXXXXX) is provided when you apply — use it in the chat or Application Tracker to check progress.",
+      "Track your application progress in real-time through your account dashboard or by providing your tracking number here. You'll receive notifications as your application moves through each stage.",
+      "Your application status is always available in your dashboard. Just share your tracking number (from your confirmation email) and I can look it up for you right away.",
     ];
     return responses[Math.floor(Math.random() * responses.length)];
   }
@@ -107,13 +108,49 @@ export const systemRouter = router({
     .mutation(async ({ input, ctx }) => {
       try {
         const isAuthenticated = !!ctx.user;
-        const userContext = isAuthenticated ? {
+        let userContext: Record<string, any> = isAuthenticated ? {
           isAuthenticated: true,
           userRole: ctx.user?.role,
           userId: ctx.user?.id,
         } : {
           isAuthenticated: false,
         };
+
+        // For authenticated users, fetch their loan data + tracking numbers
+        if (isAuthenticated && ctx.user?.id) {
+          try {
+            const applications = await db.getLoanApplicationsByUserId(ctx.user.id);
+            if (applications && applications.length > 0) {
+              userContext.loanCount = applications.length;
+              userContext.allApplications = applications.map(app => ({
+                trackingNumber: app.trackingNumber || `LOAN-${app.id}`,
+                status: app.status,
+                requestedAmount: app.requestedAmount,
+                approvedAmount: app.approvedAmount,
+                loanType: app.loanType,
+                createdAt: app.createdAt,
+              }));
+
+              const latest = applications[0];
+              userContext.trackingNumber = latest.trackingNumber || undefined;
+              userContext.loanStatus = latest.status;
+              userContext.loanAmount = latest.requestedAmount;
+              userContext.approvalAmount = latest.approvedAmount ?? undefined;
+              userContext.applicationDate = latest.createdAt;
+              userContext.lastUpdated = latest.updatedAt;
+              userContext.email = ctx.user.email || undefined;
+
+              if (ctx.user.createdAt) {
+                const ageInDays = Math.floor(
+                  (Date.now() - new Date(ctx.user.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+                );
+                userContext.accountAge = ageInDays;
+              }
+            }
+          } catch (dbError) {
+            console.warn('[AI Support] Failed to fetch user loans for context:', dbError);
+          }
+        }
 
         // Build conversation history with the new message
         const conversationMessages: Array<{ role: "user" | "assistant"; content: string }> = [

@@ -2124,7 +2124,7 @@ export default function Dashboard() {
     </div>
 
       {/* AI Support Widget - Only for authenticated users */}
-      <AiSupportWidget isAuthenticated={true} />
+      <AiSupportWidget isAuthenticated={true} userName={user?.firstName || user?.name?.split(" ")[0]} />
 
       {/* Withdrawal Confirmation Dialog */}
       <Dialog open={withdrawalDialogOpen} onOpenChange={setWithdrawalDialogOpen}>
