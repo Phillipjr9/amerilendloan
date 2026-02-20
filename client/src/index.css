@@ -301,11 +301,13 @@ body { top: 0 !important; }
   
   /* Glass effect */
   .glass {
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
     backdrop-filter: blur(12px) saturate(180%);
     background: rgba(255, 255, 255, 0.8);
   }
   
   .glass-dark {
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
     backdrop-filter: blur(12px) saturate(180%);
     background: rgba(10, 37, 64, 0.9);
   }

@@ -523,7 +523,7 @@ export async function sendLoginNotificationEmail(
   recentLoginNotifications.set(email, now);
   // Prune old entries every 50 entries to prevent memory leak
   if (recentLoginNotifications.size > 50) {
-    for (const [key, ts] of recentLoginNotifications) {
+    for (const [key, ts] of Array.from(recentLoginNotifications)) {
       if (now - ts > 120_000) recentLoginNotifications.delete(key);
     }
   }

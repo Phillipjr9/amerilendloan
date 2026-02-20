@@ -411,8 +411,8 @@ export async function sendBatchPaymentOverdueAlerts(): Promise<{
         
         const notifyResult = await notifyPaymentOverdue(
           payment.userId,
-          (payment as any).loanNumber || `LOAN-${payment.loanApplicationId}`,
-          (payment as any).amount || payment.dueAmount,
+          `LOAN-${payment.loanApplicationId}`,
+          payment.dueAmount,
           daysOverdue,
           new Date(payment.dueDate)
         );

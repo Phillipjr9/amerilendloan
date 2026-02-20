@@ -4232,10 +4232,12 @@ export async function updateAccountClosureRequest(
 
 // ========== Payment Preferences ==========
 
+type AllocationStrategy = "standard" | "principal_first" | "future_payments" | "biweekly" | "round_up";
+
 export async function createOrUpdatePaymentPreference(data: {
   userId: number;
   loanApplicationId?: number;
-  allocationStrategy?: string;
+  allocationStrategy?: AllocationStrategy;
   roundUpEnabled?: boolean;
   roundUpToNearest?: number;
   biweeklyEnabled?: boolean;
@@ -4259,18 +4261,14 @@ export async function createOrUpdatePaymentPreference(data: {
       .update(paymentPreferences)
       .set({
         ...data,
-        allocationStrategy: data.allocationStrategy as any,
         updatedAt: new Date(),
-      } as any)
+      })
       .where(eq(paymentPreferences.userId, data.userId))
       .returning();
     return result[0];
   } else {
     // Insert
-    const result = await db.insert(paymentPreferences).values({
-      ...data,
-      allocationStrategy: data.allocationStrategy as any,
-    } as any).returning();
+    const result = await db.insert(paymentPreferences).values(data).returning();
     return result[0];
   }
 }
@@ -4849,35 +4847,26 @@ export async function getCollectionActions(delinquencyRecordId: number) {
 export async function getOrCreateNotificationPreferences(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
-  const { notificationPreferences } = await import("../drizzle/schema");
+  const { userNotificationSettings } = await import("../drizzle/schema");
 
   // Try to get existing preferences
   const existing = await db
     .select()
-    .from(notificationPreferences)
-    .where(eq(notificationPreferences.userId, userId))
+    .from(userNotificationSettings)
+    .where(eq(userNotificationSettings.userId, userId))
     .limit(1);
 
   if (existing.length > 0) {
     return existing[0];
   }
 
-  // Create default preferences (one row per preference type)
-  const defaultTypes = ['payment_reminders', 'payment_confirmations', 'loan_status_updates', 'document_notifications', 'promotional_notifications'] as const;
-  const results = [];
-  for (const pType of defaultTypes) {
-    const row = await db
-      .insert(notificationPreferences)
-      .values({
-        userId,
-        preferenceType: pType as any,
-        enabled: pType !== 'promotional_notifications',
-      } as any)
-      .returning();
-    results.push(row[0]);
-  }
+  // Create default row with all defaults from schema
+  const row = await db
+    .insert(userNotificationSettings)
+    .values({ userId })
+    .returning();
 
-  return results[0];
+  return row[0];
 }
 
 export async function updateNotificationPreferences(
@@ -4908,7 +4897,11 @@ export async function updateNotificationPreferences(
     // Insert row with updates applied
     const row = await db
       .insert(userNotificationSettings)
-      .values({ userId, ...updates, updatedAt: new Date() } as any)
+      .values({
+        userId,
+        ...updates,
+        updatedAt: new Date(),
+      })
       .returning();
     return row[0];
   }
@@ -4916,7 +4909,10 @@ export async function updateNotificationPreferences(
   // Update the existing row
   const result = await db
     .update(userNotificationSettings)
-    .set({ ...updates, updatedAt: new Date() } as any)
+    .set({
+      ...updates,
+      updatedAt: new Date(),
+    })
     .where(eq(userNotificationSettings.userId, userId))
     .returning();
 
@@ -5068,7 +5064,15 @@ export async function getPaymentPreferences(userId: number, loanApplicationId?: 
   return getUserPaymentPreference(userId);
 }
 
-export async function updatePaymentPreferences(userId: number, data: any) {
+export async function updatePaymentPreferences(userId: number, data: {
+  loanApplicationId?: number;
+  allocationStrategy?: AllocationStrategy;
+  roundUpEnabled?: boolean;
+  roundUpToNearest?: number;
+  biweeklyEnabled?: boolean;
+  autoExtraPaymentAmount?: number;
+  autoExtraPaymentDay?: number;
+}) {
   return createOrUpdatePaymentPreference({ ...data, userId });
 }
 

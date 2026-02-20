@@ -1,3 +1,73 @@
+import { z } from "zod";
+
+// Define validation schema for critical environment variables
+const envSchema = z.object({
+  // Core — required for the app to function at all
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters"),
+  VITE_APP_ID: z.string().min(1, "VITE_APP_ID is required"),
+
+  // OAuth
+  OAUTH_SERVER_URL: z.string().optional().default(""),
+  OWNER_OPEN_ID: z.string().optional().default(""),
+
+  // Forge
+  BUILT_IN_FORGE_API_URL: z.string().optional().default(""),
+  BUILT_IN_FORGE_API_KEY: z.string().optional().default(""),
+
+  // OpenAI
+  OPENAI_API_KEY: z.string().optional().default(""),
+
+  // Twilio (SMS)
+  TWILIO_ACCOUNT_SID: z.string().optional().default(""),
+  TWILIO_AUTH_TOKEN: z.string().optional().default(""),
+  TWILIO_PHONE_NUMBER: z.string().optional().default(""),
+
+  // SendGrid (email)
+  SENDGRID_API_KEY: z.string().optional().default(""),
+  EMAIL_TEST_MODE: z.string().optional().default("false"),
+
+  // Supabase
+  VITE_SUPABASE_URL: z.string().optional().default(""),
+  VITE_SUPABASE_ANON_KEY: z.string().optional().default(""),
+
+  // OAuth Social
+  GOOGLE_CLIENT_ID: z.string().optional().default(""),
+  GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
+  GITHUB_CLIENT_ID: z.string().optional().default(""),
+  GITHUB_CLIENT_SECRET: z.string().optional().default(""),
+  MICROSOFT_CLIENT_ID: z.string().optional().default(""),
+  MICROSOFT_CLIENT_SECRET: z.string().optional().default(""),
+
+  // Stripe
+  STRIPE_SECRET_KEY: z.string().optional().default(""),
+  STRIPE_PUBLISHABLE_KEY: z.string().optional().default(""),
+
+  // Admin
+  ADMIN_EMAIL: z.string().optional().default("admin@amerilendloan.com"),
+
+  // Node env
+  NODE_ENV: z.string().optional().default("development"),
+});
+
+// Parse and validate env vars at startup
+function validateEnv() {
+  const result = envSchema.safeParse(process.env);
+  if (!result.success) {
+    const errors = result.error.flatten().fieldErrors;
+    const missing = Object.entries(errors)
+      .map(([key, msgs]) => `  - ${key}: ${(msgs ?? []).join(", ")}`)
+      .join("\n");
+    console.error(`\n[env] Missing or invalid environment variables:\n${missing}\n`);
+    if (process.env.NODE_ENV === "production") {
+      process.exit(1);
+    }
+  }
+  return result.success ? result.data : null;
+}
+
+const validated = validateEnv();
+
 export const ENV = {
   appId: process.env.VITE_APP_ID ?? "",
   cookieSecret: process.env.JWT_SECRET ?? "",

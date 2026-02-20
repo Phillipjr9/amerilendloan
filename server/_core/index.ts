@@ -25,37 +25,22 @@ import { healthCheck, readinessCheck, livenessCheck, metricsEndpoint } from "./h
 import { apiLimiter, authLimiter, paymentLimiter, uploadLimiter } from "./rate-limiting";
 import { handleFileUpload, handleFileDownload, upload } from "./upload-handler";
 import { registerAdminEmailActionRoutes } from "./admin-email-actions";
+import { logger } from "./logger";
 
 // Validate critical environment variables at startup
+// (Zod validation in env.ts handles the detailed checks;
+//  this logs a quick summary for operators)
 function validateEnvironment() {
   const missing: string[] = [];
-  
-  // Log the DATABASE_URL for debugging
-  console.log("[Environment] DATABASE_URL is " + (ENV.databaseUrl ? "configured" : "NOT SET"));
-  if (ENV.databaseUrl) {
-    // Only confirm it's configured, don't log any part of the URL
-    console.log("[Environment] DATABASE_URL: configured ✓");
-  }
-  
-  if (!ENV.databaseUrl) {
-    missing.push("DATABASE_URL");
-  }
-  if (!ENV.cookieSecret) {
-    missing.push("JWT_SECRET");
-  }
-  if (!ENV.appId) {
-    missing.push("VITE_APP_ID");
-  }
-  
+
+  if (!ENV.databaseUrl) missing.push("DATABASE_URL");
+  if (!ENV.cookieSecret) missing.push("JWT_SECRET");
+  if (!ENV.appId) missing.push("VITE_APP_ID");
+
   if (missing.length > 0) {
-    console.warn(`[Environment] Missing critical environment variables: ${missing.join(", ")}`);
-    console.warn("[Environment] Some features may not work correctly.");
+    logger.warn("Missing critical environment variables", { missing });
   } else {
-    console.log("[Environment] All critical environment variables configured ✓");
-  }
-  
-  if (ENV.databaseUrl) {
-    console.log("[Environment] DATABASE_URL is configured ✓");
+    logger.info("All critical environment variables configured");
   }
 }
 
@@ -81,19 +66,17 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   // Setup global error handlers FIRST (before anything can fail)
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('[Server] Unhandled Rejection:', reason);
-    // Don't exit - keep server running
+    logger.error('Unhandled Rejection', { reason: String(reason) });
   });
   
   process.on('uncaughtException', (error) => {
-    console.error('[Server] Uncaught Exception:', error);
-    // Don't exit - keep server running
+    logger.error('Uncaught Exception', error);
   });
 
   // Validate environment variables first
   validateEnvironment();
   
-  console.log("[Server] Global error handlers installed");
+  logger.info("Global error handlers installed");
   
   const app = express();
   const server = createServer(app);
@@ -103,7 +86,7 @@ async function startServer() {
   
   // Server error handler
   server.on('error', (error) => {
-    console.error('[Server] Server error:', error);
+    logger.error('Server error', error);
   });
   
   // Configure body parser with larger size limit for file uploads
@@ -258,30 +241,30 @@ async function startServer() {
   // Document upload endpoint
   app.post("/api/upload-document", upload.single("file"), async (req, res) => {
     try {
-      console.log("[Upload] Endpoint called");
+      logger.debug("Upload endpoint called");
 
       // Authenticate user from request
       let user;
       try {
         user = await sdk.authenticateRequest(req);
       } catch (authError) {
-        console.warn("[Upload] Authentication failed:", authError instanceof Error ? authError.message : "");
+        logger.warn("Upload authentication failed", authError);
         return res.status(401).json({ error: "Unauthorized - please log in again" });
       }
 
       if (!user) {
-        console.warn("[Upload] No user after authentication");
+        logger.warn("Upload: no user after authentication");
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      console.log("[Upload] User authenticated:", user.id);
+      logger.info("Upload: user authenticated", { userId: user.id });
 
       if (!req.file) {
-        console.warn("[Upload] No file provided in request");
+        logger.warn("Upload: no file provided");
         return res.status(400).json({ error: "No file provided" });
       }
 
-      console.log("[Upload] File received:", { name: req.file.originalname, size: req.file.size, mime: req.file.mimetype });
+      logger.info("Upload: file received", { name: req.file.originalname, size: req.file.size, mime: req.file.mimetype });
 
       let url: string;
       
@@ -289,7 +272,7 @@ async function startServer() {
       if (ENV.forgeApiUrl && ENV.forgeApiKey) {
         try {
           const key = `verification-documents/${user.id}/${Date.now()}-${req.file.originalname}`;
-          console.log("[Upload] Uploading to storage:", key);
+          logger.debug("Upload: uploading to storage", { key });
           
           const { url: storageUrl } = await storagePut(
             key,
@@ -297,17 +280,13 @@ async function startServer() {
             req.file.mimetype
           );
           url = storageUrl;
-          console.log("[Upload] Storage upload successful, URL length:", url.length);
+          logger.info("Upload: storage upload successful");
         } catch (storageError) {
-          const errorMsg = storageError instanceof Error ? storageError.message : String(storageError);
-          console.warn("[Upload] Storage failed, using fallback:", errorMsg);
-          // Fallback: convert to base64 data URL
+          logger.warn("Upload: storage failed, using base64 fallback", storageError);
           url = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
-          console.log("[Upload] Using base64 fallback, URL length:", url.length);
         }
       } else {
-        // No external storage configured, use base64 data URL as fallback
-        console.warn("[Upload] Storage not configured (missing FORGE_API_URL or FORGE_API_KEY), using base64 fallback");
+        logger.warn("Upload: storage not configured, using base64 fallback");
         url = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
       }
 
@@ -319,13 +298,11 @@ async function startServer() {
         mimeType: req.file.mimetype,
       };
 
-      console.log("[Upload] Sending response with URL");
       res.json(response);
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error("[Upload] Document upload error:", errorMsg, error);
+      logger.error("Document upload error", error);
       res.status(500).json({
-        error: errorMsg || "Upload failed",
+        error: error instanceof Error ? error.message : "Upload failed",
       });
     }
   });
@@ -349,11 +326,11 @@ async function startServer() {
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     try {
-      console.log("[Server] Setting up Vite dev server...");
+      logger.info("Setting up Vite dev server...");
       await setupVite(app, server);
-      console.log("[Server] Vite setup complete");
+      logger.info("Vite setup complete");
     } catch (error) {
-      console.error("[Vite] Failed to setup:", error);
+      logger.error("Vite setup failed", error);
       throw error;
     }
   } else {
@@ -373,44 +350,42 @@ async function startServer() {
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    logger.info(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  console.log("[Server] About to start listening...");
+  logger.info("About to start listening...");
   
   // Store cron jobs reference for cleanup
   let cronJobs: any = null;
   
   server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-    console.log("[Server] ✅ Server is ready to accept connections");
+    logger.info(`Server running on http://localhost:${port}/`);
     
     // Initialize background job schedulers
     try {
       initializePaymentNotificationScheduler();
       startAutoPayScheduler();
       initializeReminderScheduler();
-      cronJobs = initializeCronJobs(); // NEW: Initialize cron jobs for payment reminders
-      startBackupScheduler(24); // Backup every 24 hours
-      console.log("[Server] ✅ All schedulers initialized successfully");
+      cronJobs = initializeCronJobs();
+      startBackupScheduler(24);
+      logger.info("All schedulers initialized successfully");
     } catch (error) {
-      console.warn("[Server] Failed to initialize schedulers:", error);
-      // Don't exit - schedulers are optional
+      logger.warn("Failed to initialize schedulers", error);
     }
   });
 
   // Graceful shutdown handlers (async operations allowed in SIGTERM/SIGINT, not in 'exit')
   const gracefulShutdown = async (signal: string) => {
-    console.log(`[Server] ${signal} received, shutting down gracefully...`);
+    logger.info(`${signal} received, shutting down gracefully...`);
     try {
       shutdownPaymentNotificationScheduler();
       shutdownReminderScheduler();
       if (cronJobs) {
         stopAllCronJobs(cronJobs);
       }
-      console.log("[Server] ✅ All schedulers shut down successfully");
+      logger.info("All schedulers shut down");
     } catch (error) {
-      console.warn("[Server] Error shutting down schedulers:", error);
+      logger.warn("Error shutting down schedulers", error);
     }
     process.exit(0);
   };
@@ -419,11 +394,10 @@ async function startServer() {
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   process.on('exit', (code) => {
-    console.log(`[Server] Process exiting with code ${code}`);
+    logger.info(`Process exiting with code ${code}`);
   });
 }
 
 startServer().catch(error => {
-  console.error("[Server] Fatal error during startup:", error);
-  // Don't exit - let it stay alive
+  logger.error("Fatal error during startup", error);
 });

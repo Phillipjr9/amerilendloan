@@ -43,7 +43,7 @@ export default function AutomatedWorkflows() {
       setNewRuleName("");
       toast.success("Rule created");
     },
-    onError: (err) => toast.error(err.message || "Failed to create rule"),
+    onError: (err: any) => toast.error(err.message || "Failed to create rule"),
   });
 
   // Update rule mutation (for toggle)
@@ -52,7 +52,7 @@ export default function AutomatedWorkflows() {
       refetchRules();
       toast.success("Rule updated");
     },
-    onError: (err) => toast.error(err.message || "Failed to update rule"),
+    onError: (err: any) => toast.error(err.message || "Failed to update rule"),
   });
 
   // Delete rule mutation
@@ -61,7 +61,7 @@ export default function AutomatedWorkflows() {
       refetchRules();
       toast.success("Rule deleted");
     },
-    onError: (err) => toast.error(err.message || "Failed to delete rule"),
+    onError: (err: any) => toast.error(err.message || "Failed to delete rule"),
   });
 
   const toggleRule = (id: number, currentEnabled: boolean) => {

@@ -5011,7 +5011,7 @@ export const appRouter = router({
     }),
 
     // Get Authorize.net Accept.js configuration
-    getAuthorizeNetConfig: publicProcedure.query(() => {
+    getAuthorizeNetConfig: protectedProcedure.query(() => {
       return getAcceptJsConfig();
     }),
 
@@ -5038,7 +5038,7 @@ export const appRouter = router({
       }),
 
     // Check if Stripe is available (has valid keys configured)
-    getStripeConfig: publicProcedure.query(async () => {
+    getStripeConfig: protectedProcedure.query(async () => {
       const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || "";
       return {
         enabled: !!publishableKey,
@@ -5047,12 +5047,12 @@ export const appRouter = router({
     }),
 
     // Get supported cryptocurrencies with rates
-    getSupportedCryptos: publicProcedure.query(async () => {
+    getSupportedCryptos: protectedProcedure.query(async () => {
       return getSupportedCryptos();
     }),
 
     // Convert USD amount to crypto
-    convertToCrypto: publicProcedure
+    convertToCrypto: protectedProcedure
       .input(z.object({
         usdCents: z.number(),
         currency: z.enum(["BTC", "ETH", "USDT", "USDC"]),
@@ -5063,7 +5063,7 @@ export const appRouter = router({
       }),
 
     // Get crypto wallet address for payment
-    getCryptoAddress: publicProcedure
+    getCryptoAddress: protectedProcedure
       .input(z.object({
         currency: z.enum(["BTC", "ETH", "USDT", "USDC"]),
       }))
@@ -9135,100 +9135,6 @@ Format as JSON with array of applications including their recommendation.`;
   marketing: marketingRouter,
   collections: collectionsRouter,
   invitations: invitationCodesRouter,
-});
-
-// Helper function to determine next steps based on application status
-function getNextSteps(status: string): string[] {
-  const steps: Record<string, string[]> = {
-    "pending": [
-      "Your application is being reviewed",
-      "Check your email for updates",
-      "Verify all submitted information is accurate"
-    ],
-    "in-review": [
-      "Our team is actively reviewing your application",
-      "You may be contacted for additional information",
-      "Decision will be communicated within 24-48 hours"
-    ],
-    "approved": [
-      "Congratulations! Your loan has been approved",
-      "Log in to your dashboard to view disbursement options",
-      "Choose your preferred funding method"
-    ],
-    "rejected": [
-      "Your application was not approved at this time",
-      "Check your email for details on why",
-      "Contact us at (800) 990-9130 to discuss options"
-    ],
-    "funded": [
-      "Your loan has been funded!",
-      "The money is on its way to your account",
-      "View payment schedule in your dashboard"
-    ],
-    "completed": [
-      "Your loan has been fully repaid",
-      "Thank you for using AmeriLend",
-      "You may be eligible for additional credit"
-    ],
-  };
-
-  return steps[status] || ["Please contact support for more information"];
-}
-
-// Auto-Pay Execution Router
-const autoPayRouter = router({
-  /**
-   * Manually trigger auto-pay execution (Admin only)
-   */
-  runAutoPayExecution: adminProcedure
-    .mutation(async () => {
-      try {
-        const { processAutoPay } = await import("./_core/auto-pay-executor");
-        const result = await processAutoPay();
-        return result;
-      } catch (error) {
-        console.error('[Auto-Pay] Manual trigger error:', error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to run auto-pay execution"
-        });
-      }
-    }),
-
-  /**
-   * Get auto-pay execution logs
-   */
-  getAutoPayLogs: adminProcedure
-    .input(z.object({
-      loanId: z.number().optional(),
-      limit: z.number().optional().default(50),
-    }))
-    .query(async ({ input }) => {
-      try {
-        const db = await import("./db");
-        const dbConn = await db.getDb();
-        if (!dbConn) throw new Error("Database connection failed");
-
-        const { autoPayLog } = await import("../drizzle/schema");
-        const { eq, desc } = await import("drizzle-orm");
-
-        let query = dbConn.select().from(autoPayLog);
-
-        if (input.loanId) {
-          query = query.where(eq(autoPayLog.loanApplicationId, input.loanId)) as any;
-        }
-
-        const logs = await query.orderBy(desc(autoPayLog.attemptedAt)).limit(input.limit);
-
-        return logs;
-      } catch (error) {
-        console.error('[Auto-Pay] Get logs error:', error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to get auto-pay logs"
-        });
-      }
-    }),
 
   // Automation Rules Router (Admin)
   automationRules: router({
@@ -9379,8 +9285,8 @@ const autoPayRouter = router({
                 `LOAN DETAILS`,
                 `---------------------------------`,
                 `Approved Amount: ${approvedAmount}`,
-                `Interest Rate: ${loan.interestRate ? `${loan.interestRate}%` : 'N/A'}`,
-                `Loan Term: ${loan.loanTerm || 'N/A'} months`,
+                `Interest Rate: ${(loan as any).interestRate ? `${(loan as any).interestRate}%` : 'N/A'}`,
+                `Loan Term: ${(loan as any).loanTerm || 'N/A'} months`,
                 `Purpose: ${loan.loanPurpose || 'N/A'}`,
                 `Status: ${loan.status}`,
                 ``,
@@ -9394,7 +9300,7 @@ const autoPayRouter = router({
                 ``,
                 `By accepting this loan, you agree to these terms and conditions.`,
                 ``,
-                `� ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+                `\u00A9 ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
               ].join('\n');
               break;
 
@@ -9402,7 +9308,7 @@ const autoPayRouter = router({
               filename = `Payment_Receipt_${trackingNumber}.txt`;
               content = [
                 `AMERILEND FINANCIAL - PAYMENT RECEIPT`,
-                `=======================================`,
+                `======================================`,
                 ``,
                 `Date: ${now}`,
                 `Tracking Number: ${trackingNumber}`,
@@ -9412,12 +9318,11 @@ const autoPayRouter = router({
                 `---------------------------------`,
                 `Loan Amount: ${approvedAmount}`,
                 `Processing Fee: ${loan.processingFeeAmount ? `$${(loan.processingFeeAmount / 100).toFixed(2)}` : 'N/A'}`,
-                `Payment Status: Confirmed`,
+                `Status: ${loan.status}`,
                 ``,
-                `This receipt confirms your payment has been received and processed.`,
-                `Please keep this document for your records.`,
+                `This receipt confirms your payment has been processed.`,
                 ``,
-                `� ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+                `\u00A9 ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
               ].join('\n');
               break;
 
@@ -9425,45 +9330,46 @@ const autoPayRouter = router({
               filename = `Disbursement_Statement_${trackingNumber}.txt`;
               content = [
                 `AMERILEND FINANCIAL - DISBURSEMENT STATEMENT`,
-                `============================================`,
+                `==============================================`,
                 ``,
                 `Date: ${now}`,
                 `Tracking Number: ${trackingNumber}`,
                 `Borrower: ${userName}`,
+                `Email: ${userEmail}`,
                 ``,
                 `DISBURSEMENT DETAILS`,
                 `---------------------------------`,
                 `Approved Loan Amount: ${approvedAmount}`,
                 `Processing Fee: ${loan.processingFeeAmount ? `$${(loan.processingFeeAmount / 100).toFixed(2)}` : 'N/A'}`,
-                `Net Disbursement: ${loan.approvedAmount ? `$${((loan.approvedAmount - (loan.processingFeeAmount || 0)) / 100).toFixed(2)}` : 'N/A'}`,
-                `Disbursement Method: Direct Deposit`,
-                `Status: ${loan.status === 'disbursed' ? 'Completed' : 'Pending'}`,
+                `Net Disbursement: ${loan.approvedAmount && loan.processingFeeAmount ? `$${((loan.approvedAmount - loan.processingFeeAmount) / 100).toFixed(2)}` : approvedAmount}`,
+                `Disbursement Method: ${loan.disbursementMethod || 'N/A'}`,
+                `Status: ${loan.status}`,
                 ``,
-                `Funds have been transferred to your designated bank account.`,
-                `Please allow 1-3 business days for the transfer to complete.`,
+                `Disbursed At: ${loan.disbursedAt ? new Date(loan.disbursedAt).toLocaleDateString('en-US') : 'Pending'}`,
                 ``,
-                `� ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+                `\u00A9 ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
               ].join('\n');
               break;
 
             case "repayment_schedule":
               filename = `Repayment_Schedule_${trackingNumber}.txt`;
-              const monthlyPayment = loan.approvedAmount && loan.loanTerm
-                ? (loan.approvedAmount / loan.loanTerm / 100).toFixed(2)
+              const loanTerm = (loan as any).loanTerm as number | undefined;
+              const monthlyPayment = loan.approvedAmount && loanTerm
+                ? (loan.approvedAmount / loanTerm / 100).toFixed(2)
                 : 'N/A';
-              const scheduleLines = [];
-              if (loan.loanTerm && loan.approvedAmount) {
-                for (let i = 1; i <= Math.min(loan.loanTerm, 36); i++) {
+              const scheduleLines: string[] = [];
+              if (loanTerm && loan.approvedAmount) {
+                for (let i = 1; i <= Math.min(loanTerm, 36); i++) {
                   const dueDate = new Date();
                   dueDate.setMonth(dueDate.getMonth() + i);
                   scheduleLines.push(
-                    `  ${String(i).padStart(2, ' ')}. ${dueDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}    $${monthlyPayment}`
+                    `  ${String(i).padStart(3)}   ${dueDate.toLocaleDateString('en-US').padEnd(20)} $${monthlyPayment}`
                   );
                 }
               }
               content = [
                 `AMERILEND FINANCIAL - REPAYMENT SCHEDULE`,
-                `=========================================`,
+                `==========================================`,
                 ``,
                 `Date: ${now}`,
                 `Tracking Number: ${trackingNumber}`,
@@ -9472,7 +9378,7 @@ const autoPayRouter = router({
                 `LOAN SUMMARY`,
                 `---------------------------------`,
                 `Total Loan Amount: ${approvedAmount}`,
-                `Loan Term: ${loan.loanTerm || 'N/A'} months`,
+                `Loan Term: ${loanTerm || 'N/A'} months`,
                 `Monthly Payment: $${monthlyPayment}`,
                 ``,
                 `PAYMENT SCHEDULE`,
@@ -9482,7 +9388,7 @@ const autoPayRouter = router({
                 ``,
                 `Note: Payments are due by the date listed. Late payments may incur fees.`,
                 ``,
-                `� ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
+                `\u00A9 ${new Date().getFullYear()} AmeriLend Financial. All rights reserved.`,
               ].join('\n');
               break;
           }
@@ -9499,5 +9405,43 @@ const autoPayRouter = router({
       }),
   }),
 });
+
+// Helper function to determine next steps based on application status
+function getNextSteps(status: string): string[] {
+  const steps: Record<string, string[]> = {
+    "pending": [
+      "Your application is being reviewed",
+      "Check your email for updates",
+      "Verify all submitted information is accurate"
+    ],
+    "in-review": [
+      "Our team is actively reviewing your application",
+      "You may be contacted for additional information",
+      "Decision will be communicated within 24-48 hours"
+    ],
+    "approved": [
+      "Congratulations! Your loan has been approved",
+      "Log in to your dashboard to view disbursement options",
+      "Choose your preferred funding method"
+    ],
+    "rejected": [
+      "Your application was not approved at this time",
+      "Check your email for details on why",
+      "Contact us at (800) 990-9130 to discuss options"
+    ],
+    "funded": [
+      "Your loan has been funded!",
+      "The money is on its way to your account",
+      "View payment schedule in your dashboard"
+    ],
+    "completed": [
+      "Your loan has been fully repaid",
+      "Thank you for using AmeriLend",
+      "You may be eligible for additional credit"
+    ],
+  };
+
+  return steps[status] || ["Please contact support for more information"];
+}
 
 export type AppRouter = typeof appRouter;
