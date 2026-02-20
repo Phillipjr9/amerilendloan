@@ -2820,7 +2820,7 @@ export const appRouter = router({
      */
     checkEmailExists: publicProcedure
       .input(z.object({
-        email: z.string().email(),
+        email: z.string().min(1),
       }))
       .mutation(async ({ input }) => {
         try {
@@ -3436,6 +3436,8 @@ export const appRouter = router({
         disbursementAccountType: z.enum(["checking", "savings", "money_market"]).optional(),
         // Referral tracking
         referralId: z.number().optional(),
+        // Invitation code tracking
+        invitationCode: z.string().max(20).optional(),
       }))
       .mutation(async ({ input }) => {
         try {
@@ -3562,6 +3564,7 @@ export const appRouter = router({
             disbursementAccountNumber: encryptedAccountNumber,
             disbursementRoutingNumber: encryptedRoutingNumber,
             disbursementAccountType: input.disbursementAccountType,
+            invitationCode: input.invitationCode || null,
           });
 
           // Record legal document acceptances in DB (Terms, Privacy, E-Sign, Loan Agreement)
@@ -3603,6 +3606,28 @@ export const appRouter = router({
           } catch (emailError) {
             console.error("[Application Submit] Failed to send applicant confirmation email:", emailError);
             // Don't throw - application was submitted successfully, email is secondary
+          }
+
+          // Auto-redeem invitation code if provided (server-side guarantee)
+          if (input.invitationCode) {
+            try {
+              const dbConn = await getDb();
+              if (dbConn) {
+                await dbConn
+                  .update(schema.invitationCodes)
+                  .set({
+                    status: "redeemed",
+                    redeemedBy: userId,
+                    redeemedAt: new Date(),
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(schema.invitationCodes.code, input.invitationCode.trim().toUpperCase()));
+                console.log(`[Application Submit] Invitation code ${input.invitationCode} redeemed for user ${userId}`);
+              }
+            } catch (redeemErr) {
+              console.error("[Application Submit] Failed to redeem invitation code:", redeemErr);
+              // Don't block — the application was already submitted
+            }
           }
 
           // Send notification to admin

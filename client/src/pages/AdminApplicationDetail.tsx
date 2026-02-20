@@ -308,6 +308,16 @@ export default function AdminApplicationDetail() {
                     )}
                     
                     
+                    {/* Invitation Code Badge */}
+                    {application.invitationCode && (
+                      <div className="flex justify-between text-sm items-center">
+                        <span className="text-gray-600">Invitation Code</span>
+                        <code className="bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs font-mono font-bold">
+                          {application.invitationCode}
+                        </code>
+                      </div>
+                    )}
+
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Applied On</span>
                       <span className="font-medium">

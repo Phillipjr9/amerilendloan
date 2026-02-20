@@ -464,6 +464,8 @@ export default function ApplyLoan() {
       disbursementAccountType: formData.disbursementMethod === "bank_transfer" ? (formData.accountType as "checking" | "savings" | "money_market") : undefined,
       // Include referral tracking
       referralId: referralId || undefined,
+      // Include invitation code if user came via admin invitation
+      invitationCode: (window as any).__amerilend_invitation_code || undefined,
     });
   };
 

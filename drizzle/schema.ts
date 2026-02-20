@@ -188,6 +188,9 @@ export const loanApplications = pgTable("loanApplications", {
   rejectionReason: text("rejectionReason"),
   adminNotes: text("adminNotes"),
   
+  // Invitation code tracking
+  invitationCode: varchar("invitationCode", { length: 20 }),
+  
   // Timestamps
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
