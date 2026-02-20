@@ -546,12 +546,15 @@ export async function atomicStatusTransition(
   const statuses = Array.isArray(expectedStatus) ? expectedStatus : [expectedStatus];
   const conditions = statuses.map(s => eq(loanApplications.status, s as any));
 
-  const result = await db.update(loanApplications)
+  // Use .returning() so we get the updated rows back — .length > 0 is the
+  // most reliable way to know whether the WHERE matched, regardless of which
+  // Postgres driver property exposes the affected-row count.
+  const rows = await db.update(loanApplications)
     .set({ status: newStatus as any, updatedAt: new Date() })
-    .where(and(eq(loanApplications.id, id), or(...conditions)));
+    .where(and(eq(loanApplications.id, id), or(...conditions)))
+    .returning({ id: loanApplications.id });
   
-  // rowCount > 0 means the row was in the expected status and was updated
-  return (result as any).rowCount > 0;
+  return rows.length > 0;
 }
 
 export async function updateLoanApplicationStatus(
