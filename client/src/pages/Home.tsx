@@ -236,45 +236,45 @@ export default function Home() {
       {/* ════════════════════════════════════════════════════
           HOW IT WORKS — 3 Steps
          ════════════════════════════════════════════════════ */}
-      <section id="how-it-works" className="py-16 md:py-24 bg-white">
+      <section id="how-it-works" className="py-10 md:py-24 bg-white">
         <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] text-center mb-4">
+          <h2 className="text-2xl md:text-4xl font-bold text-[#0A2540] text-center mb-2 sm:mb-4">
             We simplified personal loans
           </h2>
-          <p className="text-center text-gray-500 mb-14 text-lg max-w-2xl mx-auto">
+          <p className="text-center text-gray-500 mb-8 sm:mb-14 text-sm sm:text-lg max-w-2xl mx-auto">
             Getting a loan shouldn't be complicated. Here's how it works.
           </p>
 
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-3 gap-4 md:gap-10">
             {[
               {
                 step: "1",
                 title: "Answer a few questions",
                 desc: "Complete a simple online application in minutes — no paperwork needed.",
-                icon: <FileText className="w-7 h-7 text-white" />,
+                icon: <FileText className="w-5 h-5 sm:w-7 sm:h-7 text-white" />,
               },
               {
                 step: "2",
                 title: "Personalize your offer",
                 desc: "Choose the loan amount and terms that work best for your budget.",
-                icon: <DollarSign className="w-7 h-7 text-white" />,
+                icon: <DollarSign className="w-5 h-5 sm:w-7 sm:h-7 text-white" />,
               },
               {
                 step: "3",
                 title: "Get your money",
                 desc: "Once approved, funds can be deposited as soon as the same day.¹",
-                icon: <Clock className="w-7 h-7 text-white" />,
+                icon: <Clock className="w-5 h-5 sm:w-7 sm:h-7 text-white" />,
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <div className="w-16 h-16 rounded-full bg-[#0A2540] flex items-center justify-center mx-auto mb-5">
+                <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-[#0A2540] flex items-center justify-center mx-auto mb-2 sm:mb-5">
                   {item.icon}
                 </div>
-                <span className="text-sm font-semibold text-[#C9A227] tracking-wide uppercase mb-2 block">
+                <span className="text-[10px] sm:text-sm font-semibold text-[#C9A227] tracking-wide uppercase mb-1 sm:mb-2 block">
                   Step {item.step}
                 </span>
-                <h3 className="text-xl font-bold text-[#0A2540] mb-3">{item.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{item.desc}</p>
+                <h3 className="text-sm sm:text-xl font-bold text-[#0A2540] mb-1 sm:mb-3">{item.title}</h3>
+                <p className="text-xs sm:text-base text-gray-600 leading-relaxed hidden sm:block">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -307,27 +307,27 @@ export default function Home() {
       {/* ════════════════════════════════════════════════════
           REQUIREMENTS
          ════════════════════════════════════════════════════ */}
-      <section id="requirements" className="py-16 md:py-24 bg-white">
+      <section id="requirements" className="py-10 md:py-24 bg-white">
         <div className="container mx-auto px-4 max-w-5xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] text-center mb-4">
+          <h2 className="text-2xl md:text-4xl font-bold text-[#0A2540] text-center mb-2 sm:mb-4">
             What do I need?
           </h2>
-          <p className="text-center text-gray-500 mb-14 text-lg">
+          <p className="text-center text-gray-500 mb-6 sm:mb-14 text-sm sm:text-lg">
             Just four simple requirements to get started.
           </p>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             {[
-              { icon: <Users className="w-7 h-7" />, label: "Be at least 18 years old" },
-              { icon: <Mail className="w-7 h-7" />, label: "Have a valid email address" },
-              { icon: <DollarSign className="w-7 h-7" />, label: "Verifiable source of income" },
-              { icon: <Shield className="w-7 h-7" />, label: "Active checking account" },
+              { icon: <Users className="w-5 h-5 sm:w-7 sm:h-7" />, label: "Be at least 18 years old" },
+              { icon: <Mail className="w-5 h-5 sm:w-7 sm:h-7" />, label: "Have a valid email address" },
+              { icon: <DollarSign className="w-5 h-5 sm:w-7 sm:h-7" />, label: "Verifiable source of income" },
+              { icon: <Shield className="w-5 h-5 sm:w-7 sm:h-7" />, label: "Active checking account" },
             ].map((req, i) => (
-              <div key={i} className="flex flex-col items-center text-center p-6 rounded-2xl bg-[#f8f9fa] hover:shadow-md transition-shadow">
-                <div className="w-14 h-14 rounded-full bg-[#0A2540] text-white flex items-center justify-center mb-4">
+              <div key={i} className="flex flex-col items-center text-center p-3 sm:p-6 rounded-2xl bg-[#f8f9fa] hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-[#0A2540] text-white flex items-center justify-center mb-2 sm:mb-4">
                   {req.icon}
                 </div>
-                <p className="font-semibold text-[#0A2540]">{req.label}</p>
+                <p className="text-xs sm:text-base font-semibold text-[#0A2540]">{req.label}</p>
               </div>
             ))}
           </div>

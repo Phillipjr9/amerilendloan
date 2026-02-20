@@ -152,8 +152,8 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
 
       {/* ─── Chat Panel ──────────────────────────────────────── */}
       {isOpen && (
-        <div className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[420px] h-full sm:h-auto sm:max-w-[calc(100vw-3rem)] shadow-2xl">
-          <Card className="h-full sm:h-[650px] sm:max-h-[calc(100vh-3rem)] flex flex-col rounded-none sm:rounded-xl overflow-hidden border-0 sm:border">
+        <div className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[420px] max-h-[85vh] sm:max-h-none sm:max-w-[calc(100vw-3rem)] shadow-2xl">
+          <Card className="h-full sm:h-[600px] sm:max-h-[calc(100vh-3rem)] flex flex-col rounded-t-xl sm:rounded-xl overflow-hidden border-0 sm:border">
             {/* Header */}
             <CardHeader className="text-white p-3 sm:p-4 flex flex-col space-y-0 bg-gradient-to-r from-[#0A2540] via-[#0033A0] to-[#0055CC]">
               <div className="flex items-center justify-between">
@@ -216,11 +216,11 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
             </CardHeader>
 
             {/* Messages Area */}
-            <CardContent className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50 dark:bg-gray-900/50">
+            <CardContent className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2.5 sm:space-y-4 bg-gray-50 dark:bg-gray-900/50">
               {/* Welcome State */}
               {messages.length === 0 && (
-                <div className="text-center py-4 sm:py-6">
-                  <div className="relative inline-block mb-3 sm:mb-4">
+                <div className="text-center py-3 sm:py-6">
+                  <div className="relative inline-block mb-2 sm:mb-4">
                     <KaiAvatar size="lg" />
                     {/* Decorative spinning dashed ring */}
                     <span className="absolute -inset-1.5 rounded-full border-2 border-dashed border-[#C9A227]/30 animate-[spin_12s_linear_infinite]" />
@@ -231,7 +231,7 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
                       ? `Hey${userName ? ` ${userName}` : ""}! I'm Kai`
                       : "Hi! I'm Kai, your AI assistant"}
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 px-2">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 sm:mb-4 px-2">
                     {isAuthenticated
                       ? "I have access to your account, loan status, and tracking details. Ask me anything!"
                       : "Learn about loans, check eligibility, or get application guidance."}
@@ -239,19 +239,19 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
 
                   {/* Auth badge */}
                   {isAuthenticated && (
-                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-medium mb-4">
+                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-medium mb-3 sm:mb-4">
                       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                       Priority Support Active
                     </div>
                   )}
 
                   {/* Quick Action Buttons */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                     {quickActions.map((action, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSuggestedPrompt(action.prompt)}
-                        className="flex flex-col items-center gap-1.5 p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-[#C9A227]/50 rounded-lg transition-colors text-center group"
+                        className="flex flex-col items-center gap-1 sm:gap-1.5 p-2 sm:p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-[#C9A227]/50 rounded-lg transition-colors text-center group"
                       >
                         <action.icon className="w-4 h-4 text-[#0033A0] dark:text-blue-400 group-hover:text-[#C9A227] transition-colors" />
                         <span className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300 font-medium">{action.label}</span>
