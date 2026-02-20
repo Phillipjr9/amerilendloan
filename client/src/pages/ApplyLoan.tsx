@@ -13,6 +13,7 @@ import { CheckCircle2, Loader2, Phone, ArrowLeft, Save, Eye, EyeOff, Calculator 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { toTitleCase, capitalizeWords } from "@shared/format";
 import { useTranslation } from "react-i18next";
 import {
   formatSSN,
@@ -531,8 +532,17 @@ export default function ApplyLoan() {
     checkDuplicateMutation.mutate();
   };
 
+  // Fields that should be auto-capitalized (Title Case)
+  const titleCaseFields = new Set(["fullName", "employer", "jobTitle", "beneficiaryName"]);
+  const capitalizeFields = new Set(["city"]);
+
   const updateFormData = (field: string, value: string | boolean) => {
-    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
+    let formatted = value;
+    if (typeof formatted === "string") {
+      if (titleCaseFields.has(field)) formatted = toTitleCase(formatted);
+      else if (capitalizeFields.has(field)) formatted = capitalizeWords(formatted);
+    }
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: formatted }));
   };
 
   const saveForLater = () => {

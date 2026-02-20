@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
+import { toTitleCase } from '@shared/format';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,8 +24,8 @@ import { toast } from 'sonner';
 
 // Form schemas
 const personalInfoSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().min(1, 'First name is required').transform(toTitleCase),
+  lastName: z.string().min(1, 'Last name is required').transform(toTitleCase),
   email: z.string().email('Invalid email'),
   phone: z.string().min(10, 'Invalid phone number'),
   dateOfBirth: z.string(),

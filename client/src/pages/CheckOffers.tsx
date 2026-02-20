@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { toTitleCase } from "@shared/format";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -239,8 +240,10 @@ export default function CheckOffers() {
     state: "TX",
   });
 
+  const nameFields = new Set(["firstName", "lastName"]);
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+    const val = nameFields.has(e.target.name) ? toTitleCase(e.target.value) : e.target.value;
+    setFormData((p) => ({ ...p, [e.target.name]: val }));
   };
   const handleSelect = (name: string, value: string) => {
     setFormData((p) => ({ ...p, [name]: value }));

@@ -6,6 +6,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { toTitleCase } from "@shared/format";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
@@ -336,6 +337,11 @@ export default function Settings() {
     // Apply formatting for SSN
     if (e.target.name === "ssn") {
       value = formatSSN(value);
+    }
+
+    // Auto-capitalize name fields
+    if (e.target.name === "firstName" || e.target.name === "lastName") {
+      value = toTitleCase(value);
     }
 
     setProfileForm({

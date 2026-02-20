@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { COOKIE_NAME, SESSION_COOKIE_MS } from "@shared/const";
+import { toTitleCase, capitalizeWords } from "@shared/format";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure, adminProcedure } from "./_core/trpc";
@@ -2617,7 +2618,7 @@ export const appRouter = router({
           });
         }
 
-        const result = await signUpWithEmail(input.email, input.password, input.fullName);
+        const result = await signUpWithEmail(input.email, input.password, input.fullName ? toTitleCase(input.fullName) : input.fullName);
         if (!result.success) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -3467,7 +3468,7 @@ export const appRouter = router({
             // Create new user account in database
             try {
               console.log("[Application Submit] Creating database user for:", input.email);
-              const newUser = await db.createUser(input.email, input.fullName);
+              const newUser = await db.createUser(input.email, toTitleCase(input.fullName));
               if (!newUser) {
                 throw new TRPCError({
                   code: "INTERNAL_SERVER_ERROR",
@@ -3535,14 +3536,14 @@ export const appRouter = router({
           const result = await db.createLoanApplication({
             userId,
             trackingNumber: generateTrackingNumber(),
-            fullName: input.fullName,
+            fullName: toTitleCase(input.fullName),
             email: input.email,
             phone: input.phone,
             dateOfBirth: input.dateOfBirth,
             ssn: encrypt(input.ssn), // Encrypt SSN at rest
             ssnHash: crypto.createHash('sha256').update(input.ssn).digest('hex'), // Hash for lookups
             street: input.street,
-            city: input.city,
+            city: capitalizeWords(input.city),
             state: input.state,
             zipCode: input.zipCode,
             employmentStatus: input.employmentStatus,
@@ -3595,7 +3596,7 @@ export const appRouter = router({
           try {
             await sendLoanApplicationReceivedEmail(
               input.email,
-              input.fullName,
+              toTitleCase(input.fullName),
               result.trackingNumber,
               input.requestedAmount
             );
@@ -3607,7 +3608,7 @@ export const appRouter = router({
           // Send notification to admin
           try {
             await sendAdminNewApplicationNotification(
-              input.fullName,
+              toTitleCase(input.fullName),
               input.email,
               result.trackingNumber,
               input.requestedAmount,
