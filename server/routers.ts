@@ -2631,8 +2631,8 @@ export const appRouter = router({
 
     supabaseSignIn: publicProcedure
       .input(z.object({
-        email: z.string().email(),
-        password: z.string().min(8),
+        email: z.string().min(1),
+        password: z.string().min(1), // No length restriction on login — Supabase handles validation
       }))
       .mutation(async ({ input, ctx }) => {
         if (!isSupabaseConfigured()) {
@@ -2720,8 +2720,8 @@ export const appRouter = router({
      */
     loginWithPassword: publicProcedure
       .input(z.object({
-        email: z.string().min(3), // Accepts email or username
-        password: z.string().min(8),
+        email: z.string().min(1), // Accepts email or username
+        password: z.string().min(1), // No length restriction on login — bcrypt handles validation
       }))
       .mutation(async ({ input, ctx }) => {
         try {
