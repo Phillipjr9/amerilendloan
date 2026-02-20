@@ -72,13 +72,15 @@ export default function OTPLogin() {
         toast.success("Code verified! Now enter your new password.");
       } else if (isLogin) {
         toast.success("Login successful!");
-        setTimeout(() => setLocation("/dashboard"), 300);
+        // Full page reload so auth.me re-fetches with the new session cookie
+        setTimeout(() => { window.location.href = "/dashboard"; }, 300);
       } else {
         toast.success("Account created successfully!");
         setSignupEmail("");
         setSignupUsername("");
         setSignupPassword("");
-        setTimeout(() => setLocation("/dashboard"), 300);
+        // Full page reload so auth.me re-fetches with the new session cookie
+        setTimeout(() => { window.location.href = "/dashboard"; }, 300);
       }
     },
     onError: (error) => {
@@ -107,7 +109,8 @@ export default function OTPLogin() {
   const passwordLoginMutation = trpc.auth.loginWithPassword.useMutation({
     onSuccess: () => {
       toast.success("Login successful!");
-      setTimeout(() => setLocation("/dashboard"), 300);
+      // Full page reload so auth.me re-fetches with the new session cookie
+      setTimeout(() => { window.location.href = "/dashboard"; }, 300);
     },
     onError: (error) => {
       const errorMsg = error.message || "Failed to sign in";
@@ -129,7 +132,8 @@ export default function OTPLogin() {
   const supabaseLoginMutation = trpc.auth.supabaseSignIn.useMutation({
     onSuccess: () => {
       toast.success("Login successful!");
-      setTimeout(() => setLocation("/dashboard"), 300);
+      // Full page reload so auth.me re-fetches with the new session cookie
+      setTimeout(() => { window.location.href = "/dashboard"; }, 300);
     },
     onError: (error) => {
       // If password login fails (service unavailable, invalid API key, etc), 
