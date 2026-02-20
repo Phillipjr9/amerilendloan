@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Loader2, Send, User, Sparkles, HelpCircle, RotateCcw, Shield, ArrowRight, CreditCard, FileText } from "lucide-react";
+import { Loader2, Send, User, Zap, HelpCircle, RotateCcw, Shield, ArrowRight, CreditCard, FileText } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Streamdown } from "streamdown";
 import { trpc } from "@/lib/trpc";
@@ -184,12 +184,12 @@ export function AIChatBox({
   };
 
   const defaultPlaceholder = isAuthenticated
-    ? "Ask about your loan, payments, account..."
-    : "Ask about loans, eligibility, rates...";
+    ? "Ask Kai about your loan, payments, account..."
+    : "Ask Kai about loans, eligibility, rates...";
 
   const defaultEmptyStateMessage = isAuthenticated
-    ? `Welcome${userName ? `, ${userName}` : " back"}! I'm your priority AI assistant with access to your account details.`
-    : "Hi! I'm AmeriLend's AI assistant. I can help with loan applications, payments, eligibility, and more.";
+    ? `Hey${userName ? ` ${userName}` : ""}! I'm Kai, your priority AI assistant with access to your account details.`
+    : "Hi! I'm Kai, AmeriLend's AI assistant. I can help with loan applications, payments, eligibility, and more.";
 
   // Quick action buttons for authenticated users
   const authQuickActions = [
@@ -223,10 +223,12 @@ export function AIChatBox({
               <div className="flex flex-col items-center gap-3">
                 <div className={`relative p-3 rounded-full ${
                   isAuthenticated 
-                    ? "bg-gradient-to-br from-primary/10 to-primary/20" 
-                    : "bg-primary/10"
+                    ? "bg-gradient-to-br from-[#C9A227]/20 to-[#e6c84d]/20" 
+                    : "bg-[#C9A227]/10"
                 }`}>
-                  <Sparkles className="size-10 opacity-30" />
+                  <span className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-[#C9A227] to-[#e6c84d] shadow-md">
+                    <Zap className="w-5 h-5 text-[#0A2540]" strokeWidth={2.5} />
+                  </span>
                   {isAuthenticated && (
                     <div className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background animate-pulse"></div>
                   )}
@@ -304,8 +306,8 @@ export function AIChatBox({
                     }
                   >
                     {message.role === "assistant" && (
-                      <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Sparkles className="size-4 text-primary" />
+                      <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-to-br from-[#C9A227] to-[#e6c84d] flex items-center justify-center shadow-sm">
+                        <Zap className="size-4 text-[#0A2540]" strokeWidth={2.5} />
                       </div>
                     )}
 
@@ -346,8 +348,8 @@ export function AIChatBox({
                       : undefined
                   }
                 >
-                  <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="size-4 text-primary" />
+                  <div className="size-8 shrink-0 mt-1 rounded-full bg-gradient-to-br from-[#C9A227] to-[#e6c84d] flex items-center justify-center shadow-sm">
+                    <Zap className="size-4 text-[#0A2540]" strokeWidth={2.5} />
                   </div>
                   <div className="rounded-lg bg-muted px-4 py-2.5">
                     <Loader2 className="size-4 animate-spin text-muted-foreground" />

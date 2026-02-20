@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, Send, Loader2, Phone, Mail, User, RotateCcw, Shield, Sparkles, ArrowRight, CreditCard, FileText, HelpCircle } from "lucide-react";
+import { X, Send, Loader2, Phone, Mail, User, RotateCcw, Shield, ArrowRight, CreditCard, FileText, HelpCircle, Zap } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { trpc } from "@/lib/trpc";
 
@@ -14,6 +14,17 @@ interface Message {
 interface AiSupportWidgetProps {
   isAuthenticated?: boolean;
   userName?: string;
+}
+
+/* ─── Kai Avatar (reusable) ───────────────────────────────── */
+function KaiAvatar({ size = "sm" }: { size?: "sm" | "md" | "lg" }) {
+  const sizeMap = { sm: "w-6 h-6", md: "w-10 h-10", lg: "w-14 h-14 sm:w-16 sm:h-16" };
+  const iconMap = { sm: "w-3 h-3", md: "w-5 h-5", lg: "w-7 h-7 sm:w-8 sm:h-8" };
+  return (
+    <span className={`${sizeMap[size]} shrink-0 rounded-full bg-gradient-to-br from-[#C9A227] to-[#e6c84d] flex items-center justify-center shadow-md`}>
+      <Zap className={`${iconMap[size]} text-[#0A2540]`} strokeWidth={2.5} />
+    </span>
+  );
 }
 
 export default function AiSupportWidget({ isAuthenticated = false, userName }: AiSupportWidgetProps) {
@@ -112,60 +123,57 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
 
   return (
     <>
-      {/* Floating Button */}
+      {/* ─── Advanced Floating Kai Button ───────────────────── */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 text-white rounded-full p-3 sm:p-4 shadow-lg transition-all hover:scale-110 flex items-center gap-2 group ${
-            isAuthenticated
-              ? "bg-gradient-to-r from-[#0033A0] to-[#0055CC] hover:from-[#002080] hover:to-[#0044BB]"
-              : "bg-[#0033A0] hover:bg-[#002080]"
-          }`}
-          aria-label="Open AI Support"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 group"
+          aria-label="Open Kai AI Support"
         >
-          {isAuthenticated ? (
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
-          ) : (
-            <img src="/icons/support.png" alt="Support" className="w-5 h-5 sm:w-6 sm:h-6" />
-          )}
-          <span className="hidden sm:block max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">
-            {isAuthenticated ? "Your AI Assistant" : "Ask AI Support"}
+          {/* Outer pulse ring */}
+          <span className="absolute inset-0 rounded-full bg-gradient-to-r from-[#C9A227] to-[#0033A0] opacity-40 animate-ping" />
+          {/* Rotating glow ring */}
+          <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-[#C9A227] via-[#0055CC] to-[#C9A227] opacity-30 blur-sm group-hover:opacity-50 transition-opacity animate-[spin_6s_linear_infinite]" />
+          {/* Main button body */}
+          <span className="relative flex items-center gap-2 bg-gradient-to-br from-[#0A2540] via-[#0033A0] to-[#0055CC] text-white rounded-full px-4 py-3 sm:py-3.5 shadow-xl shadow-blue-900/30 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-blue-800/40">
+            {/* Kai medallion */}
+            <span className="relative flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#C9A227] to-[#e6c84d] shadow-inner">
+              <Zap className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-[#0A2540]" strokeWidth={2.5} />
+            </span>
+            {/* Label */}
+            <span className="font-semibold text-sm sm:text-base tracking-wide">Kai</span>
+            {/* Online dot */}
+            {isAuthenticated && (
+              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-pulse" />
+            )}
           </span>
-          {isAuthenticated && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse" />
-          )}
         </button>
       )}
 
-      {/* Chat Widget */}
+      {/* ─── Chat Panel ──────────────────────────────────────── */}
       {isOpen && (
         <div className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[420px] h-full sm:h-auto sm:max-w-[calc(100vw-3rem)] shadow-2xl">
           <Card className="h-full sm:h-[650px] sm:max-h-[calc(100vh-3rem)] flex flex-col rounded-none sm:rounded-xl overflow-hidden border-0 sm:border">
-            {/* Header — differentiated by auth state */}
-            <CardHeader className={`text-white p-3 sm:p-4 flex flex-col space-y-0 ${
-              isAuthenticated 
-                ? "bg-gradient-to-r from-[#0033A0] via-[#0044BB] to-[#0055CC]" 
-                : "bg-gradient-to-r from-[#0033A0] to-[#0055CC]"
-            }`}>
+            {/* Header */}
+            <CardHeader className="text-white p-3 sm:p-4 flex flex-col space-y-0 bg-gradient-to-r from-[#0A2540] via-[#0033A0] to-[#0055CC]">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {isAuthenticated ? (
-                    <div className="relative">
-                      <Sparkles className="w-5 h-5" />
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full" />
-                    </div>
-                  ) : (
-                    <img src="/icons/support.png" alt="Support" className="w-4 h-4 sm:w-5 sm:h-5" />
-                  )}
+                <div className="flex items-center gap-2.5">
+                  <div className="relative">
+                    <KaiAvatar size="md" />
+                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#0A2540]" />
+                  </div>
                   <div>
-                    <CardTitle className="text-base sm:text-lg leading-tight">
-                      {isAuthenticated ? "Personal AI Assistant" : "AI Support"}
+                    <CardTitle className="text-base sm:text-lg leading-tight flex items-center gap-1.5">
+                      Kai
+                      {isAuthenticated && (
+                        <Badge className="bg-white/20 text-white/90 text-[9px] px-1.5 py-0 font-normal border-0">
+                          PRO
+                        </Badge>
+                      )}
                     </CardTitle>
-                    {isAuthenticated && (
-                      <p className="text-[10px] sm:text-xs text-white/70 mt-0.5">
-                        Priority support • Account-aware
-                      </p>
-                    )}
+                    <p className="text-[10px] sm:text-xs text-white/60 mt-0.5">
+                      {isAuthenticated ? "Your personal AI assistant" : "AmeriLend AI Support"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -207,23 +215,21 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
               )}
             </CardHeader>
 
+            {/* Messages Area */}
             <CardContent className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50 dark:bg-gray-900/50">
+              {/* Welcome State */}
               {messages.length === 0 && (
                 <div className="text-center py-4 sm:py-6">
-                  <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 ${
-                    isAuthenticated ? "bg-gradient-to-br from-blue-100 to-indigo-100" : "bg-blue-100"
-                  }`}>
-                    {isAuthenticated ? (
-                      <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-[#0033A0]" />
-                    ) : (
-                      <img src="/icons/support.png" alt="Support" className="w-7 h-7 sm:w-8 sm:h-8" />
-                    )}
+                  <div className="relative inline-block mb-3 sm:mb-4">
+                    <KaiAvatar size="lg" />
+                    {/* Decorative spinning dashed ring */}
+                    <span className="absolute -inset-1.5 rounded-full border-2 border-dashed border-[#C9A227]/30 animate-[spin_12s_linear_infinite]" />
                   </div>
 
                   <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 text-sm sm:text-base">
                     {isAuthenticated
-                      ? `Welcome${userName ? `, ${userName}` : " back"}!`
-                      : "Hi! How can I help you today?"}
+                      ? `Hey${userName ? ` ${userName}` : ""}! I'm Kai`
+                      : "Hi! I'm Kai, your AI assistant"}
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 px-2">
                     {isAuthenticated
@@ -233,35 +239,35 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
 
                   {/* Auth badge */}
                   {isAuthenticated && (
-                    <div className="inline-flex items-center gap-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-xs font-medium mb-4">
-                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-medium mb-4">
+                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                       Priority Support Active
                     </div>
                   )}
 
-                  {/* Quick Action Buttons — always visible in empty state */}
+                  {/* Quick Action Buttons */}
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     {quickActions.map((action, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSuggestedPrompt(action.prompt)}
-                        className="flex flex-col items-center gap-1.5 p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-blue-300 rounded-lg transition-colors text-center"
+                        className="flex flex-col items-center gap-1.5 p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-[#C9A227]/50 rounded-lg transition-colors text-center group"
                       >
-                        <action.icon className="w-4 h-4 text-[#0033A0] dark:text-blue-400" />
+                        <action.icon className="w-4 h-4 text-[#0033A0] dark:text-blue-400 group-hover:text-[#C9A227] transition-colors" />
                         <span className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300 font-medium">{action.label}</span>
                       </button>
                     ))}
                   </div>
 
-                  {/* Suggested Prompts — additional prompts from server */}
+                  {/* Suggested Prompts */}
                   {suggestedPromptsQuery.data && suggestedPromptsQuery.data.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-[10px] text-gray-400 mb-2">Or ask about:</p>
+                      <p className="text-[10px] text-gray-400 mb-2">Or ask Kai about:</p>
                       {suggestedPromptsQuery.data.slice(0, 3).map((prompt, idx) => (
                         <button
                           key={idx}
                           onClick={() => handleSuggestedPrompt(prompt)}
-                          className="w-full text-left p-2 sm:p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-blue-300 rounded-lg text-xs transition-colors"
+                          className="w-full text-left p-2 sm:p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-[#C9A227]/40 rounded-lg text-xs transition-colors"
                         >
                           {prompt}
                         </button>
@@ -273,23 +279,22 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
                   {!isAuthenticated && (
                     <div className="mt-4 p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
                       <p className="text-xs text-blue-700 dark:text-blue-300">
-                        <strong>Already have an account?</strong> Log in for personalized AI support with access to your loan details.
+                        <strong>Already have an account?</strong> Log in for personalized support with access to your loan details.
                       </p>
                     </div>
                   )}
                 </div>
               )}
 
+              {/* Chat Messages */}
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-2`}
                 >
                   {msg.role === "assistant" && (
-                    <div className={`w-6 h-6 shrink-0 mt-1 rounded-full flex items-center justify-center ${
-                      isAuthenticated ? "bg-gradient-to-br from-blue-100 to-indigo-100" : "bg-blue-100"
-                    }`}>
-                      <Sparkles className="w-3 h-3 text-[#0033A0]" />
+                    <div className="mt-1">
+                      <KaiAvatar size="sm" />
                     </div>
                   )}
                   <div
@@ -315,18 +320,18 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
                 </div>
               ))}
 
+              {/* Typing indicator */}
               {chatMutation.isPending && (
                 <div className="flex justify-start gap-2">
-                  <div className={`w-6 h-6 shrink-0 mt-1 rounded-full flex items-center justify-center ${
-                    isAuthenticated ? "bg-gradient-to-br from-blue-100 to-indigo-100" : "bg-blue-100"
-                  }`}>
-                    <Sparkles className="w-3 h-3 text-[#0033A0]" />
+                  <div className="mt-1">
+                    <KaiAvatar size="sm" />
                   </div>
                   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2.5 sm:p-3 rounded-lg rounded-bl-sm">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 bg-[#0033A0] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-1.5 h-1.5 bg-[#0033A0] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-1.5 h-1.5 bg-[#0033A0] rounded-full animate-bounce" />
+                      <span className="text-[10px] text-gray-400 mr-1">Kai is typing</span>
+                      <span className="w-1.5 h-1.5 bg-[#C9A227] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-1.5 h-1.5 bg-[#C9A227] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1.5 h-1.5 bg-[#C9A227] rounded-full animate-bounce" />
                     </div>
                   </div>
                 </div>
@@ -349,7 +354,7 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
                       onClick={() => setShowHumanSupport(false)}
                       className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     >
-                      Back to AI
+                      Back to Kai
                     </button>
                   </div>
                   
@@ -382,7 +387,7 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
                   </p>
                 </div>
               ) : (
-                /* AI Chat Input */
+                /* Chat Input */
                 <>
                   <form
                     onSubmit={(e) => {
@@ -395,15 +400,15 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
                       type="text"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      placeholder={isAuthenticated ? "Ask about your loan, payments..." : "Ask about loans, eligibility..."}
-                      className="flex-1 px-3 py-2 sm:px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0033A0] focus:border-transparent bg-white dark:bg-gray-800 dark:text-gray-100"
+                      placeholder={isAuthenticated ? "Ask Kai about your loan, payments..." : "Ask Kai about loans, eligibility..."}
+                      className="flex-1 px-3 py-2 sm:px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A227] focus:border-transparent bg-white dark:bg-gray-800 dark:text-gray-100"
                       disabled={chatMutation.isPending}
                       maxLength={2000}
                     />
                     <Button
                       type="submit"
                       disabled={!input.trim() || chatMutation.isPending}
-                      className="bg-[#0033A0] hover:bg-[#002080] text-white p-2 sm:px-4"
+                      className="bg-gradient-to-r from-[#0A2540] to-[#0033A0] hover:from-[#002080] hover:to-[#0055CC] text-white p-2 sm:px-4"
                     >
                       {chatMutation.isPending ? (
                         <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -415,14 +420,14 @@ export default function AiSupportWidget({ isAuthenticated = false, userName }: A
                   
                   <div className="flex items-center justify-between mt-2">
                     <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                      {isAuthenticated ? "Account-aware AI • May not always be accurate" : "AI responses may not always be accurate"}
+                      Powered by Kai AI {isAuthenticated && "• Account-aware"}
                     </p>
                     <button
                       onClick={() => setShowHumanSupport(true)}
                       className="text-xs text-[#0033A0] hover:text-[#002080] dark:text-blue-400 font-medium flex items-center gap-1"
                     >
                       <User className="w-3 h-3" />
-                      Agent
+                      Human Agent
                     </button>
                   </div>
                 </>

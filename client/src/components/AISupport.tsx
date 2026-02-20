@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Package, Loader2, Shield, Sparkles, User } from "lucide-react";
+import { MessageCircle, Package, Loader2, Shield, Zap, User } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 export function AISupport() {
@@ -74,12 +74,14 @@ export function AISupport() {
       {user ? (
         <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
           <div className="relative">
-            <Sparkles className="w-5 h-5 text-[#0033A0] dark:text-blue-400" />
+            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[#C9A227] to-[#e6c84d] flex items-center justify-center shadow-sm">
+              <Zap className="w-4 h-4 text-[#0A2540]" strokeWidth={2.5} />
+            </span>
             <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-              Priority AI Support
+              Kai &mdash; Priority Support
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Personalized assistance with your loan details, tracking numbers, and account info
@@ -95,7 +97,7 @@ export function AISupport() {
           <User className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-              General AI Support
+              Kai &mdash; General Support
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Log in for personalized support with access to your loan status and account details
@@ -111,7 +113,7 @@ export function AISupport() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="chat" className="flex gap-2">
             <MessageCircle className="w-4 h-4" />
-            {user ? "AI Assistant" : "Support Chat"}
+            {user ? "Ask Kai" : "Chat with Kai"}
           </TabsTrigger>
           <TabsTrigger value="track" className="flex gap-2">
             <Package className="w-4 h-4" />
@@ -155,7 +157,7 @@ export function AISupport() {
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Enter your Application ID and email address to check your loan application status.
-                {user && " You can also ask the AI assistant — it has access to your tracking numbers."}
+                {user && " You can also ask Kai — she has access to your tracking numbers."}
               </p>
             </div>
 
