@@ -4,6 +4,8 @@ import { createServer } from "http";
 import net from "net";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -88,6 +90,36 @@ async function startServer() {
   server.on('error', (error) => {
     logger.error('Server error', error);
   });
+
+  // Security headers via helmet
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        fontSrc: ["'self'", "data:"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://js.authorize.net", "https://jstest.authorize.net"],
+        connectSrc: ["'self'", "https:"],
+      },
+    },
+  }));
+
+  // CORS configuration
+  const allowedOrigins = [
+    'https://amerilendloan.vercel.app',
+    'https://www.amerilendloan.com',
+    `http://localhost:${process.env.PORT || 3000}`,
+    'http://localhost:5173',
+    process.env.VITE_APP_URL,
+    process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : undefined,
+  ].filter((o): o is string => Boolean(o));
+
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  }));
   
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
@@ -95,27 +127,6 @@ async function startServer() {
 
   // Trust proxy for correct IP behind reverse proxies (Railway, Vercel)
   app.set('trust proxy', 1);
-  
-  // CORS headers for API routes
-  app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    const allowedOrigins = [
-      `http://localhost:${process.env.PORT || 3000}`,
-      'http://localhost:5173',
-      process.env.VITE_APP_URL,
-      process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : '',
-    ].filter(Boolean);
-    if (origin && allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(204);
-    }
-    next();
-  });
 
   // Ensure all responses are properly formatted as JSON
   app.use(ensureJsonHeaders);
@@ -139,35 +150,6 @@ async function startServer() {
     excludeMethods: ["GET", "HEAD", "DELETE", "OPTIONS"],
   }));
   
-  // Security headers middleware
-  app.use((req, res, next) => {
-    // Content Security Policy
-    res.setHeader(
-      "Content-Security-Policy",
-      "default-src 'self'; img-src 'self' data: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://js.authorize.net https://jstest.authorize.net; connect-src 'self' https:;"
-    );
-    
-    // XSS Protection
-    res.setHeader("X-XSS-Protection", "1; mode=block");
-    
-    // Prevent clickjacking
-    res.setHeader("X-Frame-Options", "DENY");
-    
-    // Prevent MIME type sniffing
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    
-    // Strict Transport Security (HTTPS only)
-    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-    
-    // Referrer Policy
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    
-    // Permissions Policy (disable unused browser features)
-    res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
-    
-    next();
-  });
-
   // Rate limiting configurations
   // General API rate limit (100 requests per 15 minutes)
   const generalLimiter = rateLimit({

@@ -395,7 +395,7 @@ export const SUGGESTED_TOPICS = {
 
 export interface SupportContext {
   isAuthenticated: boolean;
-  userRole?: "user" | "admin"; // Their role in the system
+  userRole?: "user" | "admin" | "super_admin"; // Their role in the system
   userId?: string | number;
   email?: string;
   accountAge?: number; // Days since account creation
