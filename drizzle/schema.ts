@@ -6,7 +6,7 @@ import { boolean, integer, pgEnum, pgTable, text, timestamp, varchar, serial, in
  * Columns use camelCase to match both database fields and generated types.
  */
 
-export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const roleEnum = pgEnum("role", ["user", "admin", "super_admin"]);
 export const accountStatusEnum = pgEnum("account_status", ["active", "suspended", "banned", "deactivated"]);
 export const purposeEnum = pgEnum("purpose", ["signup", "login", "reset"]);
 export const loanTypeEnum = pgEnum("loan_type", ["installment", "short_term"]);
