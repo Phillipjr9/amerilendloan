@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, MessageSquare, Clock, CheckCircle, AlertCircle, ChevronRight } from "lucide-react";
+import { Plus, MessageSquare, Clock, CheckCircle, AlertCircle, ChevronRight, Send } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SupportTicket {
   id: string;
@@ -37,6 +38,7 @@ export function SupportCenter() {
   const [filter, setFilter] = useState<"all" | "open" | "resolved">("all");
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [showNewTicket, setShowNewTicket] = useState(false);
+  const [replyMessage, setReplyMessage] = useState("");
 
   // Fetch tickets from backend
   const { data: ticketsData, refetch } = trpc.supportTickets.getUserTickets.useQuery();
@@ -72,6 +74,7 @@ export function SupportCenter() {
   // Map backend tickets to UI format
   const allTickets: SupportTicket[] = tickets.map((t: any) => ({
     id: `TKT-${String(t.id).padStart(3, "0")}`,
+    rawId: t.id,
     subject: t.subject,
     description: t.description,
     status: t.status as "open" | "in-progress" | "resolved" | "closed",
@@ -80,6 +83,29 @@ export function SupportCenter() {
     lastUpdated: new Date(t.updatedAt || t.createdAt).toLocaleDateString(),
     messageCount: 0,
   }));
+
+  // Fetch messages for selected ticket
+  const selectedRawId = selectedTicket ? (selectedTicket as any).rawId : null;
+  const { data: messagesData, refetch: refetchMessages } = trpc.supportTickets.getMessages.useQuery(
+    { ticketId: selectedRawId! },
+    { enabled: !!selectedRawId }
+  );
+  const ticketMessages = messagesData?.data || [];
+
+  // Reply mutation
+  const addMessageMutation = trpc.supportTickets.addMessage.useMutation({
+    onSuccess: () => {
+      toast.success("Reply sent!");
+      setReplyMessage("");
+      refetchMessages();
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to send reply"),
+  });
+
+  const handleSendReply = () => {
+    if (!replyMessage.trim() || !selectedRawId) return;
+    addMessageMutation.mutate({ ticketId: selectedRawId, message: replyMessage });
+  };
 
   const filteredTickets =
     filter === "all"
@@ -318,6 +344,80 @@ export function SupportCenter() {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* Ticket Detail Dialog */}
+        <Dialog open={!!selectedTicket} onOpenChange={(open) => { if (!open) setSelectedTicket(null); }}>
+          <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {selectedTicket && getStatusIcon(selectedTicket.status)}
+                {selectedTicket?.subject}
+              </DialogTitle>
+              <DialogDescription className="flex items-center gap-2">
+                <code className="text-xs bg-slate-600 text-slate-300 px-2 py-1 rounded">{selectedTicket?.id}</code>
+                {selectedTicket && getStatusBadge(selectedTicket.status)}
+                {selectedTicket && getPriorityBadge(selectedTicket.priority)}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Original description */}
+            <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
+              <p className="text-xs text-slate-400 mb-1">Original Description</p>
+              <p className="text-slate-200 text-sm">{selectedTicket?.description}</p>
+              <p className="text-xs text-slate-500 mt-2">Created: {selectedTicket?.createdAt}</p>
+            </div>
+
+            {/* Messages thread */}
+            <ScrollArea className="flex-1 max-h-[300px]">
+              <div className="space-y-3 pr-4">
+                {ticketMessages.length === 0 ? (
+                  <p className="text-slate-400 text-sm text-center py-4">No replies yet</p>
+                ) : (
+                  ticketMessages.map((msg: any) => (
+                    <div
+                      key={msg.id}
+                      className={`p-3 rounded-lg text-sm ${
+                        msg.isFromAdmin
+                          ? "bg-blue-900/40 border border-blue-700 ml-4"
+                          : "bg-slate-700 border border-slate-600 mr-4"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs font-semibold ${msg.isFromAdmin ? "text-blue-400" : "text-green-400"}`}>
+                          {msg.isFromAdmin ? "Support Agent" : "You"}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {new Date(msg.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-slate-200">{msg.message}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Reply input */}
+            {selectedTicket && !["resolved", "closed"].includes(selectedTicket.status) && (
+              <div className="flex gap-2 pt-2 border-t border-slate-600">
+                <Input
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  placeholder="Type your reply..."
+                  className="bg-slate-700 border-slate-600 text-white flex-1"
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }}
+                />
+                <Button
+                  onClick={handleSendReply}
+                  disabled={!replyMessage.trim() || addMessageMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* FAQ Section */}
         <Card className="bg-slate-800 border-slate-700 mt-6">

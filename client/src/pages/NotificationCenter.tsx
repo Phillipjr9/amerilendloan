@@ -224,12 +224,58 @@ export function NotificationCenter() {
               </TabsContent>
 
               <TabsContent value="unread" className="space-y-3">
-                {filter === "unread" && notifications.length === 0 ? (
+                {notifications.filter(n => !n.read).length === 0 ? (
                   <div className="text-center py-12">
                     <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
                     <p className="text-slate-400">No unread notifications</p>
                   </div>
-                ) : null}
+                ) : (
+                  notifications.filter(n => !n.read).map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="p-4 rounded-lg border transition-all bg-slate-700 border-slate-600 shadow-lg hover:bg-slate-700 hover:border-slate-500"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1">{getIcon(notification.type)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-white font-semibold">{notification.title}</h3>
+                            <Badge variant={getTypeBadgeVariant(notification.type) as any}>
+                              {notification.type}
+                            </Badge>
+                            <div className="w-2 h-2 rounded-full bg-blue-500 ml-auto"></div>
+                          </div>
+                          <p className="text-slate-300 text-sm mb-3">{notification.message}</p>
+                          <div className="flex items-center gap-2 text-xs text-slate-400">
+                            <span>{formatDate(notification.createdAt)}</span>
+                            {notification.actionUrl && (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="p-0 h-auto text-blue-400 hover:text-blue-300"
+                                onClick={() => window.location.href = notification.actionUrl!}
+                              >
+                                View Details →
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-slate-300"
+                            title="Mark as read"
+                            onClick={() => markAsReadMutation.mutate({ notificationId: parseInt(notification.id) })}
+                            disabled={markAsReadMutation.isPending}
+                          >
+                            <Archive className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

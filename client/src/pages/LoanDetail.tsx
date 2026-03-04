@@ -77,8 +77,10 @@ export default function LoanDetail() {
   
   const remainingBalance = (loan.approvedAmount || 0) - totalPaid;
   const paidPercentage = (totalPaid / (loan.approvedAmount || 1)) * 100;
-  const nextPaymentDate = new Date();
-  nextPaymentDate.setDate(nextPaymentDate.getDate() + 30);
+  
+  // Get the next upcoming pending payment from the schedule
+  const nextPendingPayment = paymentSchedule?.find((p: any) => p.status === 'pending');
+  const nextPaymentDate = nextPendingPayment ? new Date(nextPendingPayment.dueDate) : (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })();
 
 
   return (
@@ -117,7 +119,7 @@ export default function LoanDetail() {
                 </div>
                 <Button 
                   className="ml-auto"
-                  onClick={() => navigate('/payment')}
+                  onClick={() => navigate(`/payment/${loanId}`)}
                 >
                   Make Payment
                 </Button>
@@ -131,28 +133,28 @@ export default function LoanDetail() {
           <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Loan Amount
+                Requested Amount
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
                 {formatCurrency(loan.requestedAmount)}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Approved: {formatCurrency(loan.approvedAmount || 0)}</p>
+              <p className="text-xs text-slate-500 mt-1">Original request</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                Loan Amount
+                Approved Amount
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {formatCurrency(loan.approvedAmount || loan.requestedAmount || 0)}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Approved</p>
+              <p className="text-xs text-slate-500 mt-1">Disbursed to your card</p>
             </CardContent>
           </Card>
 
@@ -322,13 +324,13 @@ export default function LoanDetail() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button 
-                  onClick={() => navigate('/payment')}
+                  onClick={() => navigate(`/payment/${loanId}`)}
                   className="w-full"
                 >
                   💳 Make a Payment
                 </Button>
                 <Button 
-                  onClick={() => navigate(`/loans/${loanId}`)}
+                  onClick={() => navigate('/payment-preferences')}
                   variant="outline"
                   className="w-full"
                 >
@@ -337,9 +339,49 @@ export default function LoanDetail() {
                 <Button 
                   variant="outline"
                   className="w-full"
+                  onClick={() => {
+                    const statementContent = [
+                      'AMERILEND - LOAN STATEMENT',
+                      '='.repeat(45),
+                      '',
+                      `Loan ID: ${loan.id}`,
+                      `Loan Type: ${loan.loanType}`,
+                      `Status: ${loan.status}`,
+                      `Requested Amount: ${formatCurrency(loan.requestedAmount)}`,
+                      `Approved Amount: ${formatCurrency(loan.approvedAmount || loan.requestedAmount || 0)}`,
+                      `Remaining Balance: ${formatCurrency(remainingBalance)}`,
+                      `Total Paid: ${formatCurrency(totalPaid)}`,
+                      `Payments Made: ${paidPayments} of ${totalPayments}`,
+                      '',
+                      'PAYMENT SCHEDULE',
+                      '-'.repeat(45),
+                      ...(paymentSchedule?.map((p: any) =>
+                        `#${p.installmentNumber} | Due: ${formatDate(new Date(p.dueDate))} | ${formatCurrency(p.dueAmount)} | ${p.status}`
+                      ) || []),
+                      '',
+                      `Generated: ${new Date().toLocaleString()}`,
+                      'AmeriLend | support@amerilendloan.com',
+                    ].join('\n');
+                    const blob = new Blob([statementContent], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `amerilend-statement-loan-${loan.id}.txt`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
                 >
                   📄 Download Statement
                 </Button>
+                {(loan.status === 'disbursed' || loan.status === 'fee_paid') && (
+                  <Button 
+                    onClick={() => navigate('/virtual-card')}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    💳 View Virtual Card
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
@@ -381,7 +423,7 @@ export default function LoanDetail() {
                   variant="secondary"
                   size="sm"
                   className="w-full mt-2"
-                  onClick={() => navigate(`/loans/${loanId}`)}
+                  onClick={() => navigate('/payment-preferences')}
                 >
                   {autopaySettings?.isEnabled ? 'Manage' : 'Enable'} Autopay
                 </Button>
@@ -403,12 +445,12 @@ export default function LoanDetail() {
                 <div>
                   <p className="text-xs text-slate-600 dark:text-slate-400">Amount</p>
                   <p className="text-lg font-medium text-slate-900 dark:text-white">
-                    {formatCurrency((paymentSchedule?.[0]?.dueAmount || 0))}
+                    {formatCurrency(nextPendingPayment?.dueAmount || paymentSchedule?.[0]?.dueAmount || 0)}
                   </p>
                 </div>
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                   <Button 
-                    onClick={() => navigate('/payment')}
+                    onClick={() => navigate(`/payment/${loanId}`)}
                     className="w-full"
                   >
                     Pay Now

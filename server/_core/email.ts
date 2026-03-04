@@ -5237,3 +5237,137 @@ AmeriLend Team
 
   await sendEmail({ to: email, subject, text, html });
 }
+
+// ============================================
+// SUPPORT TICKET EMAIL NOTIFICATIONS
+// ============================================
+
+/**
+ * Send email notification to admin when a new support ticket is created
+ */
+export async function sendNewSupportTicketNotificationEmail(
+  ticketId: number,
+  userName: string,
+  userEmail: string,
+  subject: string,
+  description: string,
+  category: string,
+  priority: string
+): Promise<void> {
+  const adminEmail = "support@amerilendloan.com";
+  const emailSubject = `🎫 New Support Ticket #${ticketId} - ${subject}`;
+  const text = `New support ticket submitted.\n\nTicket #${ticketId}\nFrom: ${userName} (${userEmail})\nCategory: ${category}\nPriority: ${priority}\nSubject: ${subject}\n\n${description}\n\nPlease log in to the admin dashboard to respond.`;
+
+  const priorityColor = priority === 'high' || priority === 'urgent' ? '#DC2626' : priority === 'normal' ? '#F59E0B' : '#6B7280';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+        ${getEmailHeader()}
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px;">
+          <h2 style="color: #1e3a5f; margin-top: 0;">🎫 New Support Ticket</h2>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Ticket ID:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-size: 14px;">#${ticketId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">From:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-size: 14px;">${userName} (<a href="mailto:${userEmail}" style="color: #2563eb;">${userEmail}</a>)</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Category:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px;">${category}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Priority:</td>
+                <td style="padding: 8px 0;"><span style="background-color: ${priorityColor}; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">${priority.toUpperCase()}</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Subject:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-weight: 600; font-size: 14px;">${subject}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+            <p style="margin: 0 0 4px 0; font-size: 12px; color: #92400e; font-weight: 600;">MESSAGE</p>
+            <p style="margin: 0; color: #1e293b; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${description}</p>
+          </div>
+
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${COMPANY_INFO.website}/admin/support" style="display: inline-block; padding: 12px 32px; background-color: #1e3a5f; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">View in Dashboard →</a>
+          </div>
+
+          <p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 20px;">
+            You can reply directly to the user from the admin support dashboard.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: adminEmail, subject: emailSubject, text, html });
+}
+
+/**
+ * Send email notification to user when admin replies to their support ticket
+ */
+export async function sendSupportTicketReplyEmail(
+  userEmail: string,
+  userName: string,
+  ticketId: number,
+  ticketSubject: string,
+  replyMessage: string
+): Promise<void> {
+  const emailSubject = `Re: Support Ticket #${ticketId} - ${ticketSubject}`;
+  const text = `Hi ${userName},\n\nOur support team has replied to your ticket #${ticketId} ("${ticketSubject}"):\n\n${replyMessage}\n\nYou can view the full conversation and reply in your account at ${COMPANY_INFO.website}/support\n\nThank you,\nAmeriLend Support Team`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+        ${getEmailHeader()}
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 32px;">
+          <h2 style="color: #1e3a5f; margin-top: 0;">Support Team Reply</h2>
+
+          <p style="color: #374151; font-size: 15px;">Hi ${userName},</p>
+          <p style="color: #374151; font-size: 15px;">Our support team has responded to your ticket:</p>
+
+          <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="margin: 0 0 4px 0; font-size: 12px; color: #0369a1; font-weight: 600;">TICKET #${ticketId} — ${ticketSubject}</p>
+          </div>
+
+          <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+            <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; font-weight: 600;">REPLY FROM SUPPORT</p>
+            <p style="margin: 0; color: #1e293b; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${replyMessage}</p>
+          </div>
+
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${COMPANY_INFO.website}/support" style="display: inline-block; padding: 12px 32px; background-color: #2563eb; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">View Conversation & Reply →</a>
+          </div>
+
+          <p style="color: #64748b; font-size: 13px; margin-top: 20px;">
+            If you have additional questions, you can reply through your support center or contact us directly at 
+            <a href="mailto:support@amerilendloan.com" style="color: #2563eb;">support@amerilendloan.com</a>.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+
+  await sendEmail({ to: userEmail, subject: emailSubject, text, html });
+}

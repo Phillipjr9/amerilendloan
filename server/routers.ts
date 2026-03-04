@@ -3130,7 +3130,8 @@ export const appRouter = router({
           }
           
           return { success: true, message: 'Bank information updated successfully' };
-        } catch (error) {
+        } catch (error: any) {
+          console.error('[updateBankInfo] Error:', error?.message || error);
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to update bank information"
@@ -4049,7 +4050,15 @@ export const appRouter = router({
         }
 
         const code = await createOTP(email, input.purpose, "email");
-        await sendOTPEmail(email, code, input.purpose);
+        try {
+          await sendOTPEmail(email, code, input.purpose);
+        } catch (emailErr: any) {
+          console.error('[OTP] Failed to send OTP email:', emailErr?.message || emailErr);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to send verification code. Please try again or contact support."
+          });
+        }
         // Return the resolved email so client can use it for verification
         return { success: true, resolvedEmail: email };
       }),
@@ -4120,13 +4129,24 @@ export const appRouter = router({
         if (input.purpose === "signup" || input.purpose === "login") {
           try {
             let user = await db.getUserByEmail(input.identifier);
-            const isNewUser = !user;
+            let isNewUser = !user;
             
             if (!user) {
               // Create a user for email-based OTP auth
               // Use username if provided during signup, otherwise use email
               const fullName = input.purpose === "signup" && input.username ? input.username : input.identifier;
-              user = await db.createUser(input.identifier, fullName);
+              try {
+                user = await db.createUser(input.identifier, fullName);
+              } catch (createErr: any) {
+                // Handle race condition: another concurrent request may have created the user
+                // between our getUserByEmail check and createUser call
+                user = await db.getUserByEmail(input.identifier);
+                if (!user) {
+                  // Not a duplicate — re-throw the original error
+                  throw createErr;
+                }
+                isNewUser = false;
+              }
             }
             
             // If password is provided during signup, always update/store it

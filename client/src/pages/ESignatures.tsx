@@ -60,6 +60,17 @@ export default function ESignatures() {
     },
   });
 
+  // Sign document mutation
+  const signMutation = trpc.eSignature.sign.useMutation({
+    onSuccess: () => {
+      utils.eSignature.getUserDocuments.invalidate();
+      toast.success("Document signed successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to sign document.");
+    },
+  });
+
   const handleRequestSignature = (e: React.FormEvent) => {
     e.preventDefault();
     requestMutation.mutate({
@@ -69,7 +80,7 @@ export default function ESignatures() {
       documentType,
       signerEmail,
       signerName,
-    } as any);
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -348,6 +359,21 @@ export default function ESignatures() {
                     </div>
 
                     <div className="flex gap-2">
+                      {(doc.status === "pending" || doc.status === "sent") && (
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          disabled={signMutation.isPending}
+                          onClick={() => {
+                            if (confirm(`Sign "${doc.documentTitle}"? This is a legally binding action.`)) {
+                              signMutation.mutate({ documentId: doc.id });
+                            }
+                          }}
+                        >
+                          <FileSignature className="h-4 w-4 mr-2" />
+                          {signMutation.isPending ? "Signing..." : "Sign"}
+                        </Button>
+                      )}
                       {doc.status === "signed" && doc.signedDocumentUrl && (
                         <Button
                           variant="outline"

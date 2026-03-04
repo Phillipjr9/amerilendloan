@@ -1,3 +1,4 @@
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { Loader2, DollarSign, Calendar, TrendingUp, Info } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function PaymentPreferences() {
+  const [, navigate] = useLocation();
   const utils = trpc.useUtils();
   const [allocationStrategy, setAllocationStrategy] = useState<string>("standard");
   const [enableBiweekly, setEnableBiweekly] = useState(false);
@@ -324,7 +326,7 @@ export default function PaymentPreferences() {
         <p className="text-sm text-muted-foreground mb-4">
           Have questions about payment preferences or want personalized advice on the best strategy for your situation?
         </p>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={() => navigate('/support')}>
           Contact Support
         </Button>
       </Card>

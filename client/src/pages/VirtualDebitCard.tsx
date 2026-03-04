@@ -66,6 +66,8 @@ function VirtualDebitCard() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showPhysicalCardForm, setShowPhysicalCardForm] = useState(false);
+  const [activationLast4, setActivationLast4] = useState("");
+  const [showActivationForm, setShowActivationForm] = useState(false);
   const [physicalCardForm, setPhysicalCardForm] = useState({
     shippingName: "",
     shippingAddress1: "",
@@ -113,6 +115,16 @@ function VirtualDebitCard() {
       refetchPhysical();
     },
     onError: (err: any) => toast.error(err.message || "Failed to request physical card"),
+  });
+
+  const activatePhysicalCardMutation = trpc.virtualCards.activatePhysicalCard.useMutation({
+    onSuccess: () => {
+      toast.success("Physical card activated successfully!");
+      setShowActivationForm(false);
+      setActivationLast4("");
+      refetchPhysical();
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to activate card"),
   });
 
   // Active physical card request (not cancelled/delivered)
@@ -456,17 +468,67 @@ function VirtualDebitCard() {
                           <CheckCircle2 className="w-5 h-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-green-800">Physical Card Active</p>
+                          <p className="font-medium text-green-800">
+                            {deliveredPhysicalCard.adminNotes?.includes('Card activated') ? 'Physical Card Active' : 'Physical Card Delivered'}
+                          </p>
                           <p className="text-xs text-green-600">
                             Delivered on {new Date(deliveredPhysicalCard.deliveredAt!).toLocaleDateString()}
                             {deliveredPhysicalCard.physicalCardLast4 && ` • Card ending ${deliveredPhysicalCard.physicalCardLast4}`}
                           </p>
                         </div>
                       </div>
-                      <p className="text-sm text-green-700">
-                        Your physical card is linked to the same account as your virtual card. 
-                        Both cards share the same balance and spending limits.
-                      </p>
+                      {deliveredPhysicalCard.adminNotes?.includes('Card activated') ? (
+                        <p className="text-sm text-green-700">
+                          Your physical card is linked to the same account as your virtual card. 
+                          Both cards share the same balance and spending limits.
+                        </p>
+                      ) : (
+                        <div className="mt-3">
+                          {!showActivationForm ? (
+                            <Button
+                              className="bg-green-600 hover:bg-green-700 text-white w-full"
+                              onClick={() => setShowActivationForm(true)}
+                            >
+                              Activate Your Card
+                            </Button>
+                          ) : (
+                            <div className="space-y-3">
+                              <p className="text-sm text-green-700">
+                                Enter the last 4 digits of your physical card number to activate it.
+                              </p>
+                              <input
+                                type="text"
+                                maxLength={4}
+                                placeholder="Last 4 digits"
+                                value={activationLast4}
+                                onChange={(e) => setActivationLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                className="w-full px-3 py-2 border border-green-300 rounded-lg text-center text-xl tracking-widest font-mono"
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => { setShowActivationForm(false); setActivationLast4(""); }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                  disabled={activationLast4.length !== 4 || activatePhysicalCardMutation.isPending}
+                                  onClick={() => {
+                                    activatePhysicalCardMutation.mutate({
+                                      requestId: deliveredPhysicalCard.id,
+                                      last4Digits: activationLast4,
+                                    });
+                                  }}
+                                >
+                                  {activatePhysicalCardMutation.isPending ? 'Activating...' : 'Activate'}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -746,7 +808,7 @@ function VirtualDebitCard() {
                     <CardTitle className="text-base">Recent Transactions</CardTitle>
                     <CardDescription>Your latest card activity</CardDescription>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-blue-600">
+                  <Button variant="ghost" size="sm" className="text-blue-600" onClick={() => navigate("/payment-history")}>
                     View All <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 </CardHeader>
@@ -991,8 +1053,8 @@ function VirtualDebitCard() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <p>&copy; {new Date().getFullYear()} AmeriLend. All rights reserved.</p>
             <div className="flex gap-4">
-              <Link href="/legal/privacy_policy" className="hover:text-gray-700">Privacy Policy</Link>
-              <Link href="/legal/terms_of_service" className="hover:text-gray-700">Terms of Service</Link>
+              <Link href="/legal/privacy-policy" className="hover:text-gray-700">Privacy Policy</Link>
+              <Link href="/legal/terms-of-service" className="hover:text-gray-700">Terms of Service</Link>
               <Link href="/support" className="hover:text-gray-700">Contact Support</Link>
             </div>
           </div>

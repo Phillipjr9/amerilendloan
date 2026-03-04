@@ -158,7 +158,30 @@ export default function TaxDocuments() {
                         </div>
                       </div>
 
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => {
+                          const content = [
+                            `Tax Document: ${getDocumentTypeName(doc.documentType)}`,
+                            `Tax Year: ${doc.taxYear}`,
+                            `Generated: ${new Date(doc.generatedAt).toLocaleDateString()}`,
+                            '',
+                            doc.totalInterestPaid ? `Total Interest Paid: $${(doc.totalInterestPaid / 100).toFixed(2)}` : '',
+                            doc.totalPrincipalPaid ? `Total Principal Paid: $${(doc.totalPrincipalPaid / 100).toFixed(2)}` : '',
+                          ].filter(Boolean).join('\n');
+                          const blob = new Blob([content], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `${doc.documentType}_${doc.taxYear}.txt`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                          toast.success('Document downloaded');
+                        }}
+                      >
                         <Download className="w-4 h-4 mr-1" />
                         Download
                       </Button>

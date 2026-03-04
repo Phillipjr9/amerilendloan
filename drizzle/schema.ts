@@ -58,8 +58,8 @@ export const users = pgTable("users", {
   
   // Disbursement bank information
   bankAccountHolderName: varchar("bankAccountHolderName", { length: 255 }),
-  bankAccountNumber: varchar("bankAccountNumber", { length: 50 }),
-  bankRoutingNumber: varchar("bankRoutingNumber", { length: 20 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 255 }),
+  bankRoutingNumber: varchar("bankRoutingNumber", { length: 255 }),
   bankAccountType: varchar("bankAccountType", { length: 20 }), // checking, savings
   
   // Two-Factor Authentication

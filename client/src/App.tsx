@@ -44,6 +44,12 @@ import FinancialTools from "./pages/FinancialTools";
 import ESignatures from "./pages/ESignatures";
 import MarketingCampaigns from "./pages/admin/MarketingCampaigns";
 import AdminVirtualCards from "./pages/admin/AdminVirtualCards";
+import AdminHardshipManagement from "./pages/admin/AdminHardshipManagement";
+import AdminAccountClosures from "./pages/admin/AdminAccountClosures";
+import AdminTaxDocuments from "./pages/admin/AdminTaxDocuments";
+import AdminESignatures from "./pages/admin/AdminESignatures";
+import AdminAutomationRules from "./pages/admin/AdminAutomationRules";
+import AdminInvitationCodes from "./pages/admin/AdminInvitationCodes";
 import NotificationSettings from "./pages/NotificationSettings";
 import About from "./pages/About";
 import HowItWorksPage from "./pages/HowItWorks";
@@ -93,6 +99,12 @@ function Router() {
       <Route path={"/admin/collections"} component={Collections} />
       <Route path={"/admin/marketing"} component={MarketingCampaigns} />
       <Route path={"/admin/virtual-cards"} component={AdminVirtualCards} />
+      <Route path={"/admin/hardship"} component={AdminHardshipManagement} />
+      <Route path={"/admin/account-closures"} component={AdminAccountClosures} />
+      <Route path={"/admin/tax-documents"} component={AdminTaxDocuments} />
+      <Route path={"/admin/e-signatures"} component={AdminESignatures} />
+      <Route path={"/admin/automation"} component={AdminAutomationRules} />
+      <Route path={"/admin/invitations"} component={AdminInvitationCodes} />
       <Route path={"/payment/:id"} component={PaymentPage} />
       <Route path={"/pay-fee"} component={PayFee} />
       <Route path={"/otp-login"} component={OTPLogin} />

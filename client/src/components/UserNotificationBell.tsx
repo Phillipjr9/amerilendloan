@@ -39,16 +39,16 @@ export default function UserNotificationBell() {
     // Navigate based on notification type
     switch (notification.type) {
       case "loan_status":
-        setLocation("/dashboard#applications");
+        setLocation("/dashboard");
         break;
       case "payment":
-        setLocation("/dashboard#payments");
+        setLocation("/payment-history");
         break;
       case "message":
-        setLocation("/dashboard#messages");
+        setLocation("/support");
         break;
       case "document":
-        setLocation("/dashboard#documents");
+        setLocation("/e-signatures");
         break;
       default:
         setLocation("/dashboard");

@@ -240,6 +240,12 @@ export default function OTPLogin() {
       return;
     }
 
+    // Block submission while email check is still in progress
+    if (checkEmailMutation.isPending) {
+      toast.info("Checking email availability, please wait...");
+      return;
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(signupEmail)) {
@@ -253,6 +259,13 @@ export default function OTPLogin() {
       setIsLogin(true);
       setLoginIdentifier(signupEmail);
       setStep("form");
+      return;
+    }
+
+    // If the email hasn't been checked yet (user never blurred the field), trigger a check now
+    if (!existingAccountInfo && signupEmail !== accountCheckEmail) {
+      checkEmailMutation.mutate({ email: signupEmail });
+      toast.info("Checking email availability, please wait...");
       return;
     }
 

@@ -112,8 +112,22 @@ export async function getDb() {
       const dbUrl = process.env.DATABASE_URL;
       const isLocalDb = dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1');
       const sslEnabled = !isLocalDb;
-      // Allow overriding SSL verification via env var for legacy/self-signed certs
-      const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
+      
+      // Determine SSL certificate verification:
+      // 1. Explicit env var override takes priority
+      // 2. If DATABASE_URL contains sslmode=no-verify or sslmode=require, disable verification
+      // 3. Cloud providers (Supabase, Neon, Railway) commonly use poolers with
+      //    certificates not in the default trust store, so default to false for remote DBs
+      const urlDisablesVerify = dbUrl.includes('sslmode=no-verify') ||
+                                dbUrl.includes('sslmode=require') ||
+                                dbUrl.includes('sslmode=prefer') ||
+                                dbUrl.includes('supabase.com') ||
+                                dbUrl.includes('neon.tech') ||
+                                dbUrl.includes('railway.app');
+      const envSslSetting = process.env.DB_SSL_REJECT_UNAUTHORIZED;
+      const rejectUnauthorized = envSslSetting !== undefined
+        ? envSslSetting === 'true'
+        : !urlDisablesVerify;
       console.log(`[Database] SSL mode: ${sslEnabled ? `ENABLED (verify=${rejectUnauthorized})` : 'DISABLED (local)'}`);
       
       _client = postgres(process.env.DATABASE_URL, {
@@ -124,6 +138,7 @@ export async function getDb() {
       });
 
       // Test connection with timeout
+      let connectionTestPassed = false;
       try {
         await Promise.race([
           _client`SELECT 1`,
@@ -131,10 +146,36 @@ export async function getDb() {
             setTimeout(() => reject(new Error("Connection test timeout (15s)")), 15000)
           )
         ]);
+        connectionTestPassed = true;
       } catch (testError) {
-        // Connection test failed, but don't fail startup - database might come online later
         const testErrorMsg = testError instanceof Error ? testError.message : String(testError);
-        console.warn(`[Database] Connection test failed: ${testErrorMsg} (server will continue)`);
+        
+        // If SSL verification failed, automatically retry without verification
+        if (testErrorMsg.includes('self-signed') || testErrorMsg.includes('certificate') || testErrorMsg.includes('SSL')) {
+          console.warn(`[Database] SSL verification failed, retrying with rejectUnauthorized=false...`);
+          try {
+            // Close the broken client
+            await _client.end({ timeout: 3 }).catch(() => {});
+          } catch { /* ignore close errors */ }
+          
+          _client = postgres(process.env.DATABASE_URL, {
+            ssl: sslEnabled ? { rejectUnauthorized: false } : false,
+            idle_timeout: 30,
+            max_lifetime: 60 * 60,
+            connect_timeout: 10,
+          });
+          
+          try {
+            await _client`SELECT 1`;
+            connectionTestPassed = true;
+            console.log(`[Database] SSL retry successful with rejectUnauthorized=false`);
+          } catch (retryError) {
+            const retryMsg = retryError instanceof Error ? retryError.message : String(retryError);
+            console.warn(`[Database] Connection test failed after SSL retry: ${retryMsg} (server will continue)`);
+          }
+        } else {
+          console.warn(`[Database] Connection test failed: ${testErrorMsg} (server will continue)`);
+        }
       }
       
       _db = drizzle(_client);

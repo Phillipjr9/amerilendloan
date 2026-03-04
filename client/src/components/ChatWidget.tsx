@@ -18,7 +18,7 @@ import { useLocation } from "wouter";
  */
 export default function ChatWidget() {
   const { user, isAuthenticated } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [message, setMessage] = useState("");
@@ -140,7 +140,7 @@ export default function ChatWidget() {
                 size="icon"
                 className="h-7 w-7 text-primary-foreground hover:bg-white/20"
                 onClick={() => {
-                  window.location.href = "/chat";
+                  navigate("/chat");
                 }}
                 title="Open full page"
               >
