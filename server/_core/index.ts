@@ -8,7 +8,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
+import { serveStatic } from "./static";
 import { ENV } from "./env";
 import { storagePut } from "../storage";
 import { sdk } from "./sdk";
@@ -354,6 +354,7 @@ async function startServer() {
   if (process.env.NODE_ENV === "development") {
     try {
       logger.info("Setting up Vite dev server...");
+      const { setupVite } = await import("./vite");
       await setupVite(app, server);
       logger.info("Vite setup complete");
     } catch (error) {
