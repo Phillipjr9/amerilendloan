@@ -387,6 +387,7 @@ async function startServer() {
   
   // Store cron jobs reference for cleanup
   let cronJobs: any = null;
+  let dbKeepAliveTimer: ReturnType<typeof setInterval> | null = null;
   
   server.listen(port, () => {
     logger.info(`Server running on http://localhost:${port}/`);
@@ -402,6 +403,21 @@ async function startServer() {
     } catch (error) {
       logger.warn("Failed to initialize schedulers", error);
     }
+
+    // Database keep-alive: ping DB every 4 hours to prevent Supabase free-tier pause (7-day inactivity timeout)
+    const DB_KEEPALIVE_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours in ms
+    const dbKeepAlive = setInterval(async () => {
+      try {
+        const { getDb } = await import("../db");
+        await getDb(); // getDb() runs SELECT 1 internally to validate the connection
+        logger.info("[DB Keep-Alive] Database ping successful");
+      } catch (error) {
+        logger.warn("[DB Keep-Alive] Database ping failed", error);
+      }
+    }, DB_KEEPALIVE_INTERVAL);
+    dbKeepAlive.unref(); // Don't prevent process exit
+    dbKeepAliveTimer = dbKeepAlive;
+    logger.info(`[DB Keep-Alive] Scheduled every ${DB_KEEPALIVE_INTERVAL / 3600000}h to prevent Supabase pause`);
   });
 
   // Graceful shutdown handlers (async operations allowed in SIGTERM/SIGINT, not in 'exit')
@@ -412,6 +428,9 @@ async function startServer() {
       shutdownReminderScheduler();
       if (cronJobs) {
         stopAllCronJobs(cronJobs);
+      }
+      if (dbKeepAliveTimer) {
+        clearInterval(dbKeepAliveTimer);
       }
       logger.info("All schedulers shut down");
     } catch (error) {
